@@ -1,3 +1,5 @@
 Evidencia 2: Captura de interacción enviada por WhatsApp.
 
-[Instrucción: Pega aquí la imagen o captura de pantalla de la segunda persona haciendo clic en el botón de la landing.]
+![Evidencia 2](../../attachments/2.jpg)
+
+Esta imagen corresponde a la segunda interacción enviada por WhatsApp.
