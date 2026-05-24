@@ -70,7 +70,7 @@ export default function Landing() {
                     <section id="inicio" className="relative min-h-[calc(100vh-72px)] flex items-center justify-center px-6 py-24 text-center">
                         <div className="mx-auto max-w-3xl text-white">
                             <p className="mb-4 text-sm uppercase tracking-[0.35em] text-white/75">Transforma tu menú</p>
-                            <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">Eres un restaurante?</h1>
+                            <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">Eres dueño de un restaurante?</h1>
                             <p className="mt-6 text-lg leading-8 text-white/100">
                                 Tienes problemas con tus menús? Nosotros tenemos la solución para ayudarte a vender más y mejor.
                             </p>
