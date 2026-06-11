@@ -112,6 +112,23 @@ La arquitectura permite:
 
 ---
 
-# 8. Conclusión
+# 8. Normalización de la Base de Datos
+
+La base de datos de Menu Master fue diseñada siguiendo las primeras tres formas normales:
+
+## Primera Forma Normal (1FN)
+Todos los atributos almacenan valores atómicos y cada tabla posee una clave primaria única.
+
+## Segunda Forma Normal (2FN)
+Todos los atributos dependen completamente de la clave primaria de su tabla.
+
+## Tercera Forma Normal (3FN)
+Se eliminaron dependencias transitivas mediante la separación de entidades en tablas independientes: usuarios, menus, categorias y platillos.
+
+Esta estructura reduce la redundancia de datos y mejora la integridad de la información.
+
+---
+
+# 9. Conclusión
 
 La arquitectura propuesta proporciona una base sólida para el crecimiento de Menu Master, permitiendo mantener un sistema seguro, escalable y fácil de mantener.
