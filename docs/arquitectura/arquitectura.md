@@ -112,20 +112,57 @@ La arquitectura permite:
 
 ---
 
-# 8. Normalización de la Base de Datos
+# 8. Diseño de Base de Datos y Normalización
 
-La base de datos de Menu Master fue diseñada siguiendo las primeras tres formas normales:
+La base de datos de Menu Master fue diseñada utilizando MySQL y siguiendo principios de normalización con el objetivo de reducir la redundancia de datos, mejorar la integridad de la información y facilitar el mantenimiento del sistema.
+
+## Entidades Principales
+
+### Usuarios
+
+* id_usuario (PK)
+* nombre
+* correo
+* contraseña
+
+### Menús
+
+* id_menu (PK)
+* id_usuario (FK)
+* nombre
+* descripcion
+
+### Categorías
+
+* id_categoria (PK)
+* id_menu (FK)
+* nombre
+* orden
+
+### Platillos
+
+* id_platillo (PK)
+* id_categoria (FK)
+* nombre
+* descripcion
+* precio
+* imagen_url
+* disponible
 
 ## Primera Forma Normal (1FN)
-Todos los atributos almacenan valores atómicos y cada tabla posee una clave primaria única.
+
+Se cumple debido a que todos los atributos contienen valores atómicos y cada tabla posee una clave primaria única.
 
 ## Segunda Forma Normal (2FN)
-Todos los atributos dependen completamente de la clave primaria de su tabla.
+
+Se cumple porque todos los atributos dependen completamente de la clave primaria de cada tabla y no existen dependencias parciales.
 
 ## Tercera Forma Normal (3FN)
-Se eliminaron dependencias transitivas mediante la separación de entidades en tablas independientes: usuarios, menus, categorias y platillos.
 
-Esta estructura reduce la redundancia de datos y mejora la integridad de la información.
+Se cumple debido a que no existen dependencias transitivas. La información se encuentra separada en entidades independientes relacionadas mediante claves foráneas.
+
+La aplicación de estas formas normales permite mantener una estructura eficiente, consistente y escalable para la gestión de menús digitales.
+
 
 ---
 
