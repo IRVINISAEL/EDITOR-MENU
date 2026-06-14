@@ -65,3 +65,16 @@
 | Total casos | Autenticación | Menús | UI | Infraestructura |
 |---|---|---|---|---|
 | 16 | 5 | 4 | 4 | 3 |
+
+
+
+## Estado Actual del Sistema
+
+**Frontend:** https://editor-menu-ausx.vercel.app/  Activo  
+**Backend:** https://editor-menu-production.up.railway.app/  Activo  
+**Pruebas completadas:** 8 de 16  
+**Pruebas pendientes:** 8 (editor avanzado, exportar PDF, QR)  
+**Bugs encontrados:** 7 (ver docs/bug-report.md)  
+**Última revisión:** 13/06/2026  
+
+
