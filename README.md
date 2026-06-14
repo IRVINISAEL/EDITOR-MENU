@@ -1,10 +1,10 @@
-# 🍽️ Menu Master
+# <img src="[https://img.shields.io/badge/Equipo-4B0082?style=flat](https://img.magnific.com/vector-premium/icono-tarjeta-menu-ilustracion-simple-icono-vector-tarjeta-menu-diseno-web-aislado-sobre-fondo-blanco_98396-28746.jpg?semt=ais_hybrid&w=740&q=80)" /> Menu Master
 
 > SaaS para restaurantes y negocios de comida que permite crear, personalizar y compartir menús digitales de forma rápida, sin necesidad de conocimientos de diseño.
 
 ---
 
-## 👥 Equipo
+## <img src="https://img.shields.io/badge/Equipo-4B0082?style=flat" /> Equipo
 
 | Nombre | Rol |
 |---|---|
