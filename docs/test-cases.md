@@ -89,3 +89,43 @@
 ### Prueba 8 - vista tablet samsung 
 ![Prueba 8](./evidencia/tablet1.jpeg)
 ![Prueba 8.1](./evidencia/tablet2.jpeg)
+
+
+
+---
+
+## Resultados ACT-6 — Sistema desplegado
+
+| # | Prueba | URL probada | Estado | Notas |
+|---|--------|-------------|--------|-------|
+| 1 | Landing carga | editor-menu-ausx.vercel.app/ |  PASS | Carga inmediata |
+| 2 | CTA funciona | editor-menu-ausx.vercel.app/landing |  PASS | Redirige al registro |
+| 3 | Responsive móvil landing | editor-menu-ausx.vercel.app/landing |  WARN | Secciones de precios y opiniones no se adaptan completas |
+| 4 | Responsive tablet | editor-menu-ausx.vercel.app/ |  WARN | Contenido no se adapta en 2 secciones del dashboard |
+| 5 | Backend responde | editor-menu-production.up.railway.app/ |  PASS | API activa, responde JSON |
+| 6 | Login funciona | editor-menu-ausx.vercel.app/login |  PASS | Inicia sesión correctamente |
+| 7 | Registro funciona | editor-menu-ausx.vercel.app/login |  PASS | Crea cuenta y confirma registro |
+| 8 | Dashboard carga | editor-menu-ausx.vercel.app/ |  WARN | Carga pero error 500 en /api/menus |
+
+
+
+## Evidencia ACT-6
+
+### Prueba 3 — Responsive móvil landing
+![Móvil Landing](./evidencia/evidencia-movilLanding.png)
+![Móvil Landing 2](./evidencia/evidencia-movilLanding2.png)
+![Móvil Landing 3](./evidencia/evidencia-movilLanding3.png)
+
+### Prueba 3.1 — Responsive móvil dashboard
+![Móvil MM](./evidencia/evidencia-movilDashboard.png)
+
+### Prueba 4 — Responsive tablet
+![Tablet Landing](./evidencia/evidencia-tabletLanding.png)
+![Tablet Mis Menús](./evidencia/evidencia-tabletMisMenus.png)
+![Tablet Facturación](./evidencia/evidencia-tabletFacturacion.png)
+
+### Prueba 7 — Registro
+![Registro](./evidencia/evidencia-registroMM.png)
+
+### Prueba 8 — Error 500
+![Error 500](./evidencia/evidencia-error500.png)
