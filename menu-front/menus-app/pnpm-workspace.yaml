@@ -1,4 +1,8 @@
 allowBuilds:
+<<<<<<< HEAD
   core-js: false
+=======
+  core-js: set this to true or false
+>>>>>>> aa4c578 (fix: update pnpm-workspace)
   sharp: true
   unrs-resolver: true
