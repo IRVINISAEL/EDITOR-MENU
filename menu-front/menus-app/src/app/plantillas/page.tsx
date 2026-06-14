@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 
 const categorias = ["Todas", "Restaurante", "Cafetería", "Postres", "Italiano", "Moderno"];
 
@@ -251,7 +252,31 @@ export default function Plantillas() {
       }}>
         <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #7c3aed, #a855f7)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: 16 }}>M</div>
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 14,
+                overflow: "hidden",
+                padding: 3,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px solid #7c3aed",
+                boxShadow: "0 6px 20px rgba(124,58,237,.25)",
+              }}
+            >
+              <Image
+                src="/mm.png"
+                alt="Menu Master"
+                width={46}
+                height={46}
+                priority
+                style={{
+                  objectFit: "contain",
+                }}
+              />
+            </div>
             <div>
               <div style={{ color: "white", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>MENU</div>
               <div style={{ color: "#a855f7", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>MASTER</div>

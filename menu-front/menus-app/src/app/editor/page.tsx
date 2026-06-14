@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import Image from "next/image";
 
 
 const fuentes = [
@@ -25,10 +26,10 @@ const fondos = [
 ];
 const API = "https://menu-master-backend-production-9bfc.up.railway.app";
 
-type Platillo = { 
-  nombre: string; 
-  precio: string; 
-  descripcion: string; 
+type Platillo = {
+  nombre: string;
+  precio: string;
+  descripcion: string;
   imagen?: string;
   colorTexto?: string;
   imagenPos?: { x: number; y: number };
@@ -36,21 +37,27 @@ type Platillo = {
 type Seccion = { id: number; nombre: string; platillos: Platillo[] };
 
 const seccionesIniciales: Seccion[] = [
-  { id: 1, nombre: "ENTRADAS", platillos: [
-    { nombre: "Bruschetta Clásica", precio: "$85", descripcion: "Pan tostado con tomate" },
-    { nombre: "Ensalada César", precio: "$90", descripcion: "Lechuga romana, crutones" },
-    { nombre: "Sopa del Día", precio: "$70", descripcion: "Pregunta al mesero" },
-  ]},
-  { id: 2, nombre: "PLATOS FUERTES", platillos: [
-    { nombre: "Salmón al Grill", precio: "$220", descripcion: "Con vegetales asados" },
-    { nombre: "Filete a la Parrilla", precio: "$250", descripcion: "Término a tu elección" },
-    { nombre: "Pasta Alfredo", precio: "$180", descripcion: "Con crema y parmesano" },
-  ]},
-  { id: 3, nombre: "POSTRES", platillos: [
-    { nombre: "Cheesecake de Fresa", precio: "$90", descripcion: "Con salsa de fresas" },
-    { nombre: "Volcán de Chocolate", precio: "$95", descripcion: "Con helado de vainilla" },
-    { nombre: "Tiramisú", precio: "$85", descripcion: "Receta italiana original" },
-  ]},
+  {
+    id: 1, nombre: "ENTRADAS", platillos: [
+      { nombre: "Bruschetta Clásica", precio: "$85", descripcion: "Pan tostado con tomate" },
+      { nombre: "Ensalada César", precio: "$90", descripcion: "Lechuga romana, crutones" },
+      { nombre: "Sopa del Día", precio: "$70", descripcion: "Pregunta al mesero" },
+    ]
+  },
+  {
+    id: 2, nombre: "PLATOS FUERTES", platillos: [
+      { nombre: "Salmón al Grill", precio: "$220", descripcion: "Con vegetales asados" },
+      { nombre: "Filete a la Parrilla", precio: "$250", descripcion: "Término a tu elección" },
+      { nombre: "Pasta Alfredo", precio: "$180", descripcion: "Con crema y parmesano" },
+    ]
+  },
+  {
+    id: 3, nombre: "POSTRES", platillos: [
+      { nombre: "Cheesecake de Fresa", precio: "$90", descripcion: "Con salsa de fresas" },
+      { nombre: "Volcán de Chocolate", precio: "$95", descripcion: "Con helado de vainilla" },
+      { nombre: "Tiramisú", precio: "$85", descripcion: "Receta italiana original" },
+    ]
+  },
 ];
 
 export default function Editor() {
@@ -62,7 +69,7 @@ export default function Editor() {
   const [guardado, setGuardado] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [secciones, setSecciones] = useState<Seccion[]>(seccionesIniciales);
-  const [editando, setEditando] = useState<{tipo: string, seccionId?: number, platilloIdx?: number, campo?: string} | null>(null);
+  const [editando, setEditando] = useState<{ tipo: string, seccionId?: number, platilloIdx?: number, campo?: string } | null>(null);
   const [herramienta, setHerramienta] = useState("Texto");
   const [mostrarDescripciones, setMostrarDescripciones] = useState(true);
   const [mostrarImagenes, setMostrarImagenes] = useState(true);
@@ -72,29 +79,29 @@ export default function Editor() {
   const [fuenteTitulo, setFuenteTitulo] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-  const guardada = localStorage.getItem("plantilla_cargada");
-  if (guardada) {
-    try {
-      const config = JSON.parse(guardada);
-      if (config.fuenteActiva) setFuenteActiva(config.fuenteActiva);
-      if (config.fondoActivo) setFondoActivo(config.fondoActivo);
-      if (config.tamaño) setTamaño(config.tamaño);
-      if (config.subtitulo) setSubtitulo(config.subtitulo);
-      if (config.secciones) setSecciones(config.secciones);
-      localStorage.removeItem("plantilla_cargada");
-    } catch {}
-  }
-}, []);
+    const guardada = localStorage.getItem("plantilla_cargada");
+    if (guardada) {
+      try {
+        const config = JSON.parse(guardada);
+        if (config.fuenteActiva) setFuenteActiva(config.fuenteActiva);
+        if (config.fondoActivo) setFondoActivo(config.fondoActivo);
+        if (config.tamaño) setTamaño(config.tamaño);
+        if (config.subtitulo) setSubtitulo(config.subtitulo);
+        if (config.secciones) setSecciones(config.secciones);
+        localStorage.removeItem("plantilla_cargada");
+      } catch { }
+    }
+  }, []);
   const [textoResaltado, setTextoResaltado] = useState("");
   const [tamañoResaltado, setTamañoResaltado] = useState(24);
-  
+
 
 
   const editarNombreSeccion = (seccionId: number, valor: string) => {
     setSecciones(prev => prev.map(s => s.id === seccionId ? { ...s, nombre: valor } : s));
   };
 
-const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, valor: string | { x: number; y: number }) => {
+  const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, valor: string | { x: number; y: number }) => {
     setSecciones(prev => prev.map(s =>
       s.id === seccionId ? { ...s, platillos: s.platillos.map((p, i) => i === idx ? { ...p, [campo]: valor } : p) } : s
     ));
@@ -141,17 +148,17 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
   };
 
   const exportarPDF = async () => {
-      if (!menuRef.current) return;
-      const canvas = await html2canvas(menuRef.current, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: orientacion === "horizontal" ? "landscape" : "portrait",
-        unit: "px",
-        format: [canvas.width / 2, canvas.height / 2],
-      });
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
-      pdf.save(`${nombreMenu}.pdf`);
-    };
+    if (!menuRef.current) return;
+    const canvas = await html2canvas(menuRef.current, { scale: 2, useCORS: true });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: orientacion === "horizontal" ? "landscape" : "portrait",
+      unit: "px",
+      format: [canvas.width / 2, canvas.height / 2],
+    });
+    pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
+    pdf.save(`${nombreMenu}.pdf`);
+  };
 
   const handleGuardar = async (estado: string) => {
     setGuardando(true);
@@ -196,12 +203,31 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
         padding: "12px 0", gap: 4, zIndex: 10,
       }}>
         <a href="/" style={{ textDecoration: "none" }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8,
-            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "white", fontWeight: "bold", fontSize: 14, marginBottom: 12,
-          }}>M</div>
+          <div
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 14,
+              overflow: "hidden",
+              padding: 3,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "2px solid #7c3aed",
+              boxShadow: "0 6px 20px rgba(124,58,237,.25)",
+            }}
+          >
+            <Image
+              src="/mm.png"
+              alt="Menu Master"
+              width={46}
+              height={46}
+              priority
+              style={{
+                objectFit: "contain",
+              }}
+            />
+          </div>
         </a>
         {[{ icon: "T", label: "Texto" }, { icon: "🎨", label: "Fondos" }, { icon: "☰", label: "Secciones" }, { icon: "🖼️", label: "Imágenes" }].map(h => (
           <button key={h.label} onClick={() => setHerramienta(h.label)} style={{
@@ -226,7 +252,7 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <a href="/mis-menus" style={{ color: "#888", fontSize: 12, textDecoration: "none" }}>← Volver</a>
             <span style={{ color: "#333" }}>|</span>
-            
+
             <input
               value={nombreMenu}
               onChange={e => { setNombreMenu(e.target.value); setGuardado(false); }}
@@ -257,10 +283,10 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
               width: 48, background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
               color: "white", padding: "4px 6px", fontSize: 11, outline: "none", textAlign: "center",
             }}
-            onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}} />
+              onSelect={e => {
+                const el = e.target as HTMLInputElement;
+                setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+              }} />
             <button onClick={() => setMostrarDescripciones(!mostrarDescripciones)} style={{
               background: mostrarDescripciones ? "#7c3aed33" : "#1e1e28",
               border: "1px solid #2a2a35", borderRadius: 6,
@@ -298,16 +324,16 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
           display: "flex", alignItems: "flex-start", justifyContent: "center", padding: 32,
         }}>
           <div ref={menuRef} style={{
-              width: orientacion === "vertical" ? 440 : 760,
-              display: orientacion === "horizontal" ? "grid" : "block",
-              gridTemplateColumns: orientacion === "horizontal" ? "repeat(2, 1fr)" : undefined,
-              gap: orientacion === "horizontal" ? 24 : undefined,
-              background: fondoActivo.bg,
-              borderRadius: 4,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-              padding: "36px 32px",
-              fontFamily: fuenteActiva,
-            }}>
+            width: orientacion === "vertical" ? 440 : 760,
+            display: orientacion === "horizontal" ? "grid" : "block",
+            gridTemplateColumns: orientacion === "horizontal" ? "repeat(2, 1fr)" : undefined,
+            gap: orientacion === "horizontal" ? 24 : undefined,
+            background: fondoActivo.bg,
+            borderRadius: 4,
+            boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+            padding: "36px 32px",
+            fontFamily: fuenteActiva,
+          }}>
             {/* Header */}
             <div style={{ textAlign: "center", marginBottom: 28, paddingBottom: 20, borderBottom: `2px solid ${fondoActivo.acento}` }}>
               <div style={{ fontSize: 10, letterSpacing: 4, color: fondoActivo.acento, marginBottom: 8, opacity: 0.6 }}>✦ ✦ ✦</div>
@@ -389,52 +415,52 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                     {mostrarImagenes && (
                       <div style={{ marginBottom: 6 }}>
                         {platillo.imagen ? (
-                            <div
-                              style={{ position: "relative", height: 100, overflow: "hidden", borderRadius: 6, cursor: "grab" }}
-                              onMouseDown={(e) => {
-                                const startX = e.clientX;
-                                const startY = e.clientY;
-                                const pos = platillo.imagenPos || { x: 0, y: 0 };
-                                const onMove = (mv: MouseEvent) => {
-                                  editarPlatillo(seccion.id, idx, "imagenPos", {
-                                    x: pos.x + (mv.clientX - startX),
-                                    y: pos.y + (mv.clientY - startY),
-                                  });
-                                };
-                                const onUp = () => {
-                                  window.removeEventListener("mousemove", onMove);
-                                  window.removeEventListener("mouseup", onUp);
-                                };
-                                window.addEventListener("mousemove", onMove);
-                                window.addEventListener("mouseup", onUp);
+                          <div
+                            style={{ position: "relative", height: 100, overflow: "hidden", borderRadius: 6, cursor: "grab" }}
+                            onMouseDown={(e) => {
+                              const startX = e.clientX;
+                              const startY = e.clientY;
+                              const pos = platillo.imagenPos || { x: 0, y: 0 };
+                              const onMove = (mv: MouseEvent) => {
+                                editarPlatillo(seccion.id, idx, "imagenPos", {
+                                  x: pos.x + (mv.clientX - startX),
+                                  y: pos.y + (mv.clientY - startY),
+                                });
+                              };
+                              const onUp = () => {
+                                window.removeEventListener("mousemove", onMove);
+                                window.removeEventListener("mouseup", onUp);
+                              };
+                              window.addEventListener("mousemove", onMove);
+                              window.addEventListener("mouseup", onUp);
+                            }}
+                          >
+                            <img
+                              src={platillo.imagen}
+                              alt={platillo.nombre}
+                              draggable={false}
+                              style={{
+                                position: "absolute",
+                                left: platillo.imagenPos?.x ?? 0,
+                                top: platillo.imagenPos?.y ?? 0,
+                                width: "100%",
+                                height: "auto",
+                                borderRadius: 6,
+                                userSelect: "none",
+                                pointerEvents: "none",
                               }}
-                            >
-                              <img
-                                src={platillo.imagen}
-                                alt={platillo.nombre}
-                                draggable={false}
-                                style={{
-                                  position: "absolute",
-                                  left: platillo.imagenPos?.x ?? 0,
-                                  top: platillo.imagenPos?.y ?? 0,
-                                  width: "100%",
-                                  height: "auto",
-                                  borderRadius: 6,
-                                  userSelect: "none",
-                                  pointerEvents: "none",
-                                }}
-                              />
-                              <button
-                                onClick={(e) => { e.stopPropagation(); eliminarImagen(seccion.id, idx); }}
-                                style={{
-                                  position: "absolute", top: 4, right: 4,
-                                  background: "rgba(0,0,0,0.6)", border: "none",
-                                  borderRadius: "50%", color: "white", cursor: "pointer",
-                                  width: 20, height: 20, fontSize: 10, zIndex: 2,
-                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                }}
-                              >✕</button>
-                            </div>
+                            />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); eliminarImagen(seccion.id, idx); }}
+                              style={{
+                                position: "absolute", top: 4, right: 4,
+                                background: "rgba(0,0,0,0.6)", border: "none",
+                                borderRadius: "50%", color: "white", cursor: "pointer",
+                                width: 20, height: 20, fontSize: 10, zIndex: 2,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                              }}
+                            >✕</button>
+                          </div>
                         ) : (
                           <label style={{ cursor: "pointer", display: "block" }}>
                             <div style={{
@@ -472,9 +498,9 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                           fontFamily: fuenteActiva, flex: 1, cursor: "text",
                         }}
                         onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}}
+                          const el = e.target as HTMLInputElement;
+                          setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+                        }}
                         onFocus={() => setEditando({ tipo: "platillo", seccionId: seccion.id, platilloIdx: idx, campo: "nombre" })}
                         onBlur={() => setEditando(null)}
                       />
@@ -491,9 +517,9 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                             fontWeight: 600, cursor: "text",
                           }}
                           onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}}
+                            const el = e.target as HTMLInputElement;
+                            setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+                          }}
                           onFocus={() => setEditando({ tipo: "platillo", seccionId: seccion.id, platilloIdx: idx, campo: "precio" })}
                           onBlur={() => setEditando(null)}
                         />
@@ -515,28 +541,28 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                           width: "100%", opacity: 0.6, cursor: "text", marginTop: 2,
                         }}
                         onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}}
+                          const el = e.target as HTMLInputElement;
+                          setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+                        }}
                         placeholder="Descripción..."
                       />
                     )}
 
                     {/* Color de texto */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5 }}>
-                        <span style={{ fontSize: 9, color: fondoActivo.acento, opacity: 0.6 }}>Color:</span>
-                        {["#000000","#ffffff","#8b4513","#2563eb","#16a34a","#ec4899","#ea580c","#7c3aed","#dc2626","#0891b2"].map(c => (
-                          <button
-                            key={c}
-                            onClick={() => { editarPlatillo(seccion.id, idx, "colorTexto", c); setGuardado(false); }}
-                            style={{
-                              width: 13, height: 13, borderRadius: "50%",
-                              background: c, padding: 0, cursor: "pointer",
-                              border: platillo.colorTexto === c ? "2px solid white" : "1px solid #55555566",
-                            }}
-                          />
-                        ))}
-                      </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5 }}>
+                      <span style={{ fontSize: 9, color: fondoActivo.acento, opacity: 0.6 }}>Color:</span>
+                      {["#000000", "#ffffff", "#8b4513", "#2563eb", "#16a34a", "#ec4899", "#ea580c", "#7c3aed", "#dc2626", "#0891b2"].map(c => (
+                        <button
+                          key={c}
+                          onClick={() => { editarPlatillo(seccion.id, idx, "colorTexto", c); setGuardado(false); }}
+                          style={{
+                            width: 13, height: 13, borderRadius: "50%",
+                            background: c, padding: 0, cursor: "pointer",
+                            border: platillo.colorTexto === c ? "2px solid white" : "1px solid #55555566",
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 ))}
 
@@ -601,43 +627,43 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
 
         <div>
           <div>
-              <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>TÍTULO</div>
-              <div style={{ marginBottom: 6 }}>
-                <span style={{ color: "#666", fontSize: 10 }}>Color título</span>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                  {["#ffffff","#000000","#fbbf24","#a855f7","#38bdf8","#f43f5e","#10b981","#ea580c","#8b4513","#2563eb"].map(c => (
-                    <button key={c} onClick={() => setColorTitulo(c)} style={{
-                      width: 16, height: 16, borderRadius: "50%", background: c,
-                      border: colorTitulo === c ? "2px solid white" : "1px solid #555",
-                      cursor: "pointer", padding: 0,
-                    }} />
-                  ))}
-                </div>
-              </div>
-              <div style={{ marginBottom: 6 }}>
-                <span style={{ color: "#666", fontSize: 10 }}>Color subtítulo</span>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                  {["#ffffff","#000000","#fbbf24","#a855f7","#38bdf8","#f43f5e","#10b981","#ea580c","#8b4513","#2563eb"].map(c => (
-                    <button key={c} onClick={() => setColorSubtitulo(c)} style={{
-                      width: 16, height: 16, borderRadius: "50%", background: c,
-                      border: colorSubtitulo === c ? "2px solid white" : "1px solid #555",
-                      cursor: "pointer", padding: 0,
-                    }} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <span style={{ color: "#666", fontSize: 10 }}>Fuente título</span>
-                <select value={fuenteTitulo} onChange={e => setFuenteTitulo(e.target.value)} style={{
-                  width: "100%", marginTop: 4,
-                  background: "#1e1e28", border: "1px solid #2a2a35",
-                  borderRadius: 6, color: "white", padding: "4px 6px", fontSize: 10, outline: "none",
-                }}>
-                  <option value="">— Igual que el menú —</option>
-                  {fuentes.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
+            <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>TÍTULO</div>
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ color: "#666", fontSize: 10 }}>Color título</span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                {["#ffffff", "#000000", "#fbbf24", "#a855f7", "#38bdf8", "#f43f5e", "#10b981", "#ea580c", "#8b4513", "#2563eb"].map(c => (
+                  <button key={c} onClick={() => setColorTitulo(c)} style={{
+                    width: 16, height: 16, borderRadius: "50%", background: c,
+                    border: colorTitulo === c ? "2px solid white" : "1px solid #555",
+                    cursor: "pointer", padding: 0,
+                  }} />
+                ))}
               </div>
             </div>
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ color: "#666", fontSize: 10 }}>Color subtítulo</span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                {["#ffffff", "#000000", "#fbbf24", "#a855f7", "#38bdf8", "#f43f5e", "#10b981", "#ea580c", "#8b4513", "#2563eb"].map(c => (
+                  <button key={c} onClick={() => setColorSubtitulo(c)} style={{
+                    width: 16, height: 16, borderRadius: "50%", background: c,
+                    border: colorSubtitulo === c ? "2px solid white" : "1px solid #555",
+                    cursor: "pointer", padding: 0,
+                  }} />
+                ))}
+              </div>
+            </div>
+            <div>
+              <span style={{ color: "#666", fontSize: 10 }}>Fuente título</span>
+              <select value={fuenteTitulo} onChange={e => setFuenteTitulo(e.target.value)} style={{
+                width: "100%", marginTop: 4,
+                background: "#1e1e28", border: "1px solid #2a2a35",
+                borderRadius: 6, color: "white", padding: "4px 6px", fontSize: 10, outline: "none",
+              }}>
+                <option value="">— Igual que el menú —</option>
+                {fuentes.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+          </div>
           <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>OPCIONES</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <button onClick={() => setMostrarDescripciones(!mostrarDescripciones)} style={{
@@ -653,12 +679,12 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
               padding: "8px", cursor: "pointer", fontSize: 11, textAlign: "left",
             }}>🖼️ {mostrarImagenes ? "✓" : "○"} Imágenes</button>
           </div>
-        <button onClick={() => setOrientacion(o => o === "vertical" ? "horizontal" : "vertical")} style={{
-          background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
-          color: "#aaa", padding: "4px 8px", cursor: "pointer", fontSize: 11,
-        }} title="Cambiar orientación">
-          {orientacion === "vertical" ? "⇔" : "⇕"}
-        </button>
+          <button onClick={() => setOrientacion(o => o === "vertical" ? "horizontal" : "vertical")} style={{
+            background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
+            color: "#aaa", padding: "4px 8px", cursor: "pointer", fontSize: 11,
+          }} title="Cambiar orientación">
+            {orientacion === "vertical" ? "⇔" : "⇕"}
+          </button>
         </div>
 
         <div>
@@ -684,11 +710,11 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
         <div style={{ background: "#7c3aed22", border: "1px solid #7c3aed44", borderRadius: 8, padding: 10 }}>
           <div style={{ color: "#a855f7", fontSize: 10, fontWeight: 600, marginBottom: 6 }}>💡 Cómo usar</div>
           <div style={{ color: "#888", fontSize: 10, lineHeight: 1.7 }}>
-            • Clic en texto → editar<br/>
-            • 📷 → agregar imagen<br/>
-            • ✕ → eliminar<br/>
-            • + → agregar<br/>
-            • Cambia fondo y fuente<br/>
+            • Clic en texto → editar<br />
+            • 📷 → agregar imagen<br />
+            • ✕ → eliminar<br />
+            • + → agregar<br />
+            • Cambia fondo y fuente<br />
             • 💾 Borrador o 🚀 Publicar
           </div>
         </div>

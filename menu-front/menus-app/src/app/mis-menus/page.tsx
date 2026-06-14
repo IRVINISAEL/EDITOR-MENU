@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 const API = "https://menu-master-backend-production-9bfc.up.railway.app";
 
@@ -93,7 +94,7 @@ export default function MisMenus() {
     try {
       const config = JSON.parse(menu.data_json);
       localStorage.setItem("plantilla_cargada", JSON.stringify(config));
-    } catch {}
+    } catch { }
     window.location.href = "/editor";
   };
 
@@ -110,7 +111,31 @@ export default function MisMenus() {
       <aside style={{ width: 220, background: "#16161d", display: "flex", flexDirection: "column", padding: "24px 0", borderRight: "1px solid #2a2a35", position: "fixed", height: "100vh", zIndex: 10 }}>
         <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #7c3aed, #a855f7)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: 16 }}>M</div>
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 14,
+                overflow: "hidden",
+                padding: 3,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px solid #7c3aed",
+                boxShadow: "0 6px 20px rgba(124,58,237,.25)",
+              }}
+            >
+              <Image
+                src="/mm.png"
+                alt="Menu Master"
+                width={46}
+                height={46}
+                priority
+                style={{
+                  objectFit: "contain",
+                }}
+              />
+            </div>
             <div>
               <div style={{ color: "white", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>MENU</div>
               <div style={{ color: "#a855f7", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>MASTER</div>
