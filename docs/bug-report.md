@@ -1,7 +1,7 @@
 # Bug Report — Menu Master ACT-6
 
 **Fecha:** 13/06/2026  
-**QA:** María José Linares Cortés  
+**QA:** María José Linares  
 **Rama:** test/qa-act6
 
 ---
