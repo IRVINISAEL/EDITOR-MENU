@@ -1,4 +1,4 @@
-﻿allowBuilds:
-  core-js: false
+allowBuilds:
+  core-js: set this to true or false
   sharp: true
   unrs-resolver: true

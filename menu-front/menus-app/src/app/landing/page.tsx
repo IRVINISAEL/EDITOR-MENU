@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import Image from "next/image";
 
 const features = [
   { icon: "✏️", titulo: "Editor Profesional", desc: "Diseña tu menú con drag & drop. Sin conocimientos de diseño." },
@@ -45,31 +44,12 @@ export default function Landing() {
         padding: "0 48px", height: 64,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 14,
-              overflow: "hidden",
-              padding: 3,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "2px solid #7c3aed",
-              boxShadow: "0 6px 20px rgba(124,58,237,.25)",
-            }}
-          >
-            <Image
-              src="/mm.png"
-              alt="Menu Master"
-              width={46}
-              height={46}
-              priority
-              style={{
-                objectFit: "contain",
-              }}
-            />
-          </div>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "white", fontWeight: 800, fontSize: 16,
+          }}>M</div>
           <div>
             <span style={{ color: "white", fontWeight: 800, fontSize: 16 }}>MENU</span>
             <span style={{ color: "#a855f7", fontWeight: 800, fontSize: 16 }}>MASTER</span>
@@ -95,12 +75,6 @@ export default function Landing() {
               border: "none", borderRadius: 8, padding: "8px 16px",
               color: "white", cursor: "pointer", fontSize: 13, fontWeight: 600,
             }}>Empezar gratis →</button>
-          </a>
-          <a
-            href="https://editor-menu.vercel.app/landing"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
-          >
-            Agenda Ahora También
           </a>
         </div>
       </nav>
