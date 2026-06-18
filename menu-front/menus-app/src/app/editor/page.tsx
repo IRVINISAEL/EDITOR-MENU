@@ -150,7 +150,25 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
         unit: "mm",
         format: "a4"
       });
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const ratio = Math.min(
+      pageWidth / canvas.width,
+      pageHeight / canvas.height
+    );
+    
+    const imgWidth = canvas.width * ratio;
+    const imgHeight = canvas.height * ratio;
+    
+    pdf.addImage(
+      imgData,
+      "PNG",
+      0,
+      0,
+      imgWidth,
+      imgHeight
+    );
       pdf.save(`${nombreMenu}.pdf`);
     };
 
@@ -297,14 +315,16 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
           display: "flex", alignItems: "flex-start", justifyContent: "center", padding: 32,
         }}>
           <div ref={menuRef} style={{
-              width: orientacion === "vertical" ? 440 : 760,
+              width: orientacion === "vertical" ? "210mm" : "297mm",
+              minHeight: orientacion === "vertical" ? "297mm" : "210mm",
               display: orientacion === "horizontal" ? "grid" : "block",
               gridTemplateColumns: orientacion === "horizontal" ? "repeat(2, 1fr)" : undefined,
               gap: orientacion === "horizontal" ? 24 : undefined,
               background: fondoActivo.bg,
-              borderRadius: 4,
+              borderRadius: 0,
               boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-              padding: "36px 32px",
+              padding: "20mm",
+              boxSizing: "border-box",
               fontFamily: fuenteActiva,
             }}>
             {/* Header */}
