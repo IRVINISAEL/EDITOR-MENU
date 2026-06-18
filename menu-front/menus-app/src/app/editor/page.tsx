@@ -172,25 +172,42 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
       pdf.save(`${nombreMenu}.pdf`);
     };
 
+  // ✅ FUNCIÓN CORREGIDA: manejo de errores completo
   const handleGuardar = async (estado: string) => {
+    // ✅ FIX 1: Validar nombre antes de enviar
+    if (!nombreMenu || nombreMenu.trim() === "") {
+      alert("⚠️ Escribe un nombre para el menú antes de guardar");
+      return;
+    }
+
     setGuardando(true);
     setGuardado(false);
     try {
       const usuarioData = localStorage.getItem("usuario");
       const usuario = usuarioData ? JSON.parse(usuarioData) : { id: 1 };
+
+      // ✅ FIX 2: data_json usa "categorias" como clave principal (consistente con BD)
       const res = await fetch(`${API}/api/menus${menuId ? "/" + menuId : ""}`, {
-       method: menuId ? "PUT" : "POST",
+        method: menuId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nombre: nombreMenu,
           estado,
-          data_json: JSON.stringify({ secciones, fuenteActiva, fondoActivo, tamaño, subtitulo }),
+          data_json: JSON.stringify({
+            categorias: secciones,
+            fuenteActiva,
+            fondoActivo,
+            tamaño,
+            subtitulo,
+          }),
           user_id: usuario.id || 1,
         }),
       });
+
       const data = await res.json();
       console.log("Status:", res.status);
       console.log("Respuesta:", data);
+
       if (data.ok) {
         if (data.menuId) {
           setMenuId(data.menuId);
@@ -202,12 +219,14 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
         } else {
           alert("💾 ¡Guardado como borrador!");
         }
+      } else {
+        // ✅ FIX 3: Mostrar el mensaje de error real del servidor
+        alert("❌ Error: " + (data.mensaje || "No se pudo guardar el menú"));
       }
     } catch (err) {
       console.error(err);
-      alert("❌ Error al guardar");
-    }
-     finally {
+      alert("❌ Error de conexión al servidor. Verifica tu internet e inténtalo de nuevo.");
+    } finally {
       setGuardando(false);
     }
   };
