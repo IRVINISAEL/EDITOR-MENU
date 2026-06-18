@@ -189,6 +189,8 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
         }),
       });
       const data = await res.json();
+      console.log("Status:", res.status);
+      console.log("Respuesta:", data);
       if (data.ok) {
         if (data.menuId) {
           setMenuId(data.menuId);
@@ -201,9 +203,11 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
           alert("💾 ¡Guardado como borrador!");
         }
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert("❌ Error al guardar");
-    } finally {
+    }
+     finally {
       setGuardando(false);
     }
   };
