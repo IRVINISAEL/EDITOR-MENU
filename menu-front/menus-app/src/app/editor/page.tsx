@@ -196,12 +196,7 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
         padding: "12px 0", gap: 4, zIndex: 10,
       }}>
         <a href="/" style={{ textDecoration: "none" }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8,
-            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "white", fontWeight: "bold", fontSize: 14, marginBottom: 12,
-          }}>M</div>
+          <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 8, marginBottom: 12 }} />
         </a>
         {[{ icon: "T", label: "Texto" }, { icon: "🎨", label: "Fondos" }, { icon: "☰", label: "Secciones" }, { icon: "🖼️", label: "Imágenes" }].map(h => (
           <button key={h.label} onClick={() => setHerramienta(h.label)} style={{
