@@ -135,6 +135,8 @@ app.get("/api/menus/:id", (req, res) => {
 
 // POST - Crear menú
 app.post("/api/menus", (req, res) => {
+  console.log("BODY MENUS:", req.body);
+
   const { nombre, estado, data_json, user_id } = req.body;
 
   if (!nombre) {
