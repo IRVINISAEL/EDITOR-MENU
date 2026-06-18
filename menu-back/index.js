@@ -26,7 +26,7 @@ db.getConnection((err, connection) => {
   connection.release();
 });
 
-app.get("/", (req, res) => res.json({ ok: true, version: "3.0.0" }));
+app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
 app.get("/api/menus", (req, res) => {
   const user_id = req.query.user_id;
