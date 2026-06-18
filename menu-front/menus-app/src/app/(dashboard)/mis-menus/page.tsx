@@ -1,17 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const API = "https://menu-master-backend-production-9bfc.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const navItems = [
-  { icon: "⊞", label: "Dashboard", href: "/" },
-  { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
-  { icon: "▦", label: "Plantillas", href: "/plantillas" },
-  { icon: "✏️", label: "Mis Diseños", href: "#" },
-  { icon: "🖼️", label: "Medios", href: "#" },
-  { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
-  { icon: "💳", label: "Facturación", href: "/planes" },
-  { icon: "⚙️", label: "Configuración", href: "/configuracion" },
+  { icon: '⊞', label: 'Dashboard', href: '/' },
+  { icon: '☰', label: 'Mis Menús', href: '/mis-menus' },
+  { icon: '▦', label: 'Plantillas', href: '/plantillas' },
+  { icon: '📊', label: 'Analíticas', href: '/analiticas' },
+  { icon: '🏢', label: 'Mi Negocio', href: '/mi-negocio' },
+  { icon: '💳', label: 'Facturación', href: '/planes' },
+  { icon: '⚙️', label: 'Configuración', href: '/configuracion' },
 ];
 
 type Menu = {
@@ -52,22 +51,44 @@ export default function MisMenus() {
     setCargando(true);
     try {
       const usuarioData = localStorage.getItem("usuario");
-      const usuario = usuarioData ? JSON.parse(usuarioData) : { id: 1 };
-      const res = await fetch(`${API}/api/menus`);
+      
+      if (!usuarioData) {
+        // Si no hay usuario, redirigir al login
+        window.location.href = "/login";
+        return;
+      }
+      
+      const usuario = JSON.parse(usuarioData);
+      
+      // Pasar el user_id como parámetro en la URL
+      const res = await fetch(`${API}/api/menus?user_id=${usuario.id || 1}`);
       const data = await res.json();
       if (data.ok) {
-        // Filtrar solo los del usuario actual
-        const misMenus = data.menus.filter((m: Menu) => m.user_id === (usuario.id || 1));
-        setMenus(misMenus);
+        setMenus(data.menus);
       }
-    } catch {
-      console.error("Error cargando menús");
+    } catch (error) {
+      console.error("Error cargando menús:", error);
     } finally {
       setCargando(false);
     }
   };
 
-  useEffect(() => { cargarMenus(); }, []);
+  useEffect(() => {
+    cargarMenus();
+    
+    // Forzar recarga cuando se regresa de otra página
+    const handleFocus = () => cargarMenus();
+    window.addEventListener('focus', handleFocus);
+    
+    // Escuchar evento de menú guardado
+    const handleMenuGuardado = () => cargarMenus();
+    window.addEventListener('menuGuardado', handleMenuGuardado);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('menuGuardado', handleMenuGuardado);
+    };
+  }, []);
 
   // Eliminar menú del backend
   const eliminarMenu = async (id: number) => {
@@ -79,9 +100,10 @@ export default function MisMenus() {
         setMenus(prev => prev.filter(m => m.id !== id));
         setConfirmEliminar(null);
       } else {
-        alert("Error al eliminar");
+        alert("Error al eliminar: " + data.mensaje);
       }
-    } catch {
+    } catch (error) {
+      console.error("Error al eliminar:", error);
       alert("Error de conexión");
     } finally {
       setEliminando(false);
@@ -90,10 +112,15 @@ export default function MisMenus() {
 
   // Cargar menú en editor
   const editarMenu = (menu: Menu) => {
-    try {
-      const config = JSON.parse(menu.data_json);
-      localStorage.setItem("plantilla_cargada", JSON.stringify(config));
-    } catch {}
+    // Guardar el ID del menú que se va a editar
+    const menuIdStr = String(menu.id);
+    console.log('💾 Guardando editor_menu_id:', menuIdStr, 'para menú:', menu.nombre);
+    localStorage.setItem("editor_menu_id", menuIdStr);
+    
+    // Verificar que se guardó correctamente
+    const verificado = localStorage.getItem("editor_menu_id");
+    console.log('✅ Verificado editor_menu_id:', verificado);
+    
     window.location.href = "/editor";
   };
 

@@ -2,14 +2,13 @@
 import { useState } from "react";
 
 const navItems = [
-  { icon: "⊞", label: "Dashboard", href: "/" },
-  { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
-  { icon: "▦", label: "Plantillas", href: "/plantillas" },
-  { icon: "✏️", label: "Mis Diseños", href: "#" },
-  { icon: "🖼️", label: "Medios", href: "#" },
-  { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
-  { icon: "💳", label: "Facturación", href: "/planes" },
-  { icon: "⚙️", label: "Configuración", href: "/configuracion" },
+  { icon: '⊞', label: 'Dashboard', href: '/' },
+  { icon: '☰', label: 'Mis Menús', href: '/mis-menus' },
+  { icon: '▦', label: 'Plantillas', href: '/plantillas' },
+  { icon: '📊', label: 'Analíticas', href: '/analiticas' },
+  { icon: '🏢', label: 'Mi Negocio', href: '/mi-negocio' },
+  { icon: '💳', label: 'Facturación', href: '/planes' },
+  { icon: '⚙️', label: 'Configuración', href: '/configuracion' },
 ];
 
 const planes = [

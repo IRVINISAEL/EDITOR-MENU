@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { cloudinaryService } from "@/services/cloudinary.service";
 
 
 const fuentes = [
@@ -23,7 +24,7 @@ const fondos = [
   { nombre: "Carbón", bg: "linear-gradient(135deg, #18181b, #27272a)", texto: "#fafafa", acento: "#facc15" },
   { nombre: "Rojo Vino", bg: "linear-gradient(135deg, #fff1f2, #ffe4e6)", texto: "#4c0519", acento: "#be123c" },
 ];
-const API = "https://menu-master-backend-production-9bfc.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 type Platillo = { 
   nombre: string; 
@@ -70,23 +71,121 @@ export default function Editor() {
   const [colorTitulo, setColorTitulo] = useState("");
   const [colorSubtitulo, setColorSubtitulo] = useState("");
   const [fuenteTitulo, setFuenteTitulo] = useState("");
+  const [elementoActivo, setElementoActivo] = useState<{
+    tipo: 'titulo' | 'subtitulo' | 'platillo';
+    seccionId?: number;
+    platilloIdx?: number;
+    nombre: string;
+  } | null>(null);
+  const [menuId, setMenuId] = useState<number | null>(null); // ID del menú que se está editando
+  const [usuarioId, setUsuarioId] = useState<number>(1); // ID por defecto
+  const [cargandoMenu, setCargandoMenu] = useState(false); // Estado para saber si se está cargando un menú
   const menuRef = useRef<HTMLDivElement>(null);
+  
+  // Cargar usuario y menú al iniciar
   useEffect(() => {
-  const guardada = localStorage.getItem("plantilla_cargada");
-  if (guardada) {
+    // Obtener usuario del localStorage
+    const usuarioData = localStorage.getItem("usuario");
+    if (!usuarioData) {
+      // Si no hay usuario, redirigir al login
+      window.location.href = "/login";
+      return;
+    }
+    
+    const usuario = JSON.parse(usuarioData);
+    setUsuarioId(usuario.id || 1);
+    
+    // Si hay un menuId en localStorage, cargar ese menú ANTES de permitir cualquier acción
+    const menuIdToLoad = localStorage.getItem("editor_menu_id");
+    if (menuIdToLoad) {
+      const menuIdNum = Number(menuIdToLoad);
+      if (isNaN(menuIdNum) || menuIdNum <= 0) {
+        console.error('❌ editor_menu_id inválido:', menuIdToLoad);
+        localStorage.removeItem("editor_menu_id");
+        return;
+      }
+      
+      console.log('🔍 Cargando menú:', menuIdNum);
+      setCargandoMenu(true);
+      
+      // Cargar el menú y esperar a que termine
+      cargarMenu(menuIdNum).then((exitoso) => {
+        if (!exitoso) {
+          console.error('❌ No se pudo cargar el menú, creando uno nuevo');
+          setMenuId(null); // Resetear a null para crear uno nuevo
+        }
+        localStorage.removeItem("editor_menu_id");
+      }).finally(() => {
+        setCargandoMenu(false);
+      });
+    }
+    
+    // Cargar plantilla si existe (solo si no se está cargando un menú)
+    if (!menuIdToLoad) {
+      const guardada = localStorage.getItem("plantilla_cargada");
+      if (guardada) {
+        try {
+          const config = JSON.parse(guardada);
+          if (config.fuenteActiva) setFuenteActiva(config.fuenteActiva);
+          if (config.fondoActivo) setFondoActivo(config.fondoActivo);
+          if (config.tamaño) setTamaño(config.tamaño);
+          if (config.subtitulo) setSubtitulo(config.subtitulo);
+          if (config.secciones) setSecciones(config.secciones);
+          localStorage.removeItem("plantilla_cargada");
+        } catch {}
+      }
+    }
+  }, []);
+  
+  // Función para cargar un menú existente
+  const cargarMenu = async (id: number) => {
     try {
-      const config = JSON.parse(guardada);
-      if (config.fuenteActiva) setFuenteActiva(config.fuenteActiva);
-      if (config.fondoActivo) setFondoActivo(config.fondoActivo);
-      if (config.tamaño) setTamaño(config.tamaño);
-      if (config.subtitulo) setSubtitulo(config.subtitulo);
-      if (config.secciones) setSecciones(config.secciones);
-      localStorage.removeItem("plantilla_cargada");
-    } catch {}
-  }
-}, []);
+      console.log('🔄 Cargando menú:', id);
+      const res = await fetch(`${API}/api/menus/${id}`);
+      const data = await res.json();
+      console.log('📨 Respuesta del servidor:', data);
+      
+      if (data.ok && data.menu) {
+        const menu = data.menu;
+        
+        // IMPORTANTE: Actualizar menuId PRIMERO para que el guardado funcione
+        setMenuId(menu.id);
+        setNombreMenu(menu.nombre);
+        
+        if (menu.data_json) {
+          const config = JSON.parse(menu.data_json);
+          console.log('⚙️ Configuración del menú:', config);
+          
+          // Cargar todas las propiedades de configuración
+          if (config.fuenteActiva !== undefined) setFuenteActiva(config.fuenteActiva);
+          if (config.fondoActivo !== undefined) setFondoActivo(config.fondoActivo);
+          if (config.tamaño !== undefined) setTamaño(config.tamaño);
+          if (config.subtitulo !== undefined) setSubtitulo(config.subtitulo);
+          if (config.secciones !== undefined) {
+            console.log('📋 Secciones cargadas:', config.secciones.length);
+            setSecciones(config.secciones);
+          }
+          if (config.colorTitulo !== undefined) setColorTitulo(config.colorTitulo);
+          if (config.colorSubtitulo !== undefined) setColorSubtitulo(config.colorSubtitulo);
+          if (config.fuenteTitulo !== undefined) setFuenteTitulo(config.fuenteTitulo);
+        }
+        setGuardado(true);
+        console.log('✅ Menú cargado correctamente con ID:', menu.id);
+        return true;
+      } else {
+        console.error('❌ No se pudo cargar el menú:', data.mensaje);
+        alert('Error al cargar el menú: ' + data.mensaje);
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Error al cargar menú:", error);
+      alert('Error de conexión al cargar el menú');
+      return false;
+    }
+  };
   const [textoResaltado, setTextoResaltado] = useState("");
   const [tamañoResaltado, setTamañoResaltado] = useState(24);
+  const [exportando, setExportando] = useState(false);
   
 
 
@@ -100,13 +199,46 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
     ));
   };
 
-  const subirImagen = (seccionId: number, idx: number, file: File) => {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      editarPlatillo(seccionId, idx, "imagen", ev.target?.result as string);
-      setGuardado(false);
-    };
-    reader.readAsDataURL(file);
+  const subirImagen = async (seccionId: number, idx: number, file: File) => {
+    try {
+      // Validar que sea una imagen
+      if (!file.type.startsWith('image/')) {
+        alert('❌ El archivo debe ser una imagen');
+        return;
+      }
+      
+      // Validar tamaño máximo (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('❌ La imagen no debe pesar más de 5MB');
+        return;
+      }
+      
+      // Intentar subir a Cloudinary
+      try {
+        const imageUrl = await cloudinaryService.uploadImage(file, 'menu-master/platillos');
+        
+        // Guardar URL en el platillo
+        editarPlatillo(seccionId, idx, "imagen", imageUrl);
+        setGuardado(false);
+        
+        console.log('✅ Imagen subida a Cloudinary:', imageUrl);
+      } catch (cloudinaryError) {
+        // Fallback: usar base64 si Cloudinary falla
+        console.warn('⚠️ Cloudinary falló, usando base64:', cloudinaryError);
+        
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const imagenUrl = ev.target?.result as string;
+          editarPlatillo(seccionId, idx, "imagen", imagenUrl);
+          setGuardado(false);
+          console.log('✅ Imagen guardada en base64 (fallback)');
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      console.error('❌ Error al subir imagen:', error);
+      alert('❌ Error al subir imagen: ' + (error as Error).message);
+    }
   };
 
   const eliminarImagen = (seccionId: number, idx: number) => {
@@ -142,45 +274,134 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
 
   const exportarPDF = async () => {
       if (!menuRef.current) return;
-      const canvas = await html2canvas(menuRef.current, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: orientacion === "horizontal" ? "landscape" : "portrait",
-        unit: "px",
-        format: [canvas.width / 2, canvas.height / 2],
-      });
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
-      pdf.save(`${nombreMenu}.pdf`);
+      
+      // Ocultar elementos de UI antes de exportar
+      setExportando(true);
+      
+      // Esperar a que React actualice el DOM
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      try {
+        const canvas = await html2canvas(menuRef.current, { 
+          scale: 2, 
+          useCORS: true,
+          logging: false,
+        });
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({
+          orientation: orientacion === "horizontal" ? "landscape" : "portrait",
+          unit: "px",
+          format: [canvas.width / 2, canvas.height / 2],
+        });
+        pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
+        pdf.save(`${nombreMenu}.pdf`);
+      } finally {
+        // Restaurar elementos de UI
+        setExportando(false);
+      }
     };
 
   const handleGuardar = async (estado: string) => {
+    // Validar que no se esté cargando un menú
+    if (cargandoMenu) {
+      alert('⏳ Cargando menú, por favor espera...');
+      return;
+    }
+    
+    // Validar que haya un nombre de menú
+    if (!nombreMenu || nombreMenu.trim() === "") {
+      alert('❌ El menú debe tener un nombre');
+      return;
+    }
+    
     setGuardando(true);
     setGuardado(false);
     try {
-      const usuarioData = localStorage.getItem("usuario");
-      const usuario = usuarioData ? JSON.parse(usuarioData) : { id: 1 };
-      const res = await fetch(`${API}/api/menus`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nombre: nombreMenu,
-          estado,
-          data_json: JSON.stringify({ secciones, fuenteActiva, fondoActivo, tamaño, subtitulo }),
-          user_id: usuario.id || 1,
-        }),
+      // Filtrar las secciones para quitar platillos vacíos
+      const seccionesFiltradas = secciones.map(seccion => ({
+        ...seccion,
+        platillos: seccion.platillos.filter(p => p.nombre && p.nombre.trim() !== "")
+      }));
+      
+      const dataJson = JSON.stringify({ 
+        secciones: seccionesFiltradas, 
+        fuenteActiva, 
+        fondoActivo, 
+        tamaño, 
+        subtitulo, 
+        colorTitulo, 
+        colorSubtitulo, 
+        fuenteTitulo 
       });
-      const data = await res.json();
-      if (data.ok) {
-        setGuardado(true);
-        if (estado === "Publicado") {
-          alert("🚀 ¡Menú publicado!");
-          window.location.href = "/mis-menus";
-        } else {
-          alert("💾 ¡Guardado como borrador!");
-        }
+      
+      let res;
+      let esActualizacion = menuId !== null && menuId !== undefined;
+      
+      if (esActualizacion) {
+        // ACTUALIZAR menú existente
+        console.log('✏️ Actualizando menú ID:', menuId);
+        res = await fetch(`${API}/api/menus/${menuId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nombre: nombreMenu,
+            estado,
+            data_json: dataJson,
+          }),
+        });
+      } else {
+        // CREAR menú nuevo
+        console.log('✨ Creando menú nuevo, user_id:', usuarioId);
+        res = await fetch(`${API}/api/menus`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nombre: nombreMenu,
+            estado,
+            data_json: dataJson,
+            user_id: usuarioId,
+          }),
+        });
       }
-    } catch {
-      alert("❌ Error al guardar");
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.mensaje || 'Error al guardar');
+      }
+      
+      const data = await res.json();
+      
+      if (!data.ok) {
+        throw new Error(data.mensaje || 'Error al guardar');
+      }
+      
+      // Éxito
+      setGuardado(true);
+      
+      // Si es un menú nuevo, guardar el ID para futuras actualizaciones
+      if (!esActualizacion && data.menuId) {
+        setMenuId(data.menuId);
+        console.log('✅ Menú creado con ID:', data.menuId);
+      } else if (esActualizacion) {
+        console.log('✅ Menú actualizado correctamente');
+      }
+      
+      if (estado === "Publicado") {
+        alert("🚀 ¡Menú publicado!");
+        // Disparar evento para que mis-menus recargue
+        window.dispatchEvent(new CustomEvent('menuGuardado'));
+        // Esperar un poco antes de redirigir
+        setTimeout(() => {
+          window.location.href = "/mis-menus";
+        }, 500);
+      } else {
+        alert("💾 ¡Guardado como borrador!");
+        // Disparar evento para que mis-menus recargue
+        window.dispatchEvent(new CustomEvent('menuGuardado'));
+      }
+    } catch (error) {
+      console.error("❌ Error:", error);
+      alert("❌ Error: " + (error as Error).message);
     } finally {
       setGuardando(false);
     }
@@ -311,9 +532,10 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
             {/* Header */}
             <div style={{ textAlign: "center", marginBottom: 28, paddingBottom: 20, borderBottom: `2px solid ${fondoActivo.acento}` }}>
               <div style={{ fontSize: 10, letterSpacing: 4, color: fondoActivo.acento, marginBottom: 8, opacity: 0.6 }}>✦ ✦ ✦</div>
-              <input
-                value={nombreMenu.toUpperCase()}
-                onChange={e => { setNombreMenu(e.target.value); setGuardado(false); }}
+              <div
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={e => { setNombreMenu(e.currentTarget.textContent || ""); setGuardado(false); }}
                 style={{
                   background: "transparent", border: "none",
                   borderBottom: editando?.tipo === "titulo" ? `2px solid ${fondoActivo.acento}` : "2px solid transparent",
@@ -323,17 +545,24 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                   fontFamily: fuenteTitulo || fuenteActiva,
                   letterSpacing: 4,
                   textAlign: "center", width: "100%", cursor: "text",
+                  WebkitTextFillColor: colorTitulo || fondoActivo.texto,
                 }}
                 onSelect={e => {
-                  const el = e.target as HTMLInputElement;
-                  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+                  const el = e.target as HTMLElement;
+                  setTextoResaltado(el.textContent?.substring(0, el.textContent?.length || 0) || "");
                 }}
-                onFocus={() => setEditando({ tipo: "titulo" })}
-                onBlur={() => setEditando(null)}
-              />
-              <input
-                value={subtitulo}
-                onChange={e => { setSubtitulo(e.target.value); setGuardado(false); }}
+                onFocus={() => {
+                  setEditando({ tipo: "titulo" });
+                  setElementoActivo({ tipo: 'titulo', nombre: nombreMenu });
+                }}
+                onBlurCapture={() => { setEditando(null); setElementoActivo(null); }}
+              >
+                {nombreMenu.toUpperCase()}
+              </div>
+              <div
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={e => { setSubtitulo(e.currentTarget.textContent || ""); setGuardado(false); }}
                 style={{
                   background: "transparent", border: "none",
                   borderBottom: editando?.tipo === "subtitulo" ? `2px solid ${fondoActivo.acento}` : "2px solid transparent",
@@ -343,14 +572,20 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                   fontFamily: fuenteTitulo || fuenteActiva,
                   letterSpacing: 6,
                   textAlign: "center", width: "100%", cursor: "text", marginTop: 4,
+                  WebkitTextFillColor: colorSubtitulo || fondoActivo.acento,
                 }}
                 onSelect={e => {
-                  const el = e.target as HTMLInputElement;
-                  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+                  const el = e.target as HTMLElement;
+                  setTextoResaltado(el.textContent?.substring(0, el.textContent?.length || 0) || "");
                 }}
-                onFocus={() => setEditando({ tipo: "subtitulo" })}
-                onBlur={() => setEditando(null)}
-              />
+                onFocus={() => {
+                  setEditando({ tipo: "subtitulo" });
+                  setElementoActivo({ tipo: 'subtitulo', nombre: subtitulo });
+                }}
+                onBlurCapture={() => { setEditando(null); setElementoActivo(null); }}
+              >
+                {subtitulo}
+              </div>
               <div style={{ fontSize: 10, letterSpacing: 4, color: fondoActivo.acento, marginTop: 8, opacity: 0.6 }}>✦ ✦ ✦</div>
             </div>
 
@@ -358,9 +593,10 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
             {secciones.map((seccion) => (
               <div key={seccion.id} style={{ marginBottom: 24 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12 }}>
-                  <input
-                    value={seccion.nombre}
-                    onChange={e => { editarNombreSeccion(seccion.id, e.target.value); setGuardado(false); }}
+                  <div
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={e => { editarNombreSeccion(seccion.id, e.currentTarget.textContent || ""); setGuardado(false); }}
                     style={{
                       background: "transparent", border: "none",
                       borderBottom: editando?.tipo === "seccion" && editando?.seccionId === seccion.id
@@ -368,18 +604,25 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                       outline: "none", fontSize: 10, letterSpacing: 3,
                       color: fondoActivo.acento, fontWeight: 700, textAlign: "center",
                       cursor: "text", fontFamily: fuenteActiva,
+                      WebkitTextFillColor: fondoActivo.acento,
                     }}
                     onSelect={e => {
-                      const el = e.target as HTMLInputElement;
-                      setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+                      const el = e.target as HTMLElement;
+                      setTextoResaltado(el.textContent?.substring(0, el.textContent?.length || 0) || "");
                     }}
                     onFocus={() => setEditando({ tipo: "seccion", seccionId: seccion.id })}
-                    onBlur={() => setEditando(null)}
-                  />
-                  <button onClick={() => eliminarSeccion(seccion.id)} style={{
-                    background: "transparent", border: "none", color: "#ff4444",
-                    cursor: "pointer", fontSize: 11, padding: 0, opacity: 0.4,
-                  }}>✕</button>
+                    onBlurCapture={() => setEditando(null)}
+                  >
+                    {seccion.nombre}
+                  </div>
+                  <button 
+                    onClick={() => eliminarSeccion(seccion.id)} 
+                    style={{
+                      background: "transparent", border: "none", color: "#ff4444",
+                      cursor: "pointer", fontSize: 11, padding: 0, 
+                      opacity: exportando ? 0 : 0.4,
+                      pointerEvents: exportando ? "none" : "auto",
+                    }}>✕</button>
                 </div>
 
                 {seccion.platillos.map((platillo, idx) => (
@@ -390,7 +633,16 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                       <div style={{ marginBottom: 6 }}>
                         {platillo.imagen ? (
                             <div
-                              style={{ position: "relative", height: 100, overflow: "hidden", borderRadius: 6, cursor: "grab" }}
+                              style={{ 
+                                position: "relative", 
+                                width: 100,
+                                height: 100,
+                                overflow: "hidden", 
+                                borderRadius: 6, 
+                                cursor: "grab",
+                                border: `1px solid ${fondoActivo.acento}33`,
+                                margin: "0 auto",
+                              }}
                               onMouseDown={(e) => {
                                 const startX = e.clientX;
                                 const startY = e.clientY;
@@ -418,7 +670,8 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                                   left: platillo.imagenPos?.x ?? 0,
                                   top: platillo.imagenPos?.y ?? 0,
                                   width: "100%",
-                                  height: "auto",
+                                  height: "100%",
+                                  objectFit: "contain",
                                   borderRadius: 6,
                                   userSelect: "none",
                                   pointerEvents: "none",
@@ -432,15 +685,21 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                                   borderRadius: "50%", color: "white", cursor: "pointer",
                                   width: 20, height: 20, fontSize: 10, zIndex: 2,
                                   display: "flex", alignItems: "center", justifyContent: "center",
+                                  opacity: exportando ? 0 : 1,
+                                  pointerEvents: exportando ? "none" : "auto",
                                 }}
                               >✕</button>
                             </div>
                         ) : (
-                          <label style={{ cursor: "pointer", display: "block" }}>
+                          <label style={{ 
+                            cursor: "pointer", display: "block",
+                            opacity: exportando ? 0 : 0.5,
+                            pointerEvents: exportando ? "none" : "auto",
+                          }}>
                             <div style={{
                               border: `1px dashed ${fondoActivo.acento}55`,
                               borderRadius: 6, padding: "8px",
-                              textAlign: "center", opacity: 0.5,
+                              textAlign: "center",
                               color: fondoActivo.acento, fontSize: 10,
                             }}>
                               📷 Agregar imagen
@@ -459,101 +718,121 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                       </div>
                     )}
 
-                    {/* Nombre y precio */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <input
-                        value={platillo.nombre}
-                        onChange={e => { editarPlatillo(seccion.id, idx, "nombre", e.target.value); setGuardado(false); }}
+{/* Nombre y precio */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <div
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={e => { editarPlatillo(seccion.id, idx, "nombre", e.currentTarget.textContent || ""); setGuardado(false); }}
                         style={{
-                          background: "transparent", border: "none",
+                          background: "transparent",
+                          border: "none",
                           borderBottom: editando?.seccionId === seccion.id && editando?.platilloIdx === idx && editando?.campo === "nombre"
                             ? `1px solid ${fondoActivo.acento}` : "1px solid transparent",
-                          outline: "none", fontSize: 12, color: platillo.colorTexto || fondoActivo.texto,
-                          fontFamily: fuenteActiva, flex: 1, cursor: "text",
+                          outline: "none",
+                          fontSize: 12,
+                          color: platillo.colorTexto || fondoActivo.texto,
+                          fontFamily: fuenteActiva,
+                          flex: 1,
+                          cursor: "text",
                         }}
-                        onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}}
-                        onFocus={() => setEditando({ tipo: "platillo", seccionId: seccion.id, platilloIdx: idx, campo: "nombre" })}
-                        onBlur={() => setEditando(null)}
-                      />
+                        onFocus={() => {
+                          setEditando({ tipo: "platillo", seccionId: seccion.id, platilloIdx: idx, campo: "nombre" });
+                          setElementoActivo({ tipo: 'platillo', seccionId: seccion.id, platilloIdx: idx, nombre: platillo.nombre });
+                        }}
+                        onBlurCapture={() => { setEditando(null); setElementoActivo(null); }}
+                      >
+                        {platillo.nombre}
+                      </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <input
-                          value={platillo.precio}
-                          onChange={e => { editarPlatillo(seccion.id, idx, "precio", e.target.value); setGuardado(false); }}
-                          style={{
-                            background: "transparent", border: "none",
-                            borderBottom: editando?.seccionId === seccion.id && editando?.platilloIdx === idx && editando?.campo === "precio"
-                              ? `1px solid ${fondoActivo.acento}` : "1px solid transparent",
-                            outline: "none", fontSize: 12, color: fondoActivo.acento,
-                            fontFamily: fuenteActiva, width: 55, textAlign: "right",
-                            fontWeight: 600, cursor: "text",
+                        <div
+                          contentEditable
+                          suppressContentEditableWarning
+                          onBlur={e => { 
+                            const valor = e.currentTarget.textContent || "0";
+                            editarPlatillo(seccion.id, idx, "precio", valor.startsWith('$') ? valor : `$${valor}`); 
+                            setGuardado(false); 
                           }}
-                          onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            fontSize: 12,
+                            color: fondoActivo.acento,
+                            fontFamily: fuenteActiva,
+                            fontWeight: 600,
+                            cursor: "text",
+                            minWidth: 40,
+                            textAlign: "right",
+                          }}
                           onFocus={() => setEditando({ tipo: "platillo", seccionId: seccion.id, platilloIdx: idx, campo: "precio" })}
-                          onBlur={() => setEditando(null)}
-                        />
-                        <button onClick={() => eliminarPlatillo(seccion.id, idx)} style={{
-                          background: "transparent", border: "none", color: "#ff4444",
-                          cursor: "pointer", fontSize: 10, padding: 0, opacity: 0.4,
-                        }}>✕</button>
+                          onBlurCapture={() => setEditando(null)}
+                        >
+                          {platillo.precio.replace('$', '')}
+                        </div>
+                        <button 
+                          onClick={() => eliminarPlatillo(seccion.id, idx)} 
+                          style={{
+                            background: "transparent", border: "none", color: "#ff4444",
+                            cursor: "pointer", fontSize: 10, padding: 0, 
+                            opacity: exportando ? 0 : 0.4,
+                            pointerEvents: exportando ? "none" : "auto",
+                          }}>✕</button>
                       </div>
                     </div>
 
                     {/* Descripción */}
                     {mostrarDescripciones && (
-                      <input
-                        value={platillo.descripcion}
-                        onChange={e => { editarPlatillo(seccion.id, idx, "descripcion", e.target.value); setGuardado(false); }}
+                      <div
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={e => { editarPlatillo(seccion.id, idx, "descripcion", e.currentTarget.textContent || ""); setGuardado(false); }}
                         style={{
-                          background: "transparent", border: "none", outline: "none",
-                          fontSize: 10, color: platillo.colorTexto || fondoActivo.texto, fontFamily: fuenteActiva,
-                          width: "100%", opacity: 0.6, cursor: "text", marginTop: 2,
+                          background: "transparent",
+                          border: "none",
+                          outline: "none",
+                          fontSize: 10,
+                          color: platillo.colorTexto || fondoActivo.texto,
+                          fontFamily: fuenteActiva,
+                          width: "100%",
+                          opacity: 0.6,
+                          cursor: "text",
+                          marginTop: 2,
                         }}
-                        onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}}
-                        placeholder="Descripción..."
-                      />
-                    )}
-
-                    {/* Color de texto */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5 }}>
-                        <span style={{ fontSize: 9, color: fondoActivo.acento, opacity: 0.6 }}>Color:</span>
-                        {["#000000","#ffffff","#8b4513","#2563eb","#16a34a","#ec4899","#ea580c","#7c3aed","#dc2626","#0891b2"].map(c => (
-                          <button
-                            key={c}
-                            onClick={() => { editarPlatillo(seccion.id, idx, "colorTexto", c); setGuardado(false); }}
-                            style={{
-                              width: 13, height: 13, borderRadius: "50%",
-                              background: c, padding: 0, cursor: "pointer",
-                              border: platillo.colorTexto === c ? "2px solid white" : "1px solid #55555566",
-                            }}
-                          />
-                        ))}
+                        onFocus={() => {
+                          setEditando({ tipo: "platillo", seccionId: seccion.id, platilloIdx: idx, campo: "descripcion" });
+                          setElementoActivo({ tipo: 'platillo', seccionId: seccion.id, platilloIdx: idx, nombre: platillo.nombre });
+                        }}
+                        onBlurCapture={() => { setEditando(null); setElementoActivo(null); }}
+                      >
+                        {platillo.descripcion}
                       </div>
+                    )}
                   </div>
                 ))}
 
-                <button onClick={() => agregarPlatillo(seccion.id)} style={{
-                  background: "transparent", border: `1px dashed ${fondoActivo.acento}55`,
-                  borderRadius: 4, color: fondoActivo.acento, cursor: "pointer",
-                  fontSize: 10, padding: "4px 12px", marginTop: 4, width: "100%", opacity: 0.7,
-                }}>+ Agregar platillo</button>
+                <button 
+                  onClick={() => agregarPlatillo(seccion.id)} 
+                  style={{
+                    background: "transparent", border: `1px dashed ${fondoActivo.acento}55`,
+                    borderRadius: 4, color: fondoActivo.acento, cursor: "pointer",
+                    fontSize: 10, padding: "4px 12px", marginTop: 4, width: "100%", 
+                    opacity: exportando ? 0 : 0.7,
+                    pointerEvents: exportando ? "none" : "auto",
+                  }}>+ Agregar platillo</button>
               </div>
             ))}
 
-            <button onClick={agregarSeccion} style={{
-              background: "transparent", border: `2px dashed ${fondoActivo.acento}33`,
-              borderRadius: 8, color: fondoActivo.acento, cursor: "pointer",
-              fontSize: 11, padding: "10px", marginTop: 8, width: "100%",
-              opacity: 0.6, fontFamily: fuenteActiva,
-            }}>+ Agregar sección</button>
+            <button 
+              onClick={agregarSeccion} 
+              style={{
+                background: "transparent", border: `2px dashed ${fondoActivo.acento}33`,
+                borderRadius: 8, color: fondoActivo.acento, cursor: "pointer",
+                fontSize: 11, padding: "10px", marginTop: 8, width: "100%",
+                opacity: exportando ? 0 : 0.6, 
+                pointerEvents: exportando ? "none" : "auto",
+                fontFamily: fuenteActiva,
+              }}>+ Agregar sección</button>
           </div>
         </div>
 
@@ -626,6 +905,51 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                   ))}
                 </div>
               </div>
+              <div style={{ marginBottom: 6 }}>
+                <span style={{ color: "#666", fontSize: 10 }}>Color texto</span>
+                {elementoActivo?.tipo === 'platillo' && elementoActivo.seccionId && elementoActivo.platilloIdx !== undefined && (() => {
+                  const platilloActual = secciones.find(s => s.id === elementoActivo.seccionId)?.platillos[elementoActivo.platilloIdx];
+                  const colorActual = platilloActual?.colorTexto || fondoActivo.texto;
+                  return (
+                    <>
+                      <div style={{ fontSize: 9, color: "#a855f7", marginTop: 4, marginBottom: 4 }}>
+                        Editando: {elementoActivo.nombre}
+                      </div>
+                      <div style={{ fontSize: 9, color: "#666", marginBottom: 4 }}>
+                        Color actual: <span style={{ color: colorActual, fontWeight: 700 }}>{colorActual}</span>
+                      </div>
+                    </>
+                  );
+                })()}
+                {elementoActivo?.tipo !== 'platillo' && (
+                  <div style={{ fontSize: 9, color: "#666", marginTop: 4, marginBottom: 4 }}>
+                    Selecciona un platillo para cambiar su color
+                  </div>
+                )}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                  {["#ffffff","#000000","#fbbf24","#a855f7","#38bdf8","#f43f5e","#10b981","#ea580c","#8b4513","#2563eb"].map(c => (
+                    <button
+                      key={c}
+                      onClick={() => {
+                        if (elementoActivo?.tipo === 'platillo' && elementoActivo.seccionId && elementoActivo.platilloIdx !== undefined) {
+                          editarPlatillo(elementoActivo.seccionId, elementoActivo.platilloIdx, "colorTexto", c);
+                          setGuardado(false);
+                        }
+                      }}
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: "50%",
+                        background: c,
+                        border: "2px solid #555",
+                        cursor: elementoActivo?.tipo === 'platillo' ? "pointer" : "not-allowed",
+                        padding: 0,
+                        opacity: elementoActivo?.tipo === 'platillo' ? 1 : 0.5,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
               <div>
                 <span style={{ color: "#666", fontSize: 10 }}>Fuente título</span>
                 <select value={fuenteTitulo} onChange={e => setFuenteTitulo(e.target.value)} style={{
@@ -638,7 +962,69 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                 </select>
               </div>
             </div>
-          <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>OPCIONES</div>
+
+            {/* PRECIOS - NUEVA SECCIÓN */}
+            <div>
+              <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>PRECIOS</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 300, overflowY: "auto", paddingRight: 4 }}>
+                {secciones.map(seccion => (
+                  <div key={seccion.id}>
+                    <div style={{ color: "#888", fontSize: 9, fontWeight: 600, marginBottom: 4, letterSpacing: 0.5 }}>
+                      {seccion.nombre.toUpperCase()}
+                    </div>
+                    {seccion.platillos.map((platillo, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          padding: "6px 8px",
+                          background: "#1e1e28",
+                          borderRadius: 6,
+                          marginBottom: 2,
+                        }}
+                      >
+                        <span style={{
+                          flex: 1,
+                          color: "#aaa",
+                          fontSize: 10,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}>
+                          {platillo.nombre}
+                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <span style={{ color: fondoActivo.acento, fontSize: 10, fontWeight: 600 }}>$</span>
+                          <input
+                            value={platillo.precio.replace('$', '')}
+                            onChange={e => {
+                              editarPlatillo(seccion.id, idx, "precio", `$${e.target.value}`);
+                              setGuardado(false);
+                            }}
+                            style={{
+                              width: 50,
+                              background: "#0f0f13",
+                              border: "1px solid #2a2a35",
+                              borderRadius: 4,
+                              color: fondoActivo.acento,
+                              fontSize: 10,
+                              fontWeight: 600,
+                              padding: "2px 4px",
+                              textAlign: "right",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>OPCIONES</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <button onClick={() => setMostrarDescripciones(!mostrarDescripciones)} style={{
               background: mostrarDescripciones ? "#7c3aed22" : "#1e1e28",
