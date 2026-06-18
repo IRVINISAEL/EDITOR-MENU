@@ -86,6 +86,7 @@ export default function Editor() {
   }
 }, []);
   const [textoResaltado, setTextoResaltado] = useState("");
+  const [menuId, setMenuId] = useState<number | null>(null);
   const [tamañoResaltado, setTamañoResaltado] = useState(24);
   
 
@@ -146,8 +147,8 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
         orientation: orientacion === "horizontal" ? "landscape" : "portrait",
-        unit: "px",
-        format: [canvas.width / 2, canvas.height / 2],
+        unit: "mm",
+        format: "a4"
       });
       pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
       pdf.save(`${nombreMenu}.pdf`);
@@ -159,8 +160,8 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
     try {
       const usuarioData = localStorage.getItem("usuario");
       const usuario = usuarioData ? JSON.parse(usuarioData) : { id: 1 };
-      const res = await fetch(`${API}/api/menus`, {
-        method: "POST",
+      const res = await fetch(`${API}/api/menus${menuId ? "/" + menuId : ""}`, {
+       method: menuId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nombre: nombreMenu,
@@ -171,6 +172,9 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
       });
       const data = await res.json();
       if (data.ok) {
+        if (data.menuId) {
+          setMenuId(data.menuId);
+        }
         setGuardado(true);
         if (estado === "Publicado") {
           alert("🚀 ¡Menú publicado!");
