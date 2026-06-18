@@ -13,23 +13,25 @@ app.use(express.json());
 // ============================
 // CONEXIÓN A MYSQL
 // ============================
-const db = mysql.createConnection({
-  host: process.env.DB_HOST || "localhost",
-  port: parseInt(process.env.DB_PORT || "3306"),
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "root1234",
-  database: process.env.DB_NAME || "menumaster",
+const db = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-db.connect((err) => {
+db.getConnection((err, connection) => {
   if (err) {
-    console.error("❌ Error conectando a MySQL:", err.message);
-    console.log("⚠️ Servidor corriendo sin base de datos");
+    console.error("❌ Error MySQL:", err);
     return;
   }
+
   console.log("✅ Conectado a MySQL correctamente");
-  console.log(`🗄️  DB_HOST: ${process.env.DB_HOST}`);
-  console.log(`🗄️  DB_NAME: ${process.env.DB_NAME}`);
+  connection.release();
 });
 
 // ============================
@@ -141,9 +143,14 @@ app.post("/api/menus", (req, res) => {
 
   const sql = "INSERT INTO menus (nombre, estado, data_json, user_id) VALUES (?, ?, ?, ?)";
   db.query(sql, [nombre, estado || "Borrador", data_json || "{}", user_id || 1], (err, result) => {
-    if (err) {
-      return res.status(500).json({ ok: false, mensaje: "Error al crear menú" });
-    }
+   if (err) {
+  console.error("ERROR INSERT MENU:", err);
+
+  return res.status(500).json({
+    ok: false,
+    mensaje: err.message
+  });
+}
     res.status(201).json({
       ok: true,
       mensaje: "Menú creado correctamente",
