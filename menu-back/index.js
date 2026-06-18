@@ -29,7 +29,6 @@ db.getConnection((err, connection) => {
     console.error("❌ Error MySQL:", err);
     return;
   }
-
   console.log("✅ Conectado a MySQL correctamente");
   connection.release();
 });
@@ -139,20 +138,42 @@ app.post("/api/menus", (req, res) => {
 
   const { nombre, estado, data_json, user_id } = req.body;
 
-  if (!nombre) {
-    return res.status(400).json({ ok: false, mensaje: "El nombre es obligatorio" });
+  // ✅ FIX: Validar que nombre no venga vacío o solo espacios
+  if (!nombre || nombre.trim() === "") {
+    return res.status(400).json({ ok: false, mensaje: "El nombre del menú es obligatorio" });
+  }
+
+  // ✅ FIX: Validar que data_json sea un string JSON válido
+  let dataJsonFinal = "{}";
+  if (data_json) {
+    if (typeof data_json === "string") {
+      try {
+        JSON.parse(data_json); // verificar que es JSON válido
+        dataJsonFinal = data_json;
+      } catch (e) {
+        console.error("data_json inválido:", e);
+        return res.status(400).json({ ok: false, mensaje: "El contenido del menú (data_json) no es válido" });
+      }
+    } else if (typeof data_json === "object") {
+      // si llegó como objeto (no string), convertirlo
+      dataJsonFinal = JSON.stringify(data_json);
+    }
   }
 
   const sql = "INSERT INTO menus (nombre, estado, data_json, user_id) VALUES (?, ?, ?, ?)";
-  db.query(sql, [nombre, estado || "Borrador", data_json || "{}", user_id || 1], (err, result) => {
-   if (err) {
-  console.error("ERROR INSERT MENU:", err);
-
-  return res.status(500).json({
-    ok: false,
-    mensaje: err.message
-  });
-}
+  db.query(sql, [nombre.trim(), estado || "Borrador", dataJsonFinal, user_id || 1], (err, result) => {
+    if (err) {
+      console.error("ERROR INSERT MENU:", err);
+      return res.status(500).json({
+        ok: false,
+        // ✅ FIX: Mensaje de error más claro según el tipo de error MySQL
+        mensaje: err.code === "ER_DATA_TOO_LONG"
+          ? "El contenido del menú es demasiado grande"
+          : err.code === "ER_NO_REFERENCED_ROW_2"
+          ? "El usuario no existe"
+          : "Error al crear el menú: " + err.message,
+      });
+    }
     res.status(201).json({
       ok: true,
       mensaje: "Menú creado correctamente",
@@ -164,10 +185,38 @@ app.post("/api/menus", (req, res) => {
 // PUT - Actualizar menú
 app.put("/api/menus/:id", (req, res) => {
   const { nombre, estado, data_json } = req.body;
+
+  // ✅ FIX: Validar nombre en actualización también
+  if (!nombre || nombre.trim() === "") {
+    return res.status(400).json({ ok: false, mensaje: "El nombre del menú es obligatorio" });
+  }
+
+  // ✅ FIX: Validar y normalizar data_json igual que en POST
+  let dataJsonFinal = "{}";
+  if (data_json) {
+    if (typeof data_json === "string") {
+      try {
+        JSON.parse(data_json);
+        dataJsonFinal = data_json;
+      } catch (e) {
+        console.error("data_json inválido en PUT:", e);
+        return res.status(400).json({ ok: false, mensaje: "El contenido del menú (data_json) no es válido" });
+      }
+    } else if (typeof data_json === "object") {
+      dataJsonFinal = JSON.stringify(data_json);
+    }
+  }
+
   const sql = "UPDATE menus SET nombre = ?, estado = ?, data_json = ? WHERE id = ?";
-  db.query(sql, [nombre, estado, data_json, req.params.id], (err, result) => {
+  db.query(sql, [nombre.trim(), estado, dataJsonFinal, req.params.id], (err, result) => {
     if (err) {
-      return res.status(500).json({ ok: false, mensaje: "Error al actualizar menú" });
+      console.error("ERROR UPDATE MENU:", err);
+      return res.status(500).json({
+        ok: false,
+        mensaje: err.code === "ER_DATA_TOO_LONG"
+          ? "El contenido del menú es demasiado grande"
+          : "Error al actualizar el menú: " + err.message,
+      });
     }
     if (result.affectedRows === 0) {
       return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
