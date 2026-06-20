@@ -44,12 +44,7 @@ export default function Landing() {
         padding: "0 48px", height: 64,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "white", fontWeight: 800, fontSize: 16,
-          }}>M</div>
+          <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 10 }} />
           <div>
             <span style={{ color: "white", fontWeight: 800, fontSize: 16 }}>MENU</span>
             <span style={{ color: "#a855f7", fontWeight: 800, fontSize: 16 }}>MASTER</span>
@@ -270,12 +265,7 @@ export default function Landing() {
       {/* FOOTER */}
       <footer style={{ padding: "32px 48px", borderTop: "1px solid #2a2a35", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: 8,
-            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "white", fontWeight: 800, fontSize: 12,
-          }}>M</div>
+          <img src="/logo.png" alt="Menu Master" style={{ width: 28, height: 28, borderRadius: 8 }} />
           <span style={{ color: "white", fontWeight: 700 }}>MENU</span>
           <span style={{ color: "#a855f7", fontWeight: 700 }}>MASTER</span>
         </div>

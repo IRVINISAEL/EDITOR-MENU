@@ -73,6 +73,7 @@ export default function Editor() {
   const [colorTitulo, setColorTitulo] = useState("");
   const [colorSubtitulo, setColorSubtitulo] = useState("");
   const [fuenteTitulo, setFuenteTitulo] = useState("");
+  const [textoResaltado, setTextoResaltado] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -90,8 +91,6 @@ export default function Editor() {
       } catch {}
     }
   }, []);
-
-  const [textoResaltado, setTextoResaltado] = useState("");
 
   const editarNombreSeccion = (seccionId: number, valor: string) => {
     setSecciones(prev => prev.map(s => s.id === seccionId ? { ...s, nombre: valor } : s));
@@ -194,6 +193,8 @@ export default function Editor() {
       });
 
       const data = await res.json();
+      console.log("Status:", res.status);
+      console.log("Respuesta:", data);
 
       if (data.ok) {
         if (data.menuId) {
@@ -307,7 +308,6 @@ export default function Editor() {
               color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
             }}>📄 PDF</button>
             
-            {/* NUEVO NOMBRE: Guardar Borrador */}
             <button onClick={() => handleGuardar("Guardado")} style={{
                 background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
                 color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
@@ -315,7 +315,6 @@ export default function Editor() {
                 💾 Guardar Borrador
             </button>
 
-            {/* NUEVO NOMBRE: Publicar Menú */}
             <button onClick={() => handleGuardar("Activo")} style={{
                 background: "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none",
                 borderRadius: 8, color: "white", padding: "7px 14px",
@@ -587,25 +586,10 @@ export default function Editor() {
             <button onClick={agregarSeccion} style={{
               background: "transparent", border: `2px dashed ${fondoActivo.acento}33`,
               borderRadius: 8, color: fondoActivo.acento, cursor: "pointer",
-              fontSize: 11, padding: "10px", marginTop: 8, width: "100%",
-              opacity: 0.6, fontFamily: fuenteActiva,
-            }}>+ Agregar sección</button>
+              fontSize: 11, padding: "8px 16px", width: "100%", fontWeight: 600, marginTop: 8,
+            }}>+ Agregar Nueva Sección</button>
           </div>
         </div>
-
-        {/* BOTTOM BAR / RESALTADO */}
-        <div style={{
-          height: "auto", minHeight: 36, background: "#16161d", borderTop: "1px solid #2a2a35",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 16px", gap: 12,
-        }}>
-          {textoResaltado && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#aaa", fontSize: 11 }}>
-              <span>Texto resaltado: <strong>"{textoResaltado}"</strong></span>
-            </div>
-          )}
-        </div>
-
       </div>
     </div>
   );
