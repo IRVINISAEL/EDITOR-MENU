@@ -92,6 +92,7 @@ export default function Editor() {
   }, []);
 
   const [textoResaltado, setTextoResaltado] = useState("");
+  const [menuId, setMenuId] = useState<number | null>(null);
   const [tamañoResaltado, setTamañoResaltado] = useState(24);
 
   const editarNombreSeccion = (seccionId: number, valor: string) => {
@@ -145,26 +146,37 @@ export default function Editor() {
   };
 
   const exportarPDF = async () => {
-    if (!menuRef.current) return;
-    const canvas = await html2canvas(menuRef.current, { scale: 2, useCORS: true });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({
-      orientation: orientacion === "horizontal" ? "landscape" : "portrait",
-      unit: "mm",
-      format: "a4"
-    });
+      if (!menuRef.current) return;
+      const canvas = await html2canvas(menuRef.current, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: orientacion === "horizontal" ? "landscape" : "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const ratio = Math.min(
+      pageWidth / canvas.width,
+      pageHeight / canvas.height
+    );
     
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    
-    const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
     const imgWidth = canvas.width * ratio;
     const imgHeight = canvas.height * ratio;
     
-    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-    pdf.save(`${nombreMenu}.pdf`);
-  };
+    pdf.addImage(
+      imgData,
+      "PNG",
+      0,
+      0,
+      imgWidth,
+      imgHeight
+    );
+      pdf.save(`${nombreMenu}.pdf`);
+    };
 
+  // ✅ FUNCIÓN CORREGIDA: manejo de errores completo
   const handleGuardar = async (estado: string) => {
     // ✅ FIX 1: Validar nombre antes de enviar
     if (!nombreMenu || nombreMenu.trim() === "") {
