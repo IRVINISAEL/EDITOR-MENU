@@ -3,12 +3,12 @@ import { useState, useRef, useEffect } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-
 const fuentes = [
   "Playfair Display", "Georgia", "Arial", "Montserrat", "Times New Roman",
   "Lora", "Raleway", "Oswald", "Merriweather", "Poppins",
   "EB Garamond", "Cinzel", "Dancing Script", "Josefin Sans", "Libre Baskerville"
 ];
+
 const fondos = [
   { nombre: "Clásico", bg: "linear-gradient(135deg, #fefefe, #f8f4ee)", texto: "#2c1810", acento: "#8b4513" },
   { nombre: "Oscuro", bg: "linear-gradient(135deg, #1a1a1a, #2d2d2d)", texto: "#ffffff", acento: "#a855f7" },
@@ -23,6 +23,7 @@ const fondos = [
   { nombre: "Carbón", bg: "linear-gradient(135deg, #18181b, #27272a)", texto: "#fafafa", acento: "#facc15" },
   { nombre: "Rojo Vino", bg: "linear-gradient(135deg, #fff1f2, #ffe4e6)", texto: "#4c0519", acento: "#be123c" },
 ];
+
 const API = "https://menu-master-backend-production-9bfc.up.railway.app";
 
 type Platillo = { 
@@ -33,6 +34,7 @@ type Platillo = {
   colorTexto?: string;
   imagenPos?: { x: number; y: number };
 };
+
 type Seccion = { id: number; nombre: string; platillos: Platillo[] };
 
 const seccionesIniciales: Seccion[] = [
@@ -54,6 +56,7 @@ const seccionesIniciales: Seccion[] = [
 ];
 
 export default function Editor() {
+  const [menuId, setMenuId] = useState<string | number | null>(null);
   const [nombreMenu, setNombreMenu] = useState("Menú Restaurante");
   const [subtitulo, setSubtitulo] = useState("RESTAURANTE");
   const [fuenteActiva, setFuenteActiva] = useState("Playfair Display");
@@ -70,32 +73,30 @@ export default function Editor() {
   const [colorTitulo, setColorTitulo] = useState("");
   const [colorSubtitulo, setColorSubtitulo] = useState("");
   const [fuenteTitulo, setFuenteTitulo] = useState("");
-  const menuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-  const guardada = localStorage.getItem("plantilla_cargada");
-  if (guardada) {
-    try {
-      const config = JSON.parse(guardada);
-      if (config.fuenteActiva) setFuenteActiva(config.fuenteActiva);
-      if (config.fondoActivo) setFondoActivo(config.fondoActivo);
-      if (config.tamaño) setTamaño(config.tamaño);
-      if (config.subtitulo) setSubtitulo(config.subtitulo);
-      if (config.secciones) setSecciones(config.secciones);
-      localStorage.removeItem("plantilla_cargada");
-    } catch {}
-  }
-}, []);
   const [textoResaltado, setTextoResaltado] = useState("");
-  const [menuId, setMenuId] = useState<number | null>(null);
-  const [tamañoResaltado, setTamañoResaltado] = useState(24);
-  
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const guardada = localStorage.getItem("plantilla_cargada");
+    if (guardada) {
+      try {
+        const config = JSON.parse(guardada);
+        if (config.id) setMenuId(config.id);
+        if (config.fuenteActiva) setFuenteActiva(config.fuenteActiva);
+        if (config.fondoActivo) setFondoActivo(config.fondoActivo);
+        if (config.tamaño) setTamaño(config.tamaño);
+        if (config.subtitulo) setSubtitulo(config.subtitulo);
+        if (config.secciones) setSecciones(config.secciones);
+        localStorage.removeItem("plantilla_cargada");
+      } catch {}
+    }
+  }, []);
 
   const editarNombreSeccion = (seccionId: number, valor: string) => {
     setSecciones(prev => prev.map(s => s.id === seccionId ? { ...s, nombre: valor } : s));
   };
 
-const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, valor: string | { x: number; y: number }) => {
+  const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, valor: string | { x: number; y: number }) => {
     setSecciones(prev => prev.map(s =>
       s.id === seccionId ? { ...s, platillos: s.platillos.map((p, i) => i === idx ? { ...p, [campo]: valor } : p) } : s
     ));
@@ -142,39 +143,27 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
   };
 
   const exportarPDF = async () => {
-      if (!menuRef.current) return;
-      const canvas = await html2canvas(menuRef.current, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: orientacion === "horizontal" ? "landscape" : "portrait",
-        unit: "mm",
-        format: "a4"
-      });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      
-      const ratio = Math.min(
-      pageWidth / canvas.width,
-      pageHeight / canvas.height
-    );
+    if (!menuRef.current) return;
+    const canvas = await html2canvas(menuRef.current, { scale: 2, useCORS: true });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: orientacion === "horizontal" ? "landscape" : "portrait",
+      unit: "mm",
+      format: "a4"
+    });
     
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    
+    const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
     const imgWidth = canvas.width * ratio;
     const imgHeight = canvas.height * ratio;
     
-    pdf.addImage(
-      imgData,
-      "PNG",
-      0,
-      0,
-      imgWidth,
-      imgHeight
-    );
-      pdf.save(`${nombreMenu}.pdf`);
-    };
+    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+    pdf.save(`${nombreMenu}.pdf`);
+  };
 
-  // ✅ FUNCIÓN CORREGIDA: manejo de errores completo
   const handleGuardar = async (estado: string) => {
-    // ✅ FIX 1: Validar nombre antes de enviar
     if (!nombreMenu || nombreMenu.trim() === "") {
       alert("⚠️ Escribe un nombre para el menú antes de guardar");
       return;
@@ -186,7 +175,6 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
       const usuarioData = localStorage.getItem("usuario");
       const usuario = usuarioData ? JSON.parse(usuarioData) : { id: 1 };
 
-      // ✅ FIX 2: data_json usa "categorias" como clave principal (consistente con BD)
       const res = await fetch(`${API}/api/menus${menuId ? "/" + menuId : ""}`, {
         method: menuId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -213,14 +201,13 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
           setMenuId(data.menuId);
         }
         setGuardado(true);
-        if (estado === "Publicado") {
-          alert("🚀 ¡Menú publicado!");
+        if (estado === "Activo") {
+          alert("¡Menú guardado y publicado exitosamente!");
           window.location.href = "/mis-menus";
         } else {
-          alert("💾 ¡Guardado como borrador!");
+          alert("¡Borrador guardado correctamente!");
         }
       } else {
-        // ✅ FIX 3: Mostrar el mensaje de error real del servidor
         alert("❌ Error: " + (data.mensaje || "No se pudo guardar el menú"));
       }
     } catch (err) {
@@ -298,9 +285,9 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
               color: "white", padding: "4px 6px", fontSize: 11, outline: "none", textAlign: "center",
             }}
             onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}} />
+              const el = e.target as HTMLInputElement;
+              setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+            }} />
             <button onClick={() => setMostrarDescripciones(!mostrarDescripciones)} style={{
               background: mostrarDescripciones ? "#7c3aed33" : "#1e1e28",
               border: "1px solid #2a2a35", borderRadius: 6,
@@ -320,15 +307,21 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
               color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
             }}>📄 PDF</button>
-            <button onClick={() => handleGuardar("Borrador")} style={{
-              background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-              color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
-            }}>💾 Borrador</button>
-            <button onClick={() => handleGuardar("Publicado")} style={{
-              background: "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none",
-              borderRadius: 8, color: "white", padding: "7px 14px",
-              cursor: "pointer", fontSize: 12, fontWeight: 600,
-            }}>🚀 Publicar</button>
+            
+            <button onClick={() => handleGuardar("Guardado")} style={{
+                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
+                color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
+              }}>
+                💾 Guardar Borrador
+            </button>
+
+            <button onClick={() => handleGuardar("Activo")} style={{
+                background: "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none",
+                borderRadius: 8, color: "white", padding: "7px 14px",
+                cursor: "pointer", fontSize: 12, fontWeight: 600,
+              }}>
+                🚀 Publicar Menú
+            </button>
           </div>
         </div>
 
@@ -514,9 +507,9 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                           fontFamily: fuenteActiva, flex: 1, cursor: "text",
                         }}
                         onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}}
+                          const el = e.target as HTMLInputElement;
+                          setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+                        }}
                         onFocus={() => setEditando({ tipo: "platillo", seccionId: seccion.id, platilloIdx: idx, campo: "nombre" })}
                         onBlur={() => setEditando(null)}
                       />
@@ -533,9 +526,9 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                             fontWeight: 600, cursor: "text",
                           }}
                           onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}}
+                            const el = e.target as HTMLInputElement;
+                            setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+                          }}
                           onFocus={() => setEditando({ tipo: "platillo", seccionId: seccion.id, platilloIdx: idx, campo: "precio" })}
                           onBlur={() => setEditando(null)}
                         />
@@ -557,9 +550,9 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
                           width: "100%", opacity: 0.6, cursor: "text", marginTop: 2,
                         }}
                         onSelect={e => {
-  const el = e.target as HTMLInputElement;
-  setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
-}}
+                          const el = e.target as HTMLInputElement;
+                          setTextoResaltado(el.value.substring(el.selectionStart || 0, el.selectionEnd || 0));
+                        }}
                         placeholder="Descripción..."
                       />
                     )}
@@ -593,148 +586,11 @@ const editarPlatillo = (seccionId: number, idx: number, campo: keyof Platillo, v
             <button onClick={agregarSeccion} style={{
               background: "transparent", border: `2px dashed ${fondoActivo.acento}33`,
               borderRadius: 8, color: fondoActivo.acento, cursor: "pointer",
-              fontSize: 11, padding: "10px", marginTop: 8, width: "100%",
-              opacity: 0.6, fontFamily: fuenteActiva,
-            }}>+ Agregar sección</button>
+              fontSize: 11, padding: "8px 16px", width: "100%", fontWeight: 600, marginTop: 8,
+            }}>+ Agregar Nueva Sección</button>
           </div>
-        </div>
-
-        <div style={{
-          height: "auto", minHeight: 36, background: "#16161d", borderTop: "1px solid #2a2a35",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 16px", gap: 12,
-        }}>
-          {textoResaltado ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: "#a855f7", fontSize: 11, fontWeight: 600 }}>Texto seleccionado:</span>
-              <span style={{
-                color: "white", fontSize: tamañoResaltado,
-                fontFamily: fuenteActiva, transition: "font-size 0.2s",
-              }}>{textoResaltado}</span>
-              <input type="range" min={12} max={72} value={tamañoResaltado}
-                onChange={e => setTamañoResaltado(Number(e.target.value))}
-                style={{ width: 80 }}
-              />
-              <span style={{ color: "#666", fontSize: 11 }}>{tamañoResaltado}px</span>
-            </div>
-          ) : (
-            <span style={{ color: "#444", fontSize: 11 }}>💡 Selecciona texto en cualquier campo para ajustar su tamaño</span>
-          )}
         </div>
       </div>
-
-      {/* PANEL DERECHO */}
-      <aside style={{
-        width: 200, background: "#16161d", borderLeft: "1px solid #2a2a35",
-        padding: 14, display: "flex", flexDirection: "column", gap: 18, overflowY: "auto",
-      }}>
-        <div>
-          <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>FONDO DEL MENÚ</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {fondos.map(f => (
-              <button key={f.nombre} onClick={() => { setFondoActivo(f); setGuardado(false); }} style={{
-                background: f.bg, border: fondoActivo.nombre === f.nombre ? "2px solid #a855f7" : "2px solid transparent",
-                borderRadius: 8, padding: "8px 12px", cursor: "pointer",
-                color: f.texto, fontSize: 11, fontWeight: 600, textAlign: "left",
-              }}>{f.nombre}</button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <div>
-              <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>TÍTULO</div>
-              <div style={{ marginBottom: 6 }}>
-                <span style={{ color: "#666", fontSize: 10 }}>Color título</span>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                  {["#ffffff","#000000","#fbbf24","#a855f7","#38bdf8","#f43f5e","#10b981","#ea580c","#8b4513","#2563eb"].map(c => (
-                    <button key={c} onClick={() => setColorTitulo(c)} style={{
-                      width: 16, height: 16, borderRadius: "50%", background: c,
-                      border: colorTitulo === c ? "2px solid white" : "1px solid #555",
-                      cursor: "pointer", padding: 0,
-                    }} />
-                  ))}
-                </div>
-              </div>
-              <div style={{ marginBottom: 6 }}>
-                <span style={{ color: "#666", fontSize: 10 }}>Color subtítulo</span>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                  {["#ffffff","#000000","#fbbf24","#a855f7","#38bdf8","#f43f5e","#10b981","#ea580c","#8b4513","#2563eb"].map(c => (
-                    <button key={c} onClick={() => setColorSubtitulo(c)} style={{
-                      width: 16, height: 16, borderRadius: "50%", background: c,
-                      border: colorSubtitulo === c ? "2px solid white" : "1px solid #555",
-                      cursor: "pointer", padding: 0,
-                    }} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <span style={{ color: "#666", fontSize: 10 }}>Fuente título</span>
-                <select value={fuenteTitulo} onChange={e => setFuenteTitulo(e.target.value)} style={{
-                  width: "100%", marginTop: 4,
-                  background: "#1e1e28", border: "1px solid #2a2a35",
-                  borderRadius: 6, color: "white", padding: "4px 6px", fontSize: 10, outline: "none",
-                }}>
-                  <option value="">— Igual que el menú —</option>
-                  {fuentes.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
-              </div>
-            </div>
-          <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>OPCIONES</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <button onClick={() => setMostrarDescripciones(!mostrarDescripciones)} style={{
-              background: mostrarDescripciones ? "#7c3aed22" : "#1e1e28",
-              border: `1px solid ${mostrarDescripciones ? "#7c3aed44" : "#2a2a35"}`,
-              borderRadius: 6, color: mostrarDescripciones ? "#a855f7" : "#666",
-              padding: "8px", cursor: "pointer", fontSize: 11, textAlign: "left",
-            }}>📝 {mostrarDescripciones ? "✓" : "○"} Descripciones</button>
-            <button onClick={() => setMostrarImagenes(!mostrarImagenes)} style={{
-              background: mostrarImagenes ? "#7c3aed22" : "#1e1e28",
-              border: `1px solid ${mostrarImagenes ? "#7c3aed44" : "#2a2a35"}`,
-              borderRadius: 6, color: mostrarImagenes ? "#a855f7" : "#666",
-              padding: "8px", cursor: "pointer", fontSize: 11, textAlign: "left",
-            }}>🖼️ {mostrarImagenes ? "✓" : "○"} Imágenes</button>
-          </div>
-        <button onClick={() => setOrientacion(o => o === "vertical" ? "horizontal" : "vertical")} style={{
-          background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
-          color: "#aaa", padding: "4px 8px", cursor: "pointer", fontSize: 11,
-        }} title="Cambiar orientación">
-          {orientacion === "vertical" ? "⇔" : "⇕"}
-        </button>
-        </div>
-
-        <div>
-          <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>SECCIONES ({secciones.length})</div>
-          {secciones.map((s) => (
-            <div key={s.id} style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "5px 8px", borderRadius: 6, marginBottom: 2,
-              background: "#1e1e28", color: "#aaa", fontSize: 11,
-            }}>
-              <span style={{ fontSize: 9 }}>☰</span>
-              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.nombre}</span>
-              <span style={{ color: "#555", fontSize: 10 }}>{s.platillos.length}</span>
-            </div>
-          ))}
-          <button onClick={agregarSeccion} style={{
-            background: "#7c3aed22", border: "1px solid #7c3aed44",
-            borderRadius: 6, color: "#a855f7", cursor: "pointer",
-            fontSize: 11, padding: "6px", marginTop: 6, width: "100%",
-          }}>+ Nueva sección</button>
-        </div>
-
-        <div style={{ background: "#7c3aed22", border: "1px solid #7c3aed44", borderRadius: 8, padding: 10 }}>
-          <div style={{ color: "#a855f7", fontSize: 10, fontWeight: 600, marginBottom: 6 }}>💡 Cómo usar</div>
-          <div style={{ color: "#888", fontSize: 10, lineHeight: 1.7 }}>
-            • Clic en texto → editar<br/>
-            • 📷 → agregar imagen<br/>
-            • ✕ → eliminar<br/>
-            • + → agregar<br/>
-            • Cambia fondo y fuente<br/>
-            • 💾 Borrador o 🚀 Publicar
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }
