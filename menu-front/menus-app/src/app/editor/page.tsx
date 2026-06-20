@@ -56,7 +56,7 @@ const seccionesIniciales: Seccion[] = [
 ];
 
 export default function Editor() {
-  const [menuId, setMenuId] = useState<string | number | null>(null); // ¡Corrección de Estado Añadida!
+  const [menuId, setMenuId] = useState<string | number | null>(null);
   const [nombreMenu, setNombreMenu] = useState("Menú Restaurante");
   const [subtitulo, setSubtitulo] = useState("RESTAURANTE");
   const [fuenteActiva, setFuenteActiva] = useState("Playfair Display");
@@ -80,7 +80,7 @@ export default function Editor() {
     if (guardada) {
       try {
         const config = JSON.parse(guardada);
-        if (config.id) setMenuId(config.id); // Carga la ID si existe en la plantilla local
+        if (config.id) setMenuId(config.id);
         if (config.fuenteActiva) setFuenteActiva(config.fuenteActiva);
         if (config.fondoActivo) setFondoActivo(config.fondoActivo);
         if (config.tamaño) setTamaño(config.tamaño);
@@ -150,23 +150,33 @@ export default function Editor() {
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({
       orientation: orientacion === "horizontal" ? "landscape" : "portrait",
-      unit: "px",
-      format: [canvas.width / 2, canvas.height / 2],
+      unit: "mm",
+      format: "a4"
     });
-    pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
+    
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    
+    const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+    const imgWidth = canvas.width * ratio;
+    const imgHeight = canvas.height * ratio;
+    
+    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
     pdf.save(`${nombreMenu}.pdf`);
   };
 
   const handleGuardar = async (estado: string) => {
     if (!nombreMenu || nombreMenu.trim() === "") {
-      alert("Escribe un nombre para el menu antes de guardar");
+      alert("⚠️ Escribe un nombre para el menú antes de guardar");
       return;
     }
+
     setGuardando(true);
     setGuardado(false);
     try {
       const usuarioData = localStorage.getItem("usuario");
       const usuario = usuarioData ? JSON.parse(usuarioData) : { id: 1 };
+
       const res = await fetch(`${API}/api/menus${menuId ? "/" + menuId : ""}`, {
         method: menuId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -177,27 +187,30 @@ export default function Editor() {
             categorias: secciones,
             fuenteActiva,
             fondoActivo,
+            tamaño,
             subtitulo,
           }),
           user_id: usuario.id || 1,
         }),
       });
+
       const data = await res.json();
+
       if (data.ok) {
         if (data.menuId) setMenuId(data.menuId);
         setGuardado(true);
         if (estado === "Activo") {
-          alert("Menu guardado y activo!");
+          alert("¡Menú guardado y activo!");
           window.location.href = "/mis-menus";
         } else {
-          alert("Menu guardado!");
+          alert("¡Menú guardado!");
         }
       } else {
-        alert("Error: " + (data.mensaje || "No se pudo guardar el menu"));
+        alert("❌ Error: " + (data.mensaje || "No se pudo guardar el menú"));
       }
     } catch (err) {
       console.error(err);
-      alert("Error de conexion al servidor");
+      alert("❌ Error de conexión al servidor. Verifica tu internet e inténtalo de nuevo.");
     } finally {
       setGuardando(false);
     }
@@ -213,12 +226,7 @@ export default function Editor() {
         padding: "12px 0", gap: 4, zIndex: 10,
       }}>
         <a href="/" style={{ textDecoration: "none" }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8,
-            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "white", fontWeight: "bold", fontSize: 14, marginBottom: 12,
-          }}>M</div>
+          <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 8, marginBottom: 12 }} />
         </a>
         {[{ icon: "T", label: "Texto" }, { icon: "🎨", label: "Fondos" }, { icon: "☰", label: "Secciones" }, { icon: "🖼️", label: "Imágenes" }].map(h => (
           <button key={h.label} onClick={() => setHerramienta(h.label)} style={{
@@ -320,14 +328,16 @@ export default function Editor() {
           display: "flex", alignItems: "flex-start", justifyContent: "center", padding: 32,
         }}>
           <div ref={menuRef} style={{
-              width: orientacion === "vertical" ? 440 : 760,
+              width: orientacion === "vertical" ? "210mm" : "297mm",
+              minHeight: orientacion === "vertical" ? "297mm" : "210mm",
               display: orientacion === "horizontal" ? "grid" : "block",
               gridTemplateColumns: orientacion === "horizontal" ? "repeat(2, 1fr)" : undefined,
               gap: orientacion === "horizontal" ? 24 : undefined,
               background: fondoActivo.bg,
-              borderRadius: 4,
+              borderRadius: 0,
               boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
-              padding: "36px 32px",
+              padding: "20mm",
+              boxSizing: "border-box",
               fontFamily: fuenteActiva,
             }}>
             {/* Header */}
@@ -585,62 +595,20 @@ export default function Editor() {
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "0 16px", gap: 12,
         }}>
-          {textoResaltado ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: "#a855f7", fontSize: 11, fontWeight: 600 }}>Texto seleccionado:</span>
-              <span style={{
-                color: "white", fontSize: tamañoResaltado,
-                fontFamily: fuenteActiva, transition: "font-size 0.2s",
-              }}>{textoResaltado}</span>
-              <input type="range" min={12} max={72} value={tamañoResaltado}
-                onChange={e => setTamañoResaltado(Number(e.target.value))}
-                style={{ width: 80 }}
+          {textoResaltado && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#aaa", fontSize: 11 }}>
+              <span>Texto resaltado: <strong>"{textoResaltado}"</strong></span>
+              <input 
+                type="number" 
+                value={tamañoResaltado} 
+                onChange={(e) => setTamañoResaltado(Number(e.target.value))} 
+                style={{ width: 40, background: "#1e1e28", color: "white", border: "1px solid #2a2a35", borderRadius: 4, textAlign: "center" }}
               />
-              <span style={{ color: "#666", fontSize: 11 }}>{tamañoResaltado}px</span>
+              <span>px</span>
             </div>
-          ) : (
-            <span style={{ color: "#444", fontSize: 11 }}>💡 Selecciona texto en cualquier campo para ajustar su tamaño</span>
           )}
         </div>
       </div>
-
-      {/* PANEL DERECHO (Cerrado Limpiamente) */}
-      <aside style={{
-        width: 200, background: "#16161d", borderLeft: "1px solid #2a2a35",
-        padding: 14, display: "flex", flexDirection: "column", gap: 18, overflowY: "auto",
-      }}>
-        <div>
-          <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>FONDO DEL MENÚ</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {fondos.map(f => (
-              <button key={f.nombre} onClick={() => { setFondoActivo(f); setGuardado(false); }} style={{
-                background: f.bg, border: fondoActivo.nombre === f.nombre ? "2px solid #a855f7" : "2px solid transparent",
-                borderRadius: 8, padding: "8px 12px", cursor: "pointer",
-                color: f.texto, fontSize: 11, fontWeight: 600, textAlign: "left",
-              }}>{f.nombre}</button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <div style={{ color: "#666", fontSize: 10, fontWeight: 600, letterSpacing: 1, marginBottom: 10 }}>TÍTULO</div>
-          <div style={{ marginBottom: 6 }}>
-            <span style={{ color: "#666", fontSize: 10 }}>Color título</span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-              {["#ffffff","#000000","#fbbf24", "#dc2626", "#16a34a", "#2563eb"].map(c => (
-                <button 
-                  key={c} 
-                  onClick={() => { setColorTitulo(c); setGuardado(false); }}
-                  style={{
-                    width: 20, height: 20, borderRadius: "50%", background: c, cursor: "pointer",
-                    border: colorTitulo === c ? "2px solid #a855f7" : "1px solid #444"
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }
