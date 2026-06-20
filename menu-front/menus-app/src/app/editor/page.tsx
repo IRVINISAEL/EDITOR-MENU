@@ -166,6 +166,7 @@ export default function Editor() {
   };
 
   const handleGuardar = async (estado: string) => {
+    // ✅ FIX 1: Validar nombre antes de enviar
     if (!nombreMenu || nombreMenu.trim() === "") {
       alert("⚠️ Escribe un nombre para el menú antes de guardar");
       return;
@@ -177,6 +178,7 @@ export default function Editor() {
       const usuarioData = localStorage.getItem("usuario");
       const usuario = usuarioData ? JSON.parse(usuarioData) : { id: 1 };
 
+      // ✅ FIX 2: data_json usa "categorias" como clave principal (consistente con BD)
       const res = await fetch(`${API}/api/menus${menuId ? "/" + menuId : ""}`, {
         method: menuId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -195,9 +197,13 @@ export default function Editor() {
       });
 
       const data = await res.json();
+      console.log("Status:", res.status);
+      console.log("Respuesta:", data);
 
       if (data.ok) {
-        if (data.menuId) setMenuId(data.menuId);
+        if (data.menuId) {
+          setMenuId(data.menuId);
+        }
         setGuardado(true);
         if (estado === "Activo") {
           alert("¡Menú guardado y activo!");
@@ -206,6 +212,7 @@ export default function Editor() {
           alert("¡Menú guardado!");
         }
       } else {
+        // ✅ FIX 3: Mostrar el mensaje de error real del servidor
         alert("❌ Error: " + (data.mensaje || "No se pudo guardar el menú"));
       }
     } catch (err) {
@@ -598,16 +605,10 @@ export default function Editor() {
           {textoResaltado && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#aaa", fontSize: 11 }}>
               <span>Texto resaltado: <strong>"{textoResaltado}"</strong></span>
-              <input 
-                type="number" 
-                value={tamañoResaltado} 
-                onChange={(e) => setTamañoResaltado(Number(e.target.value))} 
-                style={{ width: 40, background: "#1e1e28", color: "white", border: "1px solid #2a2a35", borderRadius: 4, textAlign: "center" }}
-              />
-              <span>px</span>
             </div>
           )}
         </div>
+
       </div>
     </div>
   );
