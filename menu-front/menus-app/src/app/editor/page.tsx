@@ -92,7 +92,6 @@ export default function Editor() {
   }, []);
 
   const [textoResaltado, setTextoResaltado] = useState("");
-  const [tamañoResaltado, setTamañoResaltado] = useState(24);
 
   const editarNombreSeccion = (seccionId: number, valor: string) => {
     setSecciones(prev => prev.map(s => s.id === seccionId ? { ...s, nombre: valor } : s));
@@ -166,7 +165,6 @@ export default function Editor() {
   };
 
   const handleGuardar = async (estado: string) => {
-    // ✅ FIX 1: Validar nombre antes de enviar
     if (!nombreMenu || nombreMenu.trim() === "") {
       alert("⚠️ Escribe un nombre para el menú antes de guardar");
       return;
@@ -178,7 +176,6 @@ export default function Editor() {
       const usuarioData = localStorage.getItem("usuario");
       const usuario = usuarioData ? JSON.parse(usuarioData) : { id: 1 };
 
-      // ✅ FIX 2: data_json usa "categorias" como clave principal (consistente con BD)
       const res = await fetch(`${API}/api/menus${menuId ? "/" + menuId : ""}`, {
         method: menuId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -197,8 +194,6 @@ export default function Editor() {
       });
 
       const data = await res.json();
-      console.log("Status:", res.status);
-      console.log("Respuesta:", data);
 
       if (data.ok) {
         if (data.menuId) {
@@ -206,13 +201,12 @@ export default function Editor() {
         }
         setGuardado(true);
         if (estado === "Activo") {
-          alert("¡Menú guardado y activo!");
+          alert("¡Menú guardado y publicado exitosamente!");
           window.location.href = "/mis-menus";
         } else {
-          alert("¡Menú guardado!");
+          alert("¡Borrador guardado correctamente!");
         }
       } else {
-        // ✅ FIX 3: Mostrar el mensaje de error real del servidor
         alert("❌ Error: " + (data.mensaje || "No se pudo guardar el menú"));
       }
     } catch (err) {
@@ -312,20 +306,23 @@ export default function Editor() {
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
               color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
             }}>📄 PDF</button>
+            
+            {/* NUEVO NOMBRE: Guardar Borrador */}
             <button onClick={() => handleGuardar("Guardado")} style={{
                 background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
                 color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
               }}>
-                💾 Guardar
-              </button>
+                💾 Guardar Borrador
+            </button>
 
-              <button onClick={() => handleGuardar("Activo")} style={{
+            {/* NUEVO NOMBRE: Publicar Menú */}
+            <button onClick={() => handleGuardar("Activo")} style={{
                 background: "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none",
                 borderRadius: 8, color: "white", padding: "7px 14px",
                 cursor: "pointer", fontSize: 12, fontWeight: 600,
               }}>
-                🚀 Publicar menu
-              </button>
+                🚀 Publicar Menú
+            </button>
           </div>
         </div>
 
