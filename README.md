@@ -14,7 +14,7 @@
 
 ---
 
-## <img src="https://img.shields.io/badge/ Stack Tecnológico-1a1a2e?style=flat" /> > Stack tecnológico
+## <img src="https://img.shields.io/badge/ Stack Tecnológico-1a1a2e?style=flat" />  Stack tecnológico
 
 **Frontend** → `menu-front/`
 - Next.js 15
