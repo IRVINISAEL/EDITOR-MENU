@@ -116,4 +116,4 @@ Usamos **GitHub Flow**. Consulta [`docs/github-flow.md`](docs/github-flow.md) pa
 
 ## 📄 Licencia
 
-Proyecto académico — SAAS Studio · 9° Cuatrimestre · 2025
+Proyecto académico — SAAS Studio · 9° Cuatrimestre · 2026
