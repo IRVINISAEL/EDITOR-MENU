@@ -51,8 +51,8 @@ EDITOR-MENU/
 
 ```bash
 cd menu-front
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
@@ -61,10 +61,10 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ```bash
 cd menu-back
-npm install
+pnpm install
 cp .env.example .env
 # Llena las variables del .env con tus credenciales
-node index.js
+pnpm start
 ```
 
 ---
