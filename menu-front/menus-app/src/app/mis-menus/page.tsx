@@ -120,7 +120,7 @@ export default function MisMenus() {
         <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
           {navItems.map((item) => (
             <a key={item.label} href={item.href} style={{ textDecoration: "none" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, background: item.label === "Mis Menús" ? "#7c3aed22" : "transparent", color: item.label === "Mis Menús" ? "#a855f7" : "#888", cursor: "pointer", fontSize: 13, fontWeight: item.label === "Mis Menús" ? 600 : 400, borderLeft: item.label === "Mis Menús" ? "2px solid #a855f7" : "2px solid transparent" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, background: item.label === "Mis Menús Guardados" ? "#7c3aed22" : "transparent", color: item.label === "Mis Menús" ? "#a855f7" : "#888", cursor: "pointer", fontSize: 13, fontWeight: item.label === "Mis Menús" ? 600 : 400, borderLeft: item.label === "Mis Menús" ? "2px solid #a855f7" : "2px solid transparent" }}>
                 <span style={{ fontSize: 16 }}>{item.icon}</span>
                 {item.label}
               </div>
@@ -146,7 +146,7 @@ export default function MisMenus() {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
           <div>
-            <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>Mis Menús</h1>
+            <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>Mis Menús Guardados</h1>
             <p style={{ color: "#666", fontSize: 13, margin: "4px 0 0" }}>Administra todos tus menús</p>
           </div>
           <button
