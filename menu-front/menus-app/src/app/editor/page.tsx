@@ -314,11 +314,6 @@ export default function Editor() {
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
               color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
             }}>💾 Guardar Borrador</button>
-            <button onClick={() => handleGuardar("Publicado")} style={{
-              background: "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none",
-              borderRadius: 8, color: "white", padding: "7px 14px",
-              cursor: "pointer", fontSize: 12, fontWeight: 600,
-            }}>🚀 Publicar Menú</button>
           </div>
         </div>
 
