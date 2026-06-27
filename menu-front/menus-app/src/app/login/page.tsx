@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Login() {
   const [modo, setModo] = useState<"login" | "registro">("login");
@@ -7,6 +7,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [negocio, setNegocio] = useState("");
+
+  const [mobile, setMobile] = useState(false);
 
   const handleSubmit = async () => {
     const API = process.env.NEXT_PUBLIC_API_URL;
@@ -40,6 +42,16 @@ export default function Login() {
         alert(data.mensaje);
       }
     }
+    const [mobile, setMobile] = useState(false);
+
+    useEffect(() => {
+      const resize = () => setMobile(window.innerWidth <= 768);
+
+      resize();
+      window.addEventListener("resize", resize);
+
+      return () => window.removeEventListener("resize", resize);
+    }, []);
   };
 
   return (
@@ -57,22 +69,37 @@ export default function Login() {
         top: -100, right: -100, pointerEvents: "none",
       }} />
       <div style={{
-        position: "absolute", width: 400, height: 400, borderRadius: "50%",
+        position: "absolute", width: "100%",
+        maxWidth: mobile ? "100%" : 400, height: 400, borderRadius: "50%",
         background: "radial-gradient(circle, #a855f722, transparent 70%)",
         bottom: -100, left: -100, pointerEvents: "none",
       }} />
 
-      <div style={{ display: "flex", width: "100%", maxWidth: 900, minHeight: 560, borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 80px rgba(0,0,0,0.5)", zIndex: 1 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: mobile ? "column" : "row",
+          width: "100%",
+          maxWidth: mobile ? "100%" : 900,
+          minHeight: mobile ? "auto" : 560,
+          borderRadius: 20,
+          overflow: "hidden",
+          boxShadow: "0 40px 80px rgba(0,0,0,0.5)",
+          zIndex: 1,
+          margin: mobile ? 15 : 0,
+        }}
+      >
 
         {/* Panel izquierdo - decorativo */}
         <div style={{
           flex: 1, background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-          padding: 48, display: "flex", flexDirection: "column",
-          justifyContent: "space-between",
+          padding: mobile ? 28 : 48, display: "flex", flexDirection: "column",
+          justifyContent: mobile ? "center" : "space-between",
         }}>
           {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <img src="/logo.png" alt="Menu Master" style={{ width: 42, height: 42, borderRadius: 12 }} />
+            <img src="/logo.png" alt="Menu Master" style={{ width: mobile ? 34 : 42,
+              height: mobile ? 34 : 42, borderRadius: 12 }} />
             <div>
               <div style={{ color: "white", fontWeight: 800, fontSize: 18, lineHeight: 1 }}>MENU</div>
               <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700, fontSize: 18, lineHeight: 1 }}>MASTER</div>
@@ -81,7 +108,7 @@ export default function Login() {
 
           {/* Texto central */}
           <div>
-            <h2 style={{ color: "white", fontSize: 28, fontWeight: 700, margin: "0 0 16px", lineHeight: 1.3 }}>
+            <h2 style={{ color: "white", fontSize: mobile ? 22 : 28, fontWeight: 700, margin: "0 0 16px", lineHeight: 1.3 }}>
               Diseña menús profesionales en minutos
             </h2>
             <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 1.6, margin: 0 }}>
@@ -90,7 +117,8 @@ export default function Login() {
           </div>
 
           {/* Features */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {!mobile && (
+          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
             {[
               "✓ Editor drag & drop profesional",
               "✓ Exporta a PDF y QR al instante",
@@ -100,12 +128,14 @@ export default function Login() {
               <div key={f} style={{ color: "rgba(255,255,255,0.85)", fontSize: 13 }}>{f}</div>
             ))}
           </div>
+)}
         </div>
 
         {/* Panel derecho - formulario */}
         <div style={{
-          width: 400, background: "#16161d",
-          padding: 48, display: "flex", flexDirection: "column", justifyContent: "center",
+          width: "100%",
+          maxWidth: mobile ? "100%" : 400, background: "#16161d",
+          padding: mobile ? 28 : 48,display: "flex", flexDirection: "column", justifyContent: "center",
         }}>
 
           {/* Tabs login / registro */}
@@ -147,7 +177,7 @@ export default function Login() {
                   value={nombre} onChange={e => setNombre(e.target.value)}
                   style={{
                     width: "100%", background: "#0f0f13", border: "1px solid #2a2a35",
-                    borderRadius: 8, padding: "11px 14px", color: "white", fontSize: 13,
+                    borderRadius: 8, padding: mobile ? "14px 16px" : "11px 14px", color: "white", fontSize: 13,
                     outline: "none", boxSizing: "border-box",
                   }}
                   onFocus={e => (e.target.style.borderColor = "#a855f7")}
@@ -166,7 +196,7 @@ export default function Login() {
                   value={negocio} onChange={e => setNegocio(e.target.value)}
                   style={{
                     width: "100%", background: "#0f0f13", border: "1px solid #2a2a35",
-                    borderRadius: 8, padding: "11px 14px", color: "white", fontSize: 13,
+                    borderRadius: 8, padding: mobile ? "14px 16px" : "11px 14px", color: "white", fontSize: 13,
                     outline: "none", boxSizing: "border-box",
                   }}
                   onFocus={e => (e.target.style.borderColor = "#a855f7")}
@@ -184,7 +214,7 @@ export default function Login() {
                 value={email} onChange={e => setEmail(e.target.value)}
                 style={{
                   width: "100%", background: "#0f0f13", border: "1px solid #2a2a35",
-                  borderRadius: 8, padding: "11px 14px", color: "white", fontSize: 13,
+                  borderRadius: 8, padding: mobile ? "14px 16px" : "11px 14px", color: "white", fontSize: 13,
                   outline: "none", boxSizing: "border-box",
                 }}
                 onFocus={e => (e.target.style.borderColor = "#a855f7")}
@@ -201,7 +231,7 @@ export default function Login() {
                 value={password} onChange={e => setPassword(e.target.value)}
                 style={{
                   width: "100%", background: "#0f0f13", border: "1px solid #2a2a35",
-                  borderRadius: 8, padding: "11px 14px", color: "white", fontSize: 13,
+                  borderRadius: 8, padding: mobile ? "14px 16px" : "11px 14px", color: "white", fontSize: 13,
                   outline: "none", boxSizing: "border-box",
                 }}
                 onFocus={e => (e.target.style.borderColor = "#a855f7")}
