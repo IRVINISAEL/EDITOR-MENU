@@ -9,6 +9,16 @@ export default function Login() {
   const [negocio, setNegocio] = useState("");
 
   const [mobile, setMobile] = useState(false);
+  
+  useEffect(() => {
+    const resize = () => setMobile(window.innerWidth <= 768);
+
+    resize();
+
+    window.addEventListener("resize", resize);
+
+    return () => window.removeEventListener("resize", resize);
+}, []);
 
   const handleSubmit = async () => {
     const API = process.env.NEXT_PUBLIC_API_URL;
@@ -42,16 +52,6 @@ export default function Login() {
         alert(data.mensaje);
       }
     }
-    const [mobile, setMobile] = useState(false);
-
-    useEffect(() => {
-      const resize = () => setMobile(window.innerWidth <= 768);
-
-      resize();
-      window.addEventListener("resize", resize);
-
-      return () => window.removeEventListener("resize", resize);
-    }, []);
   };
 
   return (
@@ -80,7 +80,7 @@ export default function Login() {
           display: "flex",
           flexDirection: mobile ? "column" : "row",
           width: "100%",
-          maxWidth: mobile ? "100%" : 900,
+          maxWidth: mobile ? 420 : 900,
           minHeight: mobile ? "auto" : 560,
           borderRadius: 20,
           overflow: "hidden",
@@ -92,14 +92,19 @@ export default function Login() {
 
         {/* Panel izquierdo - decorativo */}
         <div style={{
-          flex: 1, background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-          padding: mobile ? 28 : 48, display: "flex", flexDirection: "column",
-          justifyContent: mobile ? "center" : "space-between",
+          flex: mobile ? "none" : 1,
+          width: mobile ? "100%" : "auto",
+          background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+          padding: mobile ? 24 : 48,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: mobile ? "flex-start" : "space-between",
+          gap: mobile ? 20 : 0,
         }}>
           {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <img src="/logo.png" alt="Menu Master" style={{ width: mobile ? 34 : 42,
-              height: mobile ? 34 : 42, borderRadius: 12 }} />
+            <img src="/logo.png" alt="Menu Master" style={{ width: mobile ? 30 : 42,
+            height: mobile ? 30 : 42, borderRadius: 12 }} />
             <div>
               <div style={{ color: "white", fontWeight: 800, fontSize: 18, lineHeight: 1 }}>MENU</div>
               <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700, fontSize: 18, lineHeight: 1 }}>MASTER</div>
@@ -108,7 +113,7 @@ export default function Login() {
 
           {/* Texto central */}
           <div>
-            <h2 style={{ color: "white", fontSize: mobile ? 22 : 28, fontWeight: 700, margin: "0 0 16px", lineHeight: 1.3 }}>
+            <h2 style={{ color: "white", fontSize: mobile ? 18 : 28, fontWeight: 700, margin: "0 0 12px", lineHeight: 1.3 }}>
               Diseña menús profesionales en minutos
             </h2>
             <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 1.6, margin: 0 }}>
@@ -145,10 +150,11 @@ export default function Login() {
           }}>
             {(["login", "registro"] as const).map((m) => (
               <button key={m} onClick={() => setModo(m)} style={{
-                flex: 1, padding: "10px", border: "none", borderRadius: 8,
+                flex: 1, padding: mobile ? "12px 8px" : "10px",
+                whiteSpace: "nowrap", border: "none", borderRadius: 8,
                 background: modo === m ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "transparent",
                 color: modo === m ? "white" : "#666",
-                fontWeight: 600, fontSize: 13, cursor: "pointer",
+                fontWeight: 600, fontSize: mobile ? 12 : 13, cursor: "pointer",
                 textTransform: "capitalize",
               }}>
                 {m === "login" ? "Iniciar sesión" : "Registrarse"}
