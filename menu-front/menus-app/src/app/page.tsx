@@ -50,6 +50,7 @@ export default function Dashboard() {
 
   const handleCerrarSesion = () => {
     localStorage.removeItem("usuario");
+    document.cookie = "usuario=; path=/; max-age=0";
     window.location.href = "/login";
   };
 
