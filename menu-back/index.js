@@ -11,6 +11,21 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
+const verificarToken = (req, res, next) => {
+  const auth = req.headers["authorization"];
+  if (!auth || !auth.startsWith("Bearer ")) {
+    return res.status(401).json({ ok: false, mensaje: "Token requerido" });
+  }
+  try {
+    const token = auth.split(" ")[1];
+    const payload = jwt.verify(token, process.env.JWT_SECRET || "secret_dev");
+    req.usuario = payload;
+    next();
+  } catch {
+    return res.status(401).json({ ok: false, mensaje: "Token inválido o expirado" });
+  }
+};
+
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -30,7 +45,7 @@ db.getConnection((err, connection) => {
 
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
-app.get("/api/menus", (req, res) => {
+app.get("/api/menus", verificarToken, (req, res) => {
   const user_id = req.query.user_id;
   const sql = user_id ? "SELECT * FROM menus WHERE user_id = ? ORDER BY created_at DESC" : "SELECT * FROM menus ORDER BY created_at DESC";
   const params = user_id ? [user_id] : [];
@@ -48,7 +63,7 @@ app.get("/api/menus/:id", (req, res) => {
   });
 });
 
-app.post("/api/menus", (req, res) => {
+app.post("/api/menus", verificarToken, (req, res) => {
   console.log("BODY:", req.body);
   const { nombre, estado, data_json, user_id } = req.body;
   if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
@@ -61,7 +76,7 @@ app.post("/api/menus", (req, res) => {
     });
 });
 
-app.put("/api/menus/:id", (req, res) => {
+app.put("/api/menus/:id", verificarToken, (req, res) => {
   const { nombre, estado, data_json } = req.body;
   if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
   const dataJson = typeof data_json === "object" ? JSON.stringify(data_json) : (data_json || "{}");
@@ -74,7 +89,7 @@ app.put("/api/menus/:id", (req, res) => {
     });
 });
 
-app.delete("/api/menus/:id", (req, res) => {
+app.delete("/api/menus/:id", verificarToken, (req, res) => {
   db.query("DELETE FROM menus WHERE id = ?", [req.params.id], (err, result) => {
     if (err) return res.status(500).json({ ok: false, mensaje: err.message });
     if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "No encontrado" });
