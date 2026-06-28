@@ -59,12 +59,15 @@ export default function Dashboard() {
 
       {/* SIDEBAR */}
       <aside style={{
-        width: mobile ? "100%" : 220, background: "#16161d", display: "flex", flexDirection: "column",
-        padding: "24px 0", borderRight: "1px solid #2a2a35",
-        position: mobile ? "relative" : "fixed",
-        height: mobile ? "fit-content" : "100vh", zIndex: 10,
+        width: mobile ? "100%" : 220, background: "#16161d", display: "flex",
+        flexDirection: mobile ? "row" : "column",
+        padding: mobile ? "0" : "24px 0", borderRight: mobile ? "none" : "1px solid #2a2a35",
+        borderBottom: mobile ? "1px solid #2a2a35" : "none",
+        position: "fixed", height: mobile ? "56px" : "100vh", zIndex: 10,
+        top: 0, left: 0, alignItems: mobile ? "center" : "flex-start",
+        overflowX: mobile ? "auto" : "visible",
       }}>
-        <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35" }}>
+        <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35", display: mobile ? "none" : "block" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 10 }} />
             <div>
@@ -76,23 +79,27 @@ export default function Dashboard() {
 
         <nav
             style={{
-              flex: 1,
-              padding: "16px 12px",
+              flex: mobile ? "unset" : 1,
+              padding: mobile ? "0 8px" : "16px 12px",
               display: "flex",
-              flexDirection: mobile ? "row" : "column",
-              overflowX: mobile ? "auto" : "visible",
-              gap: 8,
+              flexDirection: "row",
+              overflowX: "auto",
+              gap: mobile ? 4 : 8,
+              alignItems: "center",
+              whiteSpace: "nowrap",
             }}
           >
           {navItems.map((item) => (
             <a key={item.label} href={item.href} style={{ textDecoration: "none" }}>
               <div style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "10px 12px", borderRadius: 8,
+                display: "flex", flexDirection: mobile ? "column" : "row",
+                alignItems: "center", gap: mobile ? 2 : 10,
+                padding: mobile ? "8px 10px" : "10px 12px", borderRadius: 8,
                 background: activeNav === item.label ? "linear-gradient(135deg, #7c3aed22, #a855f722)" : "transparent",
                 color: activeNav === item.label ? "#a855f7" : "#888",
-                cursor: "pointer", fontSize: 13, fontWeight: activeNav === item.label ? 600 : 400,
-                borderLeft: activeNav === item.label ? "2px solid #a855f7" : "2px solid transparent",
+                cursor: "pointer", fontSize: mobile ? 11 : 13, fontWeight: activeNav === item.label ? 600 : 400,
+                borderLeft: mobile ? "none" : activeNav === item.label ? "2px solid #a855f7" : "2px solid transparent",
+                borderBottom: mobile && activeNav === item.label ? "2px solid #a855f7" : "none",
                 transition: "all 0.2s",
               }}
                 onMouseEnter={e => { if (activeNav !== item.label) (e.currentTarget as HTMLElement).style.color = "white"; }}
@@ -105,7 +112,7 @@ export default function Dashboard() {
           ))}
         </nav>
 
-        <div style={{ padding: "12px", borderTop: "1px solid #2a2a35", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ padding: "12px", borderTop: "1px solid #2a2a35", display: mobile ? "none" : "flex", flexDirection: "column", gap: 4 }}>
           <a href="/landing" style={{ textDecoration: "none" }}>
             <div style={{
               display: "flex", alignItems: "center", gap: 10,
@@ -132,7 +139,7 @@ export default function Dashboard() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: mobile ? 0 : 220, flex: 1, padding: mobile ? 16 : 32}}>
+      <main style={{ marginLeft: mobile ? 0 : 220, flex: 1, padding: mobile ? 16 : 32, paddingTop: mobile ? 72 : 32 }}>
 
         {/* Header */}
         <div style={{ display: "flex",
