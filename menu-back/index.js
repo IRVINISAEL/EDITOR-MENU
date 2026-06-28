@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
+const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
 const app = express();
@@ -80,29 +81,37 @@ app.delete("/api/menus/:id", (req, res) => {
   });
 });
 
-app.post("/api/auth/register", (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   const { nombre, email, password, negocio } = req.body;
   if (!nombre || !email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
-  db.query("INSERT INTO usuarios (nombre, email, password, negocio) VALUES (?, ?, ?, ?)",
-    [nombre, email, password, negocio || ""],
-    (err, result) => {
-      if (err) {
-        if (err.code === "ER_DUP_ENTRY") return res.status(400).json({ ok: false, mensaje: "Correo ya registrado" });
-        return res.status(500).json({ ok: false, mensaje: err.message });
-      }
-      res.status(201).json({ ok: true, userId: result.insertId });
-    });
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    db.query("INSERT INTO usuarios (nombre, email, password, negocio) VALUES (?, ?, ?, ?)",
+      [nombre, email, hash, negocio || ""],
+      (err, result) => {
+        if (err) {
+          if (err.code === "ER_DUP_ENTRY") return res.status(400).json({ ok: false, mensaje: "Correo ya registrado" });
+          return res.status(500).json({ ok: false, mensaje: err.message });
+        }
+        res.status(201).json({ ok: true, userId: result.insertId });
+      });
+  } catch (e) {
+    res.status(500).json({ ok: false, mensaje: "Error al procesar contraseña" });
+  }
 });
 
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
-  db.query("SELECT id, nombre, email, plan FROM usuarios WHERE email = ? AND password = ?",
-    [email, password],
-    (err, results) => {
+  db.query("SELECT id, nombre, email, plan, password FROM usuarios WHERE email = ?",
+    [email],
+    async (err, results) => {
       if (err) return res.status(500).json({ ok: false, mensaje: err.message });
       if (results.length === 0) return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
-      res.json({ ok: true, usuario: results[0], token: "token-" + results[0].id + "-menumaster" });
+      const valido = await bcrypt.compare(password, results[0].password);
+      if (!valido) return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
+      const { password: _, ...usuario } = results[0];
+      res.json({ ok: true, usuario, token: "token-" + usuario.id + "-menumaster" });
     });
 });
 
