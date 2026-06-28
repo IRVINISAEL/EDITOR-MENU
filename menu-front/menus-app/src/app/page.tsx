@@ -23,6 +23,17 @@ export default function Dashboard() {
   const [usuario, setUsuario] = useState<{ nombre: string; plan: string } | null>(null);
   const [menuRecientes, setMenuRecientes] = useState<{ id: number; nombre: string; estado: string }[]>([]);
 
+  const [mobile, setMobile] = useState(false);
+
+  useEffect(() => {
+    const resize = () => setMobile(window.innerWidth <= 768);
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+
   useEffect(() => {
     // Cargar usuario del localStorage
     const data = localStorage.getItem("usuario");
@@ -47,9 +58,10 @@ export default function Dashboard() {
 
       {/* SIDEBAR */}
       <aside style={{
-        width: 220, background: "#16161d", display: "flex", flexDirection: "column",
+        width: mobile ? "100%" : 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
-        position: "fixed", height: "100vh", zIndex: 10,
+        position: mobile ? "relative" : "fixed",
+        height: mobile ? "fit-content" : "100vh", zIndex: 10,
       }}>
         <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -61,7 +73,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <nav
+            style={{
+              flex: 1,
+              padding: "16px 12px",
+              display: "flex",
+              flexDirection: mobile ? "row" : "column",
+              overflowX: mobile ? "auto" : "visible",
+              gap: 8,
+            }}
+          >
           {navItems.map((item) => (
             <a key={item.label} href={item.href} style={{ textDecoration: "none" }}>
               <div style={{
@@ -110,22 +131,36 @@ export default function Dashboard() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: 220, flex: 1, padding: 32 }}>
+      <main style={{ marginLeft: mobile ? 0 : 220, flex: 1, padding: mobile ? 16 : 32}}>
 
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+        <div style={{ display: "flex",
+            flexDirection: mobile ? "column" : "row",
+            justifyContent: "space-between",
+            alignItems: mobile ? "flex-start" : "center",
+            gap: mobile ? 16 : 0, marginBottom: 32 }}>
           <div>
             <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>
               ¡Bienvenido, {usuario?.nombre || "Usuario"}! 👋
             </h1>
-            <p style={{ color: "#666", fontSize: 13, margin: "4px 0 0" }}>
-              Aquí tienes un resumen de tu cuenta
+            <p
+              style={{
+                color: "#999",
+                fontSize: 13,
+                margin: "4px 0 0",
+                lineHeight: 1.6,
+              }}
+            >
+              Desde este panel puedes crear, editar y administrar todos tus menús de
+              forma rápida.
             </p>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18 }}>🔔</button>
+            <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18,  minWidth: mobile ? 120 : "auto",
+                whiteSpace: "nowrap",}}>🔔</button>
             <a href="/analiticas">
-              <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18 }}>📊</button>
+              <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18, minWidth: mobile ? 120 : "auto",
+                whiteSpace: "nowrap", }}>📊</button>
             </a>
             <div style={{
               width: 36, height: 36, borderRadius: "50%",
@@ -137,9 +172,65 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        
+        {/* ACCESOS RÁPIDOS */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 12,
+              marginBottom: 24,
+            }}
+          >
+            <a href="/editor" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+                  border: "none",
+                  color: "white",
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                ➕ Crear nuevo menú
+              </button>
+            </a>
+
+            <a href="/mis-menus" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  background: "#1e1e28",
+                  border: "1px solid #2a2a35",
+                  color: "white",
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                }}
+              >
+                📂 Ver mis menús
+              </button>
+            </a>
+
+            <a href="/plantillas" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  background: "#1e1e28",
+                  border: "1px solid #2a2a35",
+                  color: "white",
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                }}
+              >
+                🎨 Usar plantilla
+              </button>
+            </a>
+          </div>
 
         {/* Stats Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
           {[
             { label: "Menús guardados", value: String(menuRecientes.length || 0), icon: "", href: "/mis-menus" },
             { label: "Estadisticas", value: "256", icon: "", href: "/analiticas" },
@@ -170,11 +261,15 @@ export default function Dashboard() {
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = "#a855f7")}
             onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = "#2a2a35")}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div style={{ display: "flex",
+                flexDirection: mobile ? "column" : "row",
+                justifyContent: "space-between",
+                alignItems: mobile ? "flex-start" : "center",
+                gap: mobile ? 16 : 0, marginBottom: 20 }}>
               <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Estadísticas rápidas</h2>
               <span style={{ color: "#a855f7", fontSize: 12, fontWeight: 600 }}>Ver analíticas →</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16 }}>
               {[
                 { label: "Vistas totales", value: "1,256" },
                 { label: "Descargas", value: "342" },
@@ -190,13 +285,50 @@ export default function Dashboard() {
           </div>
         </a>
 
+        <div
+            style={{
+              background: "#16161d",
+              border: "1px solid #2a2a35",
+              borderLeft: "4px solid #a855f7",
+              padding: 18,
+              borderRadius: 10,
+              marginTop: 24,
+              marginBottom: 24,
+            }}
+          >
+            <div
+              style={{
+                color: "#a855f7",
+                fontWeight: 700,
+                marginBottom: 8,
+              }}
+            >
+              💡 Consejo
+            </div>
+
+            <div
+              style={{
+                color: "#bbb",
+                fontSize: 13,
+                lineHeight: 1.6,
+              }}
+            >
+              Si es tu primera vez utilizando Menu Master, comienza creando un nuevo
+              menú o selecciona una plantilla para acelerar el proceso.
+            </div>
+          </div>
+
         {/* PLANTILLAS */}
           <div style={{ marginTop: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ display: "flex",
+              flexDirection: mobile ? "column" : "row",
+              justifyContent: "space-between",
+              alignItems: mobile ? "flex-start" : "center",
+              gap: mobile ? 16 : 0, marginBottom: 16 }}>
               <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Plantillas populares</h2>
               <a href="/plantillas" style={{ color: "#a855f7", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Ver todas →</a>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16 }}>
               {plantillasPopulares.map((p) => (
                 <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
                   <div style={{

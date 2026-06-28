@@ -47,6 +47,8 @@ export default function MisMenus() {
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
   const [eliminando, setEliminando] = useState(false);
 
+  const [mobile, setMobile] = useState(false);
+
   // Cargar menús del backend
   const cargarMenus = async () => {
     setCargando(true);
@@ -66,6 +68,15 @@ export default function MisMenus() {
       setCargando(false);
     }
   };
+
+  useEffect(() => {
+  const resize = () => setMobile(window.innerWidth <= 768);
+
+  resize();
+  window.addEventListener("resize", resize);
+
+  return () => window.removeEventListener("resize", resize);
+}, []);
 
   useEffect(() => { cargarMenus(); }, []);
 
@@ -107,7 +118,19 @@ export default function MisMenus() {
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
 
       {/* SIDEBAR */}
-      <aside style={{ width: 220, background: "#16161d", display: "flex", flexDirection: "column", padding: "24px 0", borderRight: "1px solid #2a2a35", position: "fixed", height: "100vh", zIndex: 10 }}>
+      <aside
+        style={{
+          width: mobile ? "100%" : 220,
+          background: "#16161d",
+          display: "flex",
+          flexDirection: "column",
+          padding: "24px 0",
+          borderRight: "1px solid #2a2a35",
+          position: mobile ? "relative" : "fixed",
+          height: mobile ? "fit-content" : "100vh",
+          zIndex: 10,
+        }}
+      >
         <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 10 }} />
@@ -117,7 +140,16 @@ export default function MisMenus() {
             </div>
           </div>
         </div>
-        <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <nav
+            style={{
+              flex: 1,
+              padding: "16px 12px",
+              display: "flex",
+              flexDirection: mobile ? "row" : "column",
+              overflowX: mobile ? "auto" : "visible",
+              gap: 8,
+            }}
+          >
           {navItems.map((item) => (
             <a key={item.label} href={item.href} style={{ textDecoration: "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, background: item.label === "Mis Menús Guardados" ? "#7c3aed22" : "transparent", color: item.label === "Mis Menús" ? "#a855f7" : "#888", cursor: "pointer", fontSize: 13, fontWeight: item.label === "Mis Menús" ? 600 : 400, borderLeft: item.label === "Mis Menús" ? "2px solid #a855f7" : "2px solid transparent" }}>
@@ -142,9 +174,24 @@ export default function MisMenus() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: 220, flex: 1, padding: 32 }}>
+      <main
+        style={{
+          marginLeft: mobile ? 0 : 220,
+          flex: 1,
+          padding: mobile ? 16 : 32,
+        }}
+      >
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+        <div
+            style={{
+              display: "flex",
+              flexDirection: mobile ? "column" : "row",
+              justifyContent: "space-between",
+              alignItems: mobile ? "flex-start" : "center",
+              gap: mobile ? 16 : 0,
+              marginBottom: 32,
+            }}
+          >
           <div>
             <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>Mis Menús Guardados</h1>
             <p style={{ color: "#666", fontSize: 13, margin: "4px 0 0" }}>Administra todos tus menús</p>
@@ -155,11 +202,19 @@ export default function MisMenus() {
           >+ Crear nuevo menú</button>
         </div>
 
-        <div style={{ display: "flex", gap: 12, marginBottom: 24, alignItems: "center" }}>
+        <div
+            style={{
+              display: "flex",
+              flexDirection: mobile ? "column" : "row",
+              gap: 12,
+              marginBottom: 24,
+              alignItems: mobile ? "stretch" : "center",
+            }}
+          >
           <input
             type="text" placeholder="🔍 Buscar menú..."
             value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-            style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 16px", color: "white", fontSize: 13, outline: "none", width: 240 }}
+            style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 16px", color: "white", fontSize: 13, outline: "none", width: mobile ? "100%" : 240 }}
           />
           {["Todos", "Publicado", "Borrador"].map((f) => (
             <button key={f} onClick={() => setFiltro(f)} style={{ background: filtro === f ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "#1e1e28", border: filtro === f ? "none" : "1px solid #2a2a35", borderRadius: 8, padding: "10px 16px", color: filtro === f ? "white" : "#888", cursor: "pointer", fontSize: 13, fontWeight: filtro === f ? 600 : 400 }}>{f}</button>
@@ -167,7 +222,14 @@ export default function MisMenus() {
           <button onClick={cargarMenus} style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 12px", color: "#aaa", cursor: "pointer", fontSize: 13 }} title="Recargar">🔄</button>
         </div>
 
-        <div style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 12, overflow: "hidden" }}>
+        <div
+            style={{
+              background: "#1e1e28",
+              border: "1px solid #2a2a35",
+              borderRadius: 12,
+              overflowX: "auto",
+            }}
+          >
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", padding: "14px 20px", borderBottom: "1px solid #2a2a35", color: "#555", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
             <span>Nombre</span><span>Estado</span><span>Creado</span><span>Actualizado</span><span>Acciones</span>
           </div>
