@@ -143,8 +143,16 @@ export default function Dashboard() {
             <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>
               ¡Bienvenido, {usuario?.nombre || "Usuario"}! 👋
             </h1>
-            <p style={{ color: "#666", fontSize: 13, margin: "4px 0 0" }}>
-              Aquí tienes un resumen de tu cuenta
+            <p
+              style={{
+                color: "#999",
+                fontSize: 13,
+                margin: "4px 0 0",
+                lineHeight: 1.6,
+              }}
+            >
+              Desde este panel puedes crear, editar y administrar todos tus menús de
+              forma rápida.
             </p>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -164,6 +172,62 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        
+        {/* ACCESOS RÁPIDOS */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 12,
+              marginBottom: 24,
+            }}
+          >
+            <a href="/editor" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+                  border: "none",
+                  color: "white",
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                ➕ Crear nuevo menú
+              </button>
+            </a>
+
+            <a href="/mis-menus" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  background: "#1e1e28",
+                  border: "1px solid #2a2a35",
+                  color: "white",
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                }}
+              >
+                📂 Ver mis menús
+              </button>
+            </a>
+
+            <a href="/plantillas" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  background: "#1e1e28",
+                  border: "1px solid #2a2a35",
+                  color: "white",
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                }}
+              >
+                🎨 Usar plantilla
+              </button>
+            </a>
+          </div>
 
         {/* Stats Cards */}
         <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
@@ -220,6 +284,39 @@ export default function Dashboard() {
             </div>
           </div>
         </a>
+
+        <div
+            style={{
+              background: "#16161d",
+              border: "1px solid #2a2a35",
+              borderLeft: "4px solid #a855f7",
+              padding: 18,
+              borderRadius: 10,
+              marginTop: 24,
+              marginBottom: 24,
+            }}
+          >
+            <div
+              style={{
+                color: "#a855f7",
+                fontWeight: 700,
+                marginBottom: 8,
+              }}
+            >
+              💡 Consejo
+            </div>
+
+            <div
+              style={{
+                color: "#bbb",
+                fontSize: 13,
+                lineHeight: 1.6,
+              }}
+            >
+              Si es tu primera vez utilizando Menu Master, comienza creando un nuevo
+              menú o selecciona una plantilla para acelerar el proceso.
+            </div>
+          </div>
 
         {/* PLANTILLAS */}
           <div style={{ marginTop: 24 }}>
