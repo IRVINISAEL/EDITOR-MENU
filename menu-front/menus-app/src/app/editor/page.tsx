@@ -313,9 +313,42 @@ export default function Editor() {
             <button onClick={() => handleGuardar("Borrador")} style={{
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
               color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
-            }}>💾 Guardar Borrador</button>
+            }}> Guardar borrador (Paso final)</button>
           </div>
         </div>
+
+        {/* GUÍA RÁPIDA */}
+          <div
+            style={{
+              background: "#16161d",
+              borderBottom: "1px solid #2a2a35",
+              padding: "12px 20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 20,
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ color: "#fff", fontWeight: 600 }}>
+              🚀 Guía rápida para crear tu menú
+            </span>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 18,
+                flexWrap: "wrap",
+                color: "#aaa",
+                fontSize: 13,
+              }}
+            >
+              <span>① Escribe el nombre del menú</span>
+              <span>② Edita secciones y platillos</span>
+              <span>③ Personaliza colores y fuente</span>
+              <span>④ Guarda o exporta tu menú</span>
+            </div>
+          </div>
 
         {/* CANVAS DE TRABAJO */}
         <div style={{
@@ -516,10 +549,10 @@ export default function Editor() {
                     )}
                   </div>
                 ))}
-                <button onClick={() => agregarPlatillo(seccion.id)} style={{ background: "transparent", border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 4, color: fondoActivo.acento, cursor: "pointer", fontSize: 10, padding: "4px 12px", marginTop: 4, width: "100%", opacity: 0.7 }}>+ Agregar platillo</button>
+                <button onClick={() => agregarPlatillo(seccion.id)} style={{ background: "transparent", border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 4, color: fondoActivo.acento, cursor: "pointer", fontSize: 10, padding: "4px 12px", marginTop: 4, width: "100%", opacity: 0.7 }}>🍽️ Agregar nuevo platillo</button>
               </div>
             ))}
-            <button onClick={agregarSeccion} style={{ background: "transparent", border: `2px dashed ${fondoActivo.acento}33`, borderRadius: 8, color: fondoActivo.acento, cursor: "pointer", fontSize: 11, padding: "8px 16px", width: "100%", fontWeight: 600, marginTop: 8 }}>+ Agregar Nueva Sección</button>
+            <button onClick={agregarSeccion} style={{ background: "transparent", border: `2px dashed ${fondoActivo.acento}33`, borderRadius: 8, color: fondoActivo.acento, cursor: "pointer", fontSize: 11, padding: "8px 16px", width: "100%", fontWeight: 600, marginTop: 8 }}>➕ Agregar una nueva sección</button>
           </div>
         </div>
       </div>
@@ -532,6 +565,32 @@ export default function Editor() {
         <h3 style={{ color: "white", fontSize: 14, margin: 0, fontWeight: 600, borderBottom: "1px solid #2a2a35", paddingBottom: 8 }}>
           Propiedades ({herramienta})
         </h3>
+        <div
+            style={{
+              background: "#1e1e28",
+              border: "1px solid #2a2a35",
+              borderRadius: 8,
+              padding: 12,
+              marginTop: 12,
+            }}
+          >
+            <div style={{ color: "#a855f7", fontWeight: 600, marginBottom: 6 }}>
+              💡 Consejo
+            </div>
+
+            <p
+              style={{
+                color: "#aaa",
+                fontSize: 12,
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              Haz clic sobre cualquier título, sección o platillo para editarlo directamente.
+              Utiliza el panel izquierdo para cambiar herramientas y el panel derecho para
+              personalizar el diseño de tu menú.
+            </p>
+          </div>
 
         {herramienta === "Texto" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
