@@ -126,11 +126,7 @@ export default function Configuracion() {
         {/* TABS */}
         <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "#1e1e28", borderRadius: 10, padding: 4, width: "fit-content" }}>
           {(["cuenta", "preferencias"] as const).map(t => (
-            <button key={t} onClick={() => {
-                localStorage.removeItem("usuario");
-                document.cookie = "usuario=; path=/; max-age=0";
-                window.location.href = "/login";
-              }} style={{ background: tab === t ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "transparent", border: "none", borderRadius: 8, padding: "8px 20px", color: tab === t ? "white" : "#666", fontSize: 13, fontWeight: tab === t ? 600 : 400, cursor: "pointer", textTransform: "capitalize" }}>
+            <button key={t} onClick={() => setTab(t)} style={{background: tab === t ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "transparent", border: "none", borderRadius: 8, padding: "8px 20px", color: tab === t ? "white" : "#666", fontSize: 13, fontWeight: tab === t ? 600 : 400, cursor: "pointer", textTransform: "capitalize" }}>
               {t === "cuenta" ? "👤 Cuenta" : "⚙️ Preferencias"}
             </button>
           ))}

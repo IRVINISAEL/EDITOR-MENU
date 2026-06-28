@@ -41,7 +41,7 @@ export default function Landing() {
         background: "rgba(15,15,19,0.95)", backdropFilter: "blur(10px)",
         borderBottom: "1px solid #2a2a35",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 48px", height: 64,
+        padding: "0 clamp(16px, 4vw, 48px)", height: 64,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 10 }} />
@@ -50,7 +50,7 @@ export default function Landing() {
             <span style={{ color: "#a855f7", fontWeight: 800, fontSize: 16 }}>MASTER</span>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 32, alignItems: "center" }} className="nav-links">
           {["Características", "Precios", "Testimonios"].map(item => (
             <a key={item} href={`#${item.toLowerCase()}`} style={{ color: "#888", fontSize: 14, textDecoration: "none" }}
               onMouseEnter={e => (e.currentTarget.style.color = "white")}
@@ -77,7 +77,7 @@ export default function Landing() {
       {/* HERO */}
       <section style={{
         minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-        flexDirection: "column", textAlign: "center", padding: "120px 48px 80px",
+        flexDirection: "column", textAlign: "center", padding: "120px clamp(16px, 4vw, 48px) 80px",
         position: "relative",
       }}>
         {/* Fondo decorativo */}
@@ -127,7 +127,7 @@ export default function Landing() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: "flex", gap: 48, marginTop: 64, padding: "24px 48px", background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 16 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 32, marginTop: 64, padding: "24px clamp(16px, 4vw, 48px)", background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 16 }}>
           {[
             { valor: "500+", label: "Negocios activos" },
             { valor: "$1,000", label: "MXN ahorrados por menú" },
@@ -147,7 +147,7 @@ export default function Landing() {
           <h2 style={{ fontSize: 36, fontWeight: 700, margin: "0 0 16px" }}>Todo lo que necesitas</h2>
           <p style={{ color: "#666", fontSize: 16 }}>Una plataforma completa para gestionar tus menús digitales</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, maxWidth: 1000, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 24, maxWidth: 1000, margin: "0 auto" }}>
           {features.map(f => (
             <div key={f.titulo} style={{
               background: "#1e1e28", border: "1px solid #2a2a35",
@@ -171,7 +171,7 @@ export default function Landing() {
           <h2 style={{ fontSize: 36, fontWeight: 700, margin: "0 0 16px" }}>Lo que dicen nuestros clientes</h2>
           <p style={{ color: "#666", fontSize: 16 }}>Negocios reales de Tehuacán que ya usan Menu Master</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, maxWidth: 900, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 24, maxWidth: 900, margin: "0 auto" }}>
           {testimonios.map(t => (
             <div key={t.nombre} style={{
               background: "#1e1e28", border: "1px solid #2a2a35",
@@ -194,7 +194,7 @@ export default function Landing() {
           <h2 style={{ fontSize: 36, fontWeight: 700, margin: "0 0 16px" }}>Precios simples y transparentes</h2>
           <p style={{ color: "#666", fontSize: 16 }}>Sin contratos. Cancela cuando quieras.</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, maxWidth: 860, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 24, maxWidth: 860, margin: "0 auto" }}>
           {planes.map(p => (
             <div key={p.nombre} style={{ position: "relative" }}>
               {p.popular && (
