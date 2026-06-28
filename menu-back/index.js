@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const app = express();
@@ -111,7 +112,12 @@ app.post("/api/auth/login", (req, res) => {
       const valido = await bcrypt.compare(password, results[0].password);
       if (!valido) return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
       const { password: _, ...usuario } = results[0];
-      res.json({ ok: true, usuario, token: "token-" + usuario.id + "-menumaster" });
+      const token = jwt.sign(
+        { id: usuario.id, email: usuario.email },
+        process.env.JWT_SECRET || "secret_dev",
+        { expiresIn: "7d" }
+      );
+      res.json({ ok: true, usuario, token });
     });
 });
 
