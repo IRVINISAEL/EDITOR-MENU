@@ -82,11 +82,11 @@ export default function Dashboard() {
               flex: mobile ? "unset" : 1,
               padding: mobile ? "0 8px" : "16px 12px",
               display: "flex",
-              flexDirection: "row",
-              overflowX: "auto",
-              gap: mobile ? 4 : 8,
-              alignItems: "center",
-              whiteSpace: "nowrap",
+              flexDirection: mobile ? "row" : "column",
+              overflowX: mobile ? "auto" : "visible",
+              gap: mobile ? 4 : 4,
+              alignItems: mobile ? "center" : "flex-start",
+              whiteSpace: mobile ? "nowrap" : "normal",
             }}
           >
           {navItems.map((item) => (
