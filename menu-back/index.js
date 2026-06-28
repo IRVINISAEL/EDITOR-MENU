@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const app = express();
@@ -8,6 +10,21 @@ const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(express.json());
+
+const verificarToken = (req, res, next) => {
+  const auth = req.headers["authorization"];
+  if (!auth || !auth.startsWith("Bearer ")) {
+    return res.status(401).json({ ok: false, mensaje: "Token requerido" });
+  }
+  try {
+    const token = auth.split(" ")[1];
+    const payload = jwt.verify(token, process.env.JWT_SECRET || "secret_dev");
+    req.usuario = payload;
+    next();
+  } catch {
+    return res.status(401).json({ ok: false, mensaje: "Token inválido o expirado" });
+  }
+};
 
 const db = mysql.createPool({
   host: process.env.DB_HOST,
@@ -28,7 +45,7 @@ db.getConnection((err, connection) => {
 
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
-app.get("/api/menus", (req, res) => {
+app.get("/api/menus", verificarToken, (req, res) => {
   const user_id = req.query.user_id;
   const sql = user_id ? "SELECT * FROM menus WHERE user_id = ? ORDER BY created_at DESC" : "SELECT * FROM menus ORDER BY created_at DESC";
   const params = user_id ? [user_id] : [];
@@ -46,7 +63,7 @@ app.get("/api/menus/:id", (req, res) => {
   });
 });
 
-app.post("/api/menus", (req, res) => {
+app.post("/api/menus", verificarToken, (req, res) => {
   console.log("BODY:", req.body);
   const { nombre, estado, data_json, user_id } = req.body;
   if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
@@ -59,7 +76,7 @@ app.post("/api/menus", (req, res) => {
     });
 });
 
-app.put("/api/menus/:id", (req, res) => {
+app.put("/api/menus/:id", verificarToken, (req, res) => {
   const { nombre, estado, data_json } = req.body;
   if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
   const dataJson = typeof data_json === "object" ? JSON.stringify(data_json) : (data_json || "{}");
@@ -72,7 +89,7 @@ app.put("/api/menus/:id", (req, res) => {
     });
 });
 
-app.delete("/api/menus/:id", (req, res) => {
+app.delete("/api/menus/:id", verificarToken, (req, res) => {
   db.query("DELETE FROM menus WHERE id = ?", [req.params.id], (err, result) => {
     if (err) return res.status(500).json({ ok: false, mensaje: err.message });
     if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "No encontrado" });
@@ -80,29 +97,42 @@ app.delete("/api/menus/:id", (req, res) => {
   });
 });
 
-app.post("/api/auth/register", (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   const { nombre, email, password, negocio } = req.body;
   if (!nombre || !email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
-  db.query("INSERT INTO usuarios (nombre, email, password, negocio) VALUES (?, ?, ?, ?)",
-    [nombre, email, password, negocio || ""],
-    (err, result) => {
-      if (err) {
-        if (err.code === "ER_DUP_ENTRY") return res.status(400).json({ ok: false, mensaje: "Correo ya registrado" });
-        return res.status(500).json({ ok: false, mensaje: err.message });
-      }
-      res.status(201).json({ ok: true, userId: result.insertId });
-    });
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    db.query("INSERT INTO usuarios (nombre, email, password, negocio) VALUES (?, ?, ?, ?)",
+      [nombre, email, hash, negocio || ""],
+      (err, result) => {
+        if (err) {
+          if (err.code === "ER_DUP_ENTRY") return res.status(400).json({ ok: false, mensaje: "Correo ya registrado" });
+          return res.status(500).json({ ok: false, mensaje: err.message });
+        }
+        res.status(201).json({ ok: true, userId: result.insertId });
+      });
+  } catch (e) {
+    res.status(500).json({ ok: false, mensaje: "Error al procesar contraseña" });
+  }
 });
 
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
-  db.query("SELECT id, nombre, email, plan FROM usuarios WHERE email = ? AND password = ?",
-    [email, password],
-    (err, results) => {
+  db.query("SELECT id, nombre, email, plan, password FROM usuarios WHERE email = ?",
+    [email],
+    async (err, results) => {
       if (err) return res.status(500).json({ ok: false, mensaje: err.message });
       if (results.length === 0) return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
-      res.json({ ok: true, usuario: results[0], token: "token-" + results[0].id + "-menumaster" });
+      const valido = await bcrypt.compare(password, results[0].password);
+      if (!valido) return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
+      const { password: _, ...usuario } = results[0];
+      const token = jwt.sign(
+        { id: usuario.id, email: usuario.email },
+        process.env.JWT_SECRET || "secret_dev",
+        { expiresIn: "7d" }
+      );
+      res.json({ ok: true, usuario, token });
     });
 });
 
