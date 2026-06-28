@@ -23,6 +23,17 @@ export default function Dashboard() {
   const [usuario, setUsuario] = useState<{ nombre: string; plan: string } | null>(null);
   const [menuRecientes, setMenuRecientes] = useState<{ id: number; nombre: string; estado: string }[]>([]);
 
+  const [mobile, setMobile] = useState(false);
+
+  useEffect(() => {
+    const resize = () => setMobile(window.innerWidth <= 768);
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+
   useEffect(() => {
     // Cargar usuario del localStorage
     const data = localStorage.getItem("usuario");
@@ -47,9 +58,10 @@ export default function Dashboard() {
 
       {/* SIDEBAR */}
       <aside style={{
-        width: 220, background: "#16161d", display: "flex", flexDirection: "column",
+        width: mobile ? "100%" : 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
-        position: "fixed", height: "100vh", zIndex: 10,
+        position: mobile ? "relative" : "fixed",
+        height: mobile ? "auto" : "100vh", zIndex: 10,
       }}>
         <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -110,10 +122,14 @@ export default function Dashboard() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: 220, flex: 1, padding: 32 }}>
+      <main style={{ marginLeft: mobile ? 0 : 220, flex: 1, padding: 32 }}>
 
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+        <div style={{ display: "flex",
+            flexDirection: mobile ? "column" : "row",
+            justifyContent: "space-between",
+            alignItems: mobile ? "flex-start" : "center",
+            gap: mobile ? 16 : 0, marginBottom: 32 }}>
           <div>
             <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>
               ¡Bienvenido, {usuario?.nombre || "Usuario"}! 👋
@@ -139,7 +155,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
           {[
             { label: "Menús guardados", value: String(menuRecientes.length || 0), icon: "", href: "/mis-menus" },
             { label: "Estadisticas", value: "256", icon: "", href: "/analiticas" },
@@ -170,11 +186,15 @@ export default function Dashboard() {
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = "#a855f7")}
             onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = "#2a2a35")}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div style={{ display: "flex",
+                flexDirection: mobile ? "column" : "row",
+                justifyContent: "space-between",
+                alignItems: mobile ? "flex-start" : "center",
+                gap: mobile ? 16 : 0, marginBottom: 20 }}>
               <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Estadísticas rápidas</h2>
               <span style={{ color: "#a855f7", fontSize: 12, fontWeight: 600 }}>Ver analíticas →</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
               {[
                 { label: "Vistas totales", value: "1,256" },
                 { label: "Descargas", value: "342" },
@@ -192,11 +212,15 @@ export default function Dashboard() {
 
         {/* PLANTILLAS */}
           <div style={{ marginTop: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ display: "flex",
+              flexDirection: mobile ? "column" : "row",
+              justifyContent: "space-between",
+              alignItems: mobile ? "flex-start" : "center",
+              gap: mobile ? 16 : 0, marginBottom: 16 }}>
               <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Plantillas populares</h2>
               <a href="/plantillas" style={{ color: "#a855f7", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Ver todas →</a>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
               {plantillasPopulares.map((p) => (
                 <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
                   <div style={{
