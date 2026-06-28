@@ -61,7 +61,7 @@ export default function Dashboard() {
         width: mobile ? "100%" : 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
         position: mobile ? "relative" : "fixed",
-        height: mobile ? "auto" : "100vh", zIndex: 10,
+        height: mobile ? "fit-content" : "100vh", zIndex: 10,
       }}>
         <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -73,7 +73,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <nav
+            style={{
+              flex: 1,
+              padding: "16px 12px",
+              display: "flex",
+              flexDirection: mobile ? "row" : "column",
+              overflowX: mobile ? "auto" : "visible",
+              gap: 8,
+            }}
+          >
           {navItems.map((item) => (
             <a key={item.label} href={item.href} style={{ textDecoration: "none" }}>
               <div style={{
@@ -122,7 +131,7 @@ export default function Dashboard() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: mobile ? 0 : 220, flex: 1, padding: 32 }}>
+      <main style={{ marginLeft: mobile ? 0 : 220, flex: 1, padding: mobile ? 16 : 32}}>
 
         {/* Header */}
         <div style={{ display: "flex",
@@ -139,9 +148,11 @@ export default function Dashboard() {
             </p>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18 }}>🔔</button>
+            <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18,  minWidth: mobile ? 120 : "auto",
+                whiteSpace: "nowrap",}}>🔔</button>
             <a href="/analiticas">
-              <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18 }}>📊</button>
+              <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18, minWidth: mobile ? 120 : "auto",
+                whiteSpace: "nowrap", }}>📊</button>
             </a>
             <div style={{
               width: 36, height: 36, borderRadius: "50%",
@@ -155,7 +166,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
           {[
             { label: "Menús guardados", value: String(menuRecientes.length || 0), icon: "", href: "/mis-menus" },
             { label: "Estadisticas", value: "256", icon: "", href: "/analiticas" },
@@ -194,7 +205,7 @@ export default function Dashboard() {
               <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Estadísticas rápidas</h2>
               <span style={{ color: "#a855f7", fontSize: 12, fontWeight: 600 }}>Ver analíticas →</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16 }}>
               {[
                 { label: "Vistas totales", value: "1,256" },
                 { label: "Descargas", value: "342" },
@@ -220,7 +231,7 @@ export default function Dashboard() {
               <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Plantillas populares</h2>
               <a href="/plantillas" style={{ color: "#a855f7", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Ver todas →</a>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16 }}>
               {plantillasPopulares.map((p) => (
                 <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
                   <div style={{
