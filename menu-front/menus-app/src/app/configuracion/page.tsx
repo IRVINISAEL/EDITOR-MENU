@@ -33,12 +33,13 @@ export default function Configuracion() {
 
   const [guardado, setGuardado] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     const usuario = localStorage.getItem("usuario");
     if (usuario) {
       const u = JSON.parse(usuario);
-      setNombre(u.nombre || "");
+      setNombre(u.nombre_u || u.nombre || "");
       setEmail(u.email || "");
     }
     const prefs = localStorage.getItem("preferencias");
@@ -53,18 +54,64 @@ export default function Configuracion() {
     }
   }, []);
 
-  const guardarCuenta = () => {
+  const guardarCuenta = async () => {
     if (passwordNuevo && passwordNuevo !== passwordConfirm) {
-      setErrorPass("Las contraseñas no coinciden"); return;
+      setErrorPass("Las contraseñas no coinciden");
+      return;
     }
-    if (passwordNuevo && passwordNuevo.length < 6) {
-      setErrorPass("Mínimo 6 caracteres"); return;
+    if (passwordNuevo && !passwordActual) {
+      setErrorPass("Ingresa tu contraseña actual para cambiarla");
+      return;
     }
+    if (passwordNuevo && passwordNuevo.length < 8) {
+      setErrorPass("Mínimo 8 caracteres");
+      return;
+    }
+
     setErrorPass("");
     setGuardando(true);
+
     const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
-    localStorage.setItem("usuario", JSON.stringify({ ...usuario, nombre, email, ...(passwordNuevo ? { password: passwordNuevo } : {}) }));
-    setTimeout(() => { setGuardando(false); setGuardado(true); setPasswordActual(""); setPasswordNuevo(""); setPasswordConfirm(""); setTimeout(() => setGuardado(false), 2000); }, 600);
+    const token = localStorage.getItem("token");
+
+    if (passwordNuevo) {
+      if (!token) {
+        setErrorPass("Necesitas iniciar sesión de nuevo");
+        setGuardando(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/api/auth/password`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ currentPassword: passwordActual, newPassword: passwordNuevo }),
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          setErrorPass(data.mensaje || "No se pudo cambiar la contraseña");
+          setGuardando(false);
+          return;
+        }
+      } catch (error) {
+        setErrorPass("Error de conexión al servidor");
+        setGuardando(false);
+        return;
+      }
+    }
+
+    localStorage.setItem("usuario", JSON.stringify({ ...usuario, nombre: nombre, email }));
+    setTimeout(() => {
+      setGuardando(false);
+      setGuardado(true);
+      setPasswordActual("");
+      setPasswordNuevo("");
+      setPasswordConfirm("");
+      setTimeout(() => setGuardado(false), 2000);
+    }, 600);
   };
 
   const guardarPreferencias = () => {
@@ -126,11 +173,7 @@ export default function Configuracion() {
         {/* TABS */}
         <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "#1e1e28", borderRadius: 10, padding: 4, width: "fit-content" }}>
           {(["cuenta", "preferencias"] as const).map(t => (
-            <button key={t} onClick={() => {
-                localStorage.removeItem("usuario");
-                document.cookie = "usuario=; path=/; max-age=0";
-                window.location.href = "/login";
-              }} style={{ background: tab === t ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "transparent", border: "none", borderRadius: 8, padding: "8px 20px", color: tab === t ? "white" : "#666", fontSize: 13, fontWeight: tab === t ? 600 : 400, cursor: "pointer", textTransform: "capitalize" }}>
+            <button key={t} onClick={() => setTab(t)} style={{ background: tab === t ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "transparent", border: "none", borderRadius: 8, padding: "8px 20px", color: tab === t ? "white" : "#666", fontSize: 13, fontWeight: tab === t ? 600 : 400, cursor: "pointer", textTransform: "capitalize" }}>
               {t === "cuenta" ? "👤 Cuenta" : "⚙️ Preferencias"}
             </button>
           ))}
