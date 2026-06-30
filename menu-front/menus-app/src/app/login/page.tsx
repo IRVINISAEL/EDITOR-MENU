@@ -44,6 +44,7 @@ export default function Login() {
       const data = await res.json();
       if (data.ok) {
         localStorage.setItem("usuario", JSON.stringify(data.usuario));
+        localStorage.setItem("token", data.token);
         // Guardar cookie para el middleware
         document.cookie = `usuario=${data.usuario.id}; path=/; max-age=${60 * 60 * 24 * 7}`;
         window.location.href = "/";
