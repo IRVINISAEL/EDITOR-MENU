@@ -246,9 +246,9 @@ export default function Editor() {
 
         {/* BARRA SUPERIOR */}
         <div style={{
-          height: 52, background: "#16161d", borderBottom: "1px solid #2a2a35",
+          minHeight: 52, background: "#16161d", borderBottom: "1px solid #2a2a35",
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 16px", gap: 8,
+          padding: "8px 16px", gap: 8, flexWrap: "wrap",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <a href="/mis-menus" style={{ color: "#888", fontSize: 12, textDecoration: "none" }}>← Volver</a>
