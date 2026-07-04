@@ -7,6 +7,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [negocio, setNegocio] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+
 
   const [mobile, setMobile] = useState(false);
   const [passwordError, setPasswordError] = useState("");
@@ -34,6 +36,7 @@ export default function Login() {
 
   const handleSubmit = async () => {
     const API = process.env.NEXT_PUBLIC_API_URL;
+    setShowPassword(false);
 
     if (modo === "login") {
       const res = await fetch(`${API}/api/auth/login`, {
@@ -244,18 +247,39 @@ export default function Login() {
               <label style={{ color: "#888", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>
                 CONTRASEÑA
               </label>
-              <input
-                type="password" placeholder="••••••••"
-                value={password} onChange={e => validarPassword(e.target.value)}
-                style={{
-                  width: "100%", background: "#0f0f13",
-                  border: `1px solid ${passwordError ? "#ef4444" : passwordFuerte ? "#22c55e" : "#2a2a35"}`,
-                  borderRadius: 8, padding: mobile ? "14px 16px" : "11px 14px", color: "white", fontSize: 13,
-                  outline: "none", boxSizing: "border-box",
-                }}
-                onFocus={e => (e.target.style.borderColor = "#a855f7")}
-                onBlur={e => (e.target.style.borderColor = passwordError ? "#ef4444" : passwordFuerte ? "#22c55e" : "#2a2a35")}
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password} onChange={e => validarPassword(e.target.value)}
+                  style={{
+                    width: "100%", background: "#0f0f13",
+                    border: `1px solid ${passwordError ? "#ef4444" : passwordFuerte ? "#22c55e" : "#2a2a35"}`,
+                    borderRadius: 8, padding: mobile ? "14px 16px" : "11px 14px", color: "white", fontSize: 13,
+                    outline: "none", boxSizing: "border-box",
+                  }}
+                  onFocus={e => (e.target.style.borderColor = "#a855f7")}
+                  onBlur={e => (e.target.style.borderColor = passwordError ? "#ef4444" : passwordFuerte ? "#22c55e" : "#2a2a35")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    top: mobile ? 14 : 11,
+                    right: 14,
+                    background: "transparent",
+                    border: "none",
+                    color: "#a855f7",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    padding: 0,
+                  }}
+                >
+                  {showPassword ? "Ocultar" : "Mostrar"}
+                </button>
+              </div>
               {modo === "registro" && password.length === 0 && (
                 <p style={{ color: "#666", fontSize: 11, marginTop: 5 }}>
                   Mínimo 8 caracteres, una mayúscula y un número
