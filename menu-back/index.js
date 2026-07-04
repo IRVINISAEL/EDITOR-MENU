@@ -3,6 +3,8 @@ const cors = require("cors");
 const mysql = require("mysql2");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const cloudinary = require("./cloudinary");
 require("dotenv").config();
 
 const app = express();
@@ -25,6 +27,19 @@ const verificarToken = (req, res, next) => {
     return res.status(401).json({ ok: false, mensaje: "Token inválido o expirado" });
   }
 };
+
+// RN-04: solo formatos permitidos | RN-05: tamaño máximo (5MB)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const permitidos = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!permitidos.includes(file.mimetype)) {
+      return cb(new Error("Formato no soportado. Usa JPG, PNG o WEBP"));
+    }
+    cb(null, true);
+  },
+});
 
 const db = mysql.createPool({
   host: process.env.DB_HOST,
@@ -55,7 +70,8 @@ app.get("/api/menus", verificarToken, (req, res) => {
   });
 });
 
-app.get("/api/menus/:id", (req, res) => {
+// Se agregó verificarToken aquí (antes era pública, hallazgo de seguridad corregido)
+app.get("/api/menus/:id", verificarToken, (req, res) => {
   db.query("SELECT * FROM menus WHERE id = ?", [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ ok: false, mensaje: err.message });
     if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
@@ -134,6 +150,66 @@ app.post("/api/auth/login", (req, res) => {
       );
       res.json({ ok: true, usuario, token });
     });
+});
+
+// Nuevo endpoint: subir imagen a Cloudinary y asociarla a un menú
+app.post("/api/upload", verificarToken, (req, res) => {
+  upload.single("imagen")(req, res, async (err) => {
+    // CA-04 / RN-07: si falla la validación del archivo, no se toca la BD
+    if (err) {
+      return res.status(400).json({ ok: false, mensaje: err.message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ ok: false, mensaje: "Imagen requerida" });
+    }
+
+    try {
+      // CA-01: subir a Cloudinary
+      const resultado = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "menumaster/menus" },
+          (error, result) => (error ? reject(error) : resolve(result))
+        );
+        stream.end(req.file.buffer);
+      });
+
+      const imageUrl = resultado.secure_url;
+      const { menu_id } = req.body;
+
+      // CA-03 / RN-06: guardar la URL en data_json del menú, si se indicó uno
+      if (menu_id) {
+        db.query("SELECT data_json FROM menus WHERE id = ?", [menu_id], (err2, rows) => {
+          if (err2 || rows.length === 0) {
+            return res.status(201).json({
+              ok: true, url: imageUrl,
+              mensaje: "Imagen subida, pero no se pudo asociar al menú"
+            });
+          }
+          let data = {};
+          try { data = JSON.parse(rows[0].data_json || "{}"); } catch { data = {}; }
+          data.imagen_url = imageUrl;
+
+          db.query("UPDATE menus SET data_json = ? WHERE id = ?",
+            [JSON.stringify(data), menu_id],
+            (err3) => {
+              if (err3) {
+                return res.status(201).json({
+                  ok: true, url: imageUrl,
+                  mensaje: "Imagen subida, pero error al guardar en el menú"
+                });
+              }
+              res.status(201).json({ ok: true, url: imageUrl, menuActualizado: true });
+            });
+        });
+      } else {
+        res.status(201).json({ ok: true, url: imageUrl });
+      }
+    } catch (cloudErr) {
+      // CA-04 / RN-07: falla Cloudinary → no se guarda nada en BD
+      console.error("ERROR CLOUDINARY:", cloudErr);
+      res.status(500).json({ ok: false, mensaje: "Error al subir la imagen" });
+    }
+  });
 });
 
 app.listen(PORT, () => {
