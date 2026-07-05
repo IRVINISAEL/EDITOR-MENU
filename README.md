@@ -1,10 +1,9 @@
-# 🍽️ Menu Master
-
+# Menu Master
 > SaaS para restaurantes y negocios de comida que permite crear, personalizar y compartir menús digitales de forma rápida, sin necesidad de conocimientos de diseño.
 
 ---
 
-## 👥 Equipo
+## <img src="https://img.shields.io/badge/Equipo-4B0082?style=flat" /> Equipo
 
 | Nombre | Rol |
 |---|---|
@@ -15,7 +14,7 @@
 
 ---
 
-## 🛠️ Stack tecnológico
+## <img src="https://img.shields.io/badge/ Stack Tecnológico-1a1a2e?style=flat" />  Stack tecnológico
 
 **Frontend** → `menu-front/`
 - Next.js 15
@@ -31,7 +30,7 @@
 
 ---
 
-## 📁 Estructura del proyecto
+## <img src="https://img.shields.io/badge/ Estructura-0d3b66?style=flat" /> Estructura del proyecto
 
 ```
 EDITOR-MENU/
@@ -46,14 +45,14 @@ EDITOR-MENU/
 
 ---
 
-## 🚀 Cómo correr el proyecto
+## <img src="https://img.shields.io/badge/ Cómo Correrlo-006400?style=flat" /> Cómo correr el proyecto
 
 ### Frontend
 
 ```bash
 cd menu-front
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
@@ -62,15 +61,15 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ```bash
 cd menu-back
-npm install
+pnpm install
 cp .env.example .env
 # Llena las variables del .env con tus credenciales
-node index.js
+pnpm start
 ```
 
 ---
 
-## ⚙️ Variables de entorno
+## <img src="https://img.shields.io/badge/ Variables de Entorno-8B0000?style=flat" /> Variables de entorno
 
 Crea un archivo `.env` dentro de `menu-back/` basándote en `.env.example`:
 
@@ -82,11 +81,11 @@ DB_NAME=tu_base_de_datos
 PORT=3001
 ```
 
-> ⚠️ Nunca subas el archivo `.env` al repositorio.
+> <img src="https://img.shields.io/badge/Equipo-4B0082?style=flat" /> Nunca subas el archivo `.env` al repositorio.
 
 ---
 
-## 🌿 Ramas y flujo de trabajo
+## <img src="https://img.shields.io/badge/ Ramas-2d6a4f?style=flat" /> Ramas y flujo de trabajo
 
 Usamos **GitHub Flow**. Consulta [`docs/github-flow.md`](docs/github-flow.md) para el flujo completo.
 
@@ -105,7 +104,7 @@ Usamos **GitHub Flow**. Consulta [`docs/github-flow.md`](docs/github-flow.md) pa
 
 ---
 
-## 📦 Deploy
+## <img src="https://img.shields.io/badge/ Deploy-FF6B00?style=flat" /> Deploy
 
 | Servicio | URL |
 |---|---|
@@ -117,4 +116,4 @@ Usamos **GitHub Flow**. Consulta [`docs/github-flow.md`](docs/github-flow.md) pa
 
 ## 📄 Licencia
 
-Proyecto académico — SAAS Studio · 9° Cuatrimestre · 2025
+Proyecto académico — SAAS Studio · 9° Cuatrimestre · 2026
