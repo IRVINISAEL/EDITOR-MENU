@@ -40,7 +40,7 @@ export default function Dashboard() {
     if (data) setUsuario(JSON.parse(data));
 
     // Cargar menús reales del backend
-    fetch("https://menu-master-backend-production-9bfc.up.railway.app/api/menus")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menus`)
       .then(res => res.json())
       .then(data => {
         if (data.ok) setMenuRecientes(data.menus.slice(0, 3));
