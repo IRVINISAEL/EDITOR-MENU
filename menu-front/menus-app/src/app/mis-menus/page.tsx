@@ -87,9 +87,9 @@ export default function MisMenus() {
     setEliminando(true);
     try {
       const res = await fetch(`${API}/api/menus/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
       const data = await res.json();
       if (data.ok) {
         setMenus(prev => prev.filter(m => m.id !== id));
@@ -107,10 +107,16 @@ export default function MisMenus() {
   // Cargar menú en editor
   const editarMenu = (menu: Menu) => {
     try {
-      const config = JSON.parse(menu.data_json);
+      const config = typeof menu.data_json === "string"
+        ? JSON.parse(menu.data_json)
+        : menu.data_json;
       config.id = menu.id;
       localStorage.setItem("plantilla_cargada", JSON.stringify(config));
-    } catch {}
+    } catch (err) {
+      console.error("Error al cargar el menu para editar:", err);
+      alert("No se pudo cargar el menu para editar.");
+      return;
+    }
     window.location.href = "/editor";
   };
 
