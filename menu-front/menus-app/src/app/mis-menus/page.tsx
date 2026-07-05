@@ -108,6 +108,7 @@ export default function MisMenus() {
   const editarMenu = (menu: Menu) => {
     try {
       const config = JSON.parse(menu.data_json);
+      config.id = menu.id;
       localStorage.setItem("plantilla_cargada", JSON.stringify(config));
     } catch {}
     window.location.href = "/editor";
