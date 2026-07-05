@@ -129,3 +129,31 @@
 
 ### Prueba 8 — Error 500
 ![Error 500](./evidencia/evidencia-error500.png)
+
+
+
+
+## Casos de Prueba — HU: Ver plantillas disponibles
+
+**Fecha** 29/06/2026
+**QA** María José Linares Cortés
+**URL probada** https://editor-menu-ausx.vercel.app/plantillas
+
+| # | Caso de prueba | Pasos | Resultado esperado | Resultado obtenido | Estado |
+|---|----------------|-------|-------------------|-------------------|--------|
+| 1 | La página de plantillas carga correctamente | Entrar a /plantillas y revisar consola con F12 | La página carga sin errores en consola | La consola no muestra errores |  PASS |
+| 2 | Se muestran todas las plantillas disponibles | Entrar a /plantillas y contar plantillas | Se muestran 16 plantillas | Muestra 12 inicialmente con opción "Ver más" que carga las 4 restantes |  WARN |
+| 3 | Cada plantilla muestra su nombre | Revisar visualmente cada plantilla | Todas tienen nombre visible | Todas las plantillas muestran su nombre correctamente |  PASS |
+| 4 | Cada plantilla muestra su categoría | Revisar visualmente cada plantilla | Todas tienen categoría visible | Todas las plantillas muestran su categoría correctamente |  PASS |
+| 5 | Cada plantilla muestra vista previa | Revisar visualmente cada plantilla | Todas tienen imagen o preview visible | Todas las plantillas muestran vista previa correctamente |  PASS |
+| 6 | Se pueden filtrar plantillas por categoría | Hacer clic en cada categoría disponible | Solo muestra las plantillas de esa categoría | El filtro funciona correctamente, muestra solo las plantillas de la categoría seleccionada | PASS |
+| 7 | El botón "Me gusta" funciona | Hacer clic en me gusta de una plantilla | Se marca como favorita | El corazón cambia de blanco a rojo correctamente |  PASS |
+| 8 | El botón "Editar" funciona | Hacer clic en editar de una plantilla | Redirige al editor con esa plantilla cargada | Abre el editor correctamente permitiendo modificar título, texto y contenido general de la plantilla |  PASS |
+| 9 | La página se ve bien en móvil | Abrir en DevTools modo iPhone SE | Las plantillas se adaptan correctamente | Las plantillas se adaptan bien en móvil, pero se detectaron 2 observaciones: 1: El sidebar deja espacio vacío al desplegarse, 2: El editor en móvil no es funcional, los elementos se mueven al intentar editar |  WARN |
+| 10 | La página se ve bien en tablet | Abrir en DevTools modo iPad Air | Las plantillas se adaptan correctamente | Las plantillas se muestran en grid de 2 columnas correctamente, pero la consola muestra  Error: Minified React error #418; |  WARN |
+
+## Resumen
+
+| Total pruebas | PASS | WARN | FAIL |
+|---|---|---|---|
+| 10 | 7 | 3 | 0 |
