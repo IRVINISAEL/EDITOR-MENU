@@ -203,7 +203,10 @@ export default function Editor() {
 
       const res = await fetch(`${API}/api/menus${menuId ? "/" + menuId : ""}`, {
         method: menuId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
         body: JSON.stringify({
           nombre: nombreMenu,
           estado,
