@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 
-const API = "https://menu-master-backend-production-9bfc.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },

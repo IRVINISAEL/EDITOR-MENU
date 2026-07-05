@@ -24,7 +24,7 @@ const fondos = [
   { nombre: "Rojo Vino", bg: "linear-gradient(135deg, #fff1f2, #ffe4e6)", texto: "#4c0519", acento: "#be123c" },
 ];
 
-const API = "https://menu-master-backend-production-9bfc.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 type Platillo = { 
   nombre: string; 
