@@ -72,12 +72,7 @@ export default function Login() {
         }}>
           {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{
-              width: 42, height: 42, borderRadius: 12,
-              background: "rgba(255,255,255,0.2)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "white", fontWeight: 800, fontSize: 20,
-            }}>M</div>
+            <img src="/logo.png" alt="Menu Master" style={{ width: 42, height: 42, borderRadius: 12 }} />
             <div>
               <div style={{ color: "white", fontWeight: 800, fontSize: 18, lineHeight: 1 }}>MENU</div>
               <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700, fontSize: 18, lineHeight: 1 }}>MASTER</div>
@@ -216,9 +211,9 @@ export default function Login() {
 
             {modo === "login" && (
               <div style={{ textAlign: "right" }}>
-                <span style={{ color: "#a855f7", fontSize: 12, cursor: "pointer" }}>
+                <a href="/forgot-password" style={{ color: "#a855f7", fontSize: 12, textDecoration: "none" }}>
                   ¿Olvidaste tu contraseña?
-                </span>
+                </a>
               </div>
             )}
 

@@ -13,6 +13,8 @@
 | `email` | Texto único | Correo electrónico único |
 | `password` | Texto | Contraseña encriptada con bcrypt |
 | `plan` | Enum | Puede ser `free` o `pro` |
+| `reset_token` | Texto opcional | Token de recuperación de contraseña temporal |
+| `reset_token_expiration` | Fecha opcional | Expiración del token de recuperación |
 | `fecha_registro` | Fecha automática | Fecha de registro asignada al crear la cuenta |
 
 ---

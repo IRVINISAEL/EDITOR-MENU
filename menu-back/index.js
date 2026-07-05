@@ -1,14 +1,25 @@
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
+const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const PASSWORD_RESET_EXPIRATION_MINUTES = parseInt(process.env.PASSWORD_RESET_EXPIRATION_MINUTES || "60", 10);
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+function isValidEmail(email) {
+  return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function formatDateToMySql(date) {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
 
 // ============================
 // CONEXIÓN A MYSQL
@@ -47,27 +58,40 @@ app.get("/", (req, res) => {
 // ============================
 
 // POST - Registro
-app.post("/api/auth/register", (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   const { nombre, email, password, negocio } = req.body;
 
   if (!nombre || !email || !password) {
     return res.status(400).json({ ok: false, mensaje: "Todos los campos son obligatorios" });
   }
 
-  const sql = "INSERT INTO usuarios (nombre, email, password, negocio) VALUES (?, ?, ?, ?)";
-  db.query(sql, [nombre, email, password, negocio || ""], (err, result) => {
-    if (err) {
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({ ok: false, mensaje: "Este correo ya está registrado" });
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ ok: false, mensaje: "El correo electrónico no es válido" });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ ok: false, mensaje: "La contraseña debe tener al menos 8 caracteres" });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const sql = "INSERT INTO usuarios (nombre, email, password, negocio) VALUES (?, ?, ?, ?)";
+    db.query(sql, [nombre, email, hashedPassword, negocio || ""], (err, result) => {
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(400).json({ ok: false, mensaje: "Este correo ya está registrado" });
+        }
+        return res.status(500).json({ ok: false, mensaje: "Error al registrar usuario" });
       }
-      return res.status(500).json({ ok: false, mensaje: "Error al registrar usuario" });
-    }
-    res.status(201).json({
-      ok: true,
-      mensaje: "Usuario registrado correctamente",
-      userId: result.insertId,
+      res.status(201).json({
+        ok: true,
+        mensaje: "Usuario registrado correctamente",
+        userId: result.insertId,
+      });
     });
-  });
+  } catch (error) {
+    return res.status(500).json({ ok: false, mensaje: "Error al procesar la contraseña" });
+  }
 });
 
 // POST - Login
@@ -78,20 +102,136 @@ app.post("/api/auth/login", (req, res) => {
     return res.status(400).json({ ok: false, mensaje: "Email y contraseña son obligatorios" });
   }
 
-  const sql = "SELECT id, nombre, email, plan FROM usuarios WHERE email = ? AND password = ?";
-  db.query(sql, [email, password], (err, results) => {
+  const sql = "SELECT id, nombre, email, plan, password FROM usuarios WHERE email = ?";
+  db.query(sql, [email], async (err, results) => {
     if (err) {
       return res.status(500).json({ ok: false, mensaje: "Error en el servidor" });
     }
     if (results.length === 0) {
       return res.status(401).json({ ok: false, mensaje: "Correo o contraseña incorrectos" });
     }
-    res.json({
-      ok: true,
-      mensaje: "Login exitoso",
-      usuario: results[0],
-      token: "token-" + results[0].id + "-menumaster",
-    });
+
+    const user = results[0];
+    try {
+      const storedPassword = user.password;
+      const passwordMatch = storedPassword?.startsWith("$2")
+        ? await bcrypt.compare(password, storedPassword)
+        : password === storedPassword;
+
+      if (!passwordMatch) {
+        return res.status(401).json({ ok: false, mensaje: "Correo o contraseña incorrectos" });
+      }
+
+      if (storedPassword && !storedPassword.startsWith("$2")) {
+        const newHash = await bcrypt.hash(password, 10);
+        db.query("UPDATE usuarios SET password = ? WHERE id = ?", [newHash, user.id], () => {});
+      }
+
+      res.json({
+        ok: true,
+        mensaje: "Login exitoso",
+        usuario: {
+          id: user.id,
+          nombre: user.nombre,
+          email: user.email,
+          plan: user.plan,
+        },
+        token: "token-" + user.id + "-menumaster",
+      });
+    } catch (error) {
+      return res.status(500).json({ ok: false, mensaje: "Error al verificar la contraseña" });
+    }
+  });
+});
+
+// POST - Solicitar recuperación de contraseña
+app.post("/api/auth/forgot-password", (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ ok: false, mensaje: "El correo electrónico no es válido" });
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRATION_MINUTES * 60 * 1000);
+  const tokenExpiration = formatDateToMySql(expiresAt);
+
+  const sql = "UPDATE usuarios SET reset_token = ?, reset_token_expiration = ? WHERE email = ?";
+  db.query(sql, [token, tokenExpiration, email], (err) => {
+    if (err) {
+      console.error("Error al guardar el token de recuperación:", err);
+      return res.status(500).json({ ok: false, mensaje: "Error al procesar la solicitud" });
+    }
+
+    console.log(`🔐 Recovery token for ${email}: ${token}`);
+    return res.json({ ok: true, mensaje: "Si el correo existe, se ha enviado un enlace de recuperación" });
+  });
+});
+
+// GET - Validar token de recuperación
+app.get("/api/auth/reset-password/:token", (req, res) => {
+  const { token } = req.params;
+
+  if (!token) {
+    return res.status(400).json({ ok: false, mensaje: "Token inválido" });
+  }
+
+  const sql = "SELECT id, reset_token_expiration FROM usuarios WHERE reset_token = ?";
+  db.query(sql, [token], (err, results) => {
+    if (err) {
+      return res.status(500).json({ ok: false, mensaje: "Error en el servidor" });
+    }
+    if (results.length === 0) {
+      return res.status(400).json({ ok: false, mensaje: "Token inválido o expirado" });
+    }
+
+    const expiration = results[0].reset_token_expiration;
+    if (!expiration || new Date(expiration) < new Date()) {
+      return res.status(400).json({ ok: false, mensaje: "Token inválido o expirado" });
+    }
+
+    res.json({ ok: true, mensaje: "Token válido" });
+  });
+});
+
+// POST - Restablecer contraseña
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+
+  if (!token || !password) {
+    return res.status(400).json({ ok: false, mensaje: "Token y contraseña son obligatorios" });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ ok: false, mensaje: "La contraseña debe tener al menos 8 caracteres" });
+  }
+
+  const sql = "SELECT id, reset_token_expiration FROM usuarios WHERE reset_token = ?";
+  db.query(sql, [token], async (err, results) => {
+    if (err) {
+      return res.status(500).json({ ok: false, mensaje: "Error en el servidor" });
+    }
+    if (results.length === 0) {
+      return res.status(400).json({ ok: false, mensaje: "Token inválido o expirado" });
+    }
+
+    const row = results[0];
+    if (!row.reset_token_expiration || new Date(row.reset_token_expiration) < new Date()) {
+      return res.status(400).json({ ok: false, mensaje: "Token inválido o expirado" });
+    }
+
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const updateSql = "UPDATE usuarios SET password = ?, reset_token = NULL, reset_token_expiration = NULL WHERE id = ?";
+      db.query(updateSql, [hashedPassword, row.id], (updateErr) => {
+        if (updateErr) {
+          return res.status(500).json({ ok: false, mensaje: "Error al actualizar la contraseña" });
+        }
+        res.json({ ok: true, mensaje: "Contraseña actualizada correctamente" });
+      });
+    } catch (hashError) {
+      return res.status(500).json({ ok: false, mensaje: "Error al cifrar la contraseña" });
+    }
   });
 });
 

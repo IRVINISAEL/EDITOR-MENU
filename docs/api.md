@@ -32,10 +32,42 @@ Body que recibe:
 {
     "email": "string",
     "password": "string"
-  }
+}
 Respuesta exitosa (200): { "token": "eyJhbGciOiJIUzI1NiIs..."}
 
 Error si credenciales incorrectas (401): { "error": "Credenciales inválidas" }
+
+## POST /api/auth/forgot-password
+### Descripción: Solicitar recuperación de contraseña
+
+Body que recibe:
+
+{
+    "email": "string"
+}
+Respuesta exitosa (200): { "ok": true, "mensaje": "Si el correo existe en el sistema, se ha enviado un enlace de recuperación" }
+
+## GET /api/auth/reset-password/:token
+### Descripción: Validar token de recuperación
+
+Respuesta exitosa (200): { "ok": true, "mensaje": "Token válido" }
+
+Error si el token es inválido o expirado (400): { "ok": false, "mensaje": "Token inválido o expirado" }
+
+## POST /api/auth/reset-password
+### Descripción: Restablecer contraseña
+
+Body que recibe:
+
+{
+    "token": "string",
+    "password": "string"
+}
+Respuesta exitosa (200): { "ok": true, "mensaje": "Contraseña actualizada correctamente" }
+
+Error si el token es inválido o expirado (400): { "ok": false, "mensaje": "Token inválido o expirado" }
+
+Error si falla la actualización (500): { "ok": false, "mensaje": "Error al actualizar la contraseña" }
 
 
 ## POST /api/menus
