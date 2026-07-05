@@ -101,14 +101,31 @@ export default function Editor() {
     ));
   };
 
-  const subirImagen = (seccionId: number, idx: number, file: File) => {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      editarPlatillo(seccionId, idx, "imagen", ev.target?.result as string);
+  const subirImagen = async (seccionId: number, idx: number, file: File) => {
+  try {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("imagen", file);
+    if (menuId) formData.append("menu_id", String(menuId));
+
+    const res = await fetch(`${API}/api/upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    const data = await res.json();
+
+    if (data.ok && data.url) {
+      editarPlatillo(seccionId, idx, "imagen", data.url);
       setGuardado(false);
-    };
-    reader.readAsDataURL(file);
-  };
+    } else {
+      alert("❌ No se pudo subir la imagen: " + (data.mensaje || "error desconocido"));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error de conexión al subir la imagen.");
+  }
+};
 
   const eliminarImagen = (seccionId: number, idx: number) => {
     editarPlatillo(seccionId, idx, "imagen", "");
@@ -313,7 +330,11 @@ export default function Editor() {
             <button onClick={() => handleGuardar("Borrador")} style={{
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
               color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
-            }}> Guardar borrador (Paso final)</button>
+            }}> Guardar borrador</button>
+            <button onClick={() => handleGuardar("Publicado")} style={{
+              background: "#7c3aed", border: "1px solid #7c3aed", borderRadius: 8,
+              color: "white", padding: "7px 12px", cursor: "pointer", fontSize: 12, fontWeight: 600,
+            }}>🚀 Publicar menú</button>
           </div>
         </div>
 
