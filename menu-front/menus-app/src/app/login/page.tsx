@@ -296,9 +296,9 @@ export default function Login() {
 
             {modo === "login" && (
               <div style={{ textAlign: "right" }}>
-                <span style={{ color: "#a855f7", fontSize: 12, cursor: "pointer" }}>
+                <a href="/forgot-password" style={{ color: "#a855f7", fontSize: 12, textDecoration: "none" }}>
                   ¿Olvidaste tu contraseña?
-                </span>
+                </a>
               </div>
             )}
 

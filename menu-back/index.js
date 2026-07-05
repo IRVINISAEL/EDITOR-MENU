@@ -9,6 +9,7 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const PASSWORD_RESET_EXPIRATION_MINUTES = parseInt(process.env.PASSWORD_RESET_EXPIRATION_MINUTES || "60", 10);
 
 app.use(cors());
 app.use(express.json());
