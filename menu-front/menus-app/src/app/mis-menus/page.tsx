@@ -55,7 +55,9 @@ export default function MisMenus() {
     try {
       const usuarioData = localStorage.getItem("usuario");
       const usuario = usuarioData ? JSON.parse(usuarioData) : { id: 1 };
-      const res = await fetch(`${API}/api/menus`);
+      const res = await fetch(`${API}/api/menus`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
       const data = await res.json();
       if (data.ok) {
         // Filtrar solo los del usuario actual
@@ -84,7 +86,10 @@ export default function MisMenus() {
   const eliminarMenu = async (id: number) => {
     setEliminando(true);
     try {
-      const res = await fetch(`${API}/api/menus/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API}/api/menus/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
       const data = await res.json();
       if (data.ok) {
         setMenus(prev => prev.filter(m => m.id !== id));
