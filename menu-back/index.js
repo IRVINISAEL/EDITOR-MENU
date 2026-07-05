@@ -2,11 +2,13 @@ const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const JWT_SECRET = process.env.JWT_SECRET || "tu-clave-secreta-super-segura-cambiar-en-produccion";
 const PASSWORD_RESET_EXPIRATION_MINUTES = parseInt(process.env.PASSWORD_RESET_EXPIRATION_MINUTES || "60", 10);
 
 // Middlewares
@@ -20,6 +22,43 @@ function isValidEmail(email) {
 function formatDateToMySql(date) {
   return date.toISOString().slice(0, 19).replace("T", " ");
 }
+
+function isValidJSON(str) {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isValidMenuState(estado) {
+  return ["Borrador", "Publicado", "Archivado"].includes(estado);
+}
+
+// ============================
+// MIDDLEWARE DE AUTENTICACIÓN
+// ============================
+const verificarToken = (req, res, next) => {
+  // Buscar el token en el header Authorization o en el query string
+  const token = req.headers.authorization?.split(" ")[1] || req.query.token;
+
+  if (!token) {
+    return res.status(401).json({ ok: false, mensaje: "Token no proporcionado" });
+  }
+
+  try {
+    // Verificar el token JWT
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.userId = decoded.id;
+    next();
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ ok: false, mensaje: "Token expirado" });
+    }
+    return res.status(401).json({ ok: false, mensaje: "Token inválido o malformado" });
+  }
+};
 
 // ============================
 // CONEXIÓN A MYSQL
@@ -61,26 +100,49 @@ app.get("/", (req, res) => {
 app.post("/api/auth/register", async (req, res) => {
   const { nombre, email, password, negocio } = req.body;
 
-  if (!nombre || !email || !password) {
-    return res.status(400).json({ ok: false, mensaje: "Todos los campos son obligatorios" });
+  // Validación de campos obligatorios y tipos
+  if (!nombre || typeof nombre !== "string") {
+    return res.status(400).json({ ok: false, mensaje: "El nombre es obligatorio y debe ser texto" });
   }
 
+  if (!email || typeof email !== "string") {
+    return res.status(400).json({ ok: false, mensaje: "El correo es obligatorio y debe ser texto" });
+  }
+
+  if (!password || typeof password !== "string") {
+    return res.status(400).json({ ok: false, mensaje: "La contraseña es obligatoria y debe ser texto" });
+  }
+
+  // Validación de formato del nombre
+  const trimmedNombre = nombre.trim();
+  if (trimmedNombre.length === 0 || trimmedNombre.length > 255) {
+    return res.status(400).json({ ok: false, mensaje: "El nombre debe tener entre 1 y 255 caracteres" });
+  }
+
+  // Validación de email
   if (!isValidEmail(email)) {
     return res.status(400).json({ ok: false, mensaje: "El correo electrónico no es válido" });
   }
 
+  // Validación de contraseña
   if (password.length < 8) {
     return res.status(400).json({ ok: false, mensaje: "La contraseña debe tener al menos 8 caracteres" });
+  }
+
+  // Validación de negocio si se proporciona
+  if (negocio && typeof negocio !== "string") {
+    return res.status(400).json({ ok: false, mensaje: "El nombre del negocio debe ser texto" });
   }
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const sql = "INSERT INTO usuarios (nombre, email, password, negocio) VALUES (?, ?, ?, ?)";
-    db.query(sql, [nombre, email, hashedPassword, negocio || ""], (err, result) => {
+    db.query(sql, [trimmedNombre, email.toLowerCase(), hashedPassword, negocio?.trim() || ""], (err, result) => {
       if (err) {
         if (err.code === "ER_DUP_ENTRY") {
           return res.status(400).json({ ok: false, mensaje: "Este correo ya está registrado" });
         }
+        console.error("Error al registrar usuario:", err);
         return res.status(500).json({ ok: false, mensaje: "Error al registrar usuario" });
       }
       res.status(201).json({
@@ -90,6 +152,7 @@ app.post("/api/auth/register", async (req, res) => {
       });
     });
   } catch (error) {
+    console.error("Error al procesar la contraseña:", error);
     return res.status(500).json({ ok: false, mensaje: "Error al procesar la contraseña" });
   }
 });
@@ -98,13 +161,24 @@ app.post("/api/auth/register", async (req, res) => {
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ ok: false, mensaje: "Email y contraseña son obligatorios" });
+  // Validación de campos obligatorios y tipos
+  if (!email || typeof email !== "string") {
+    return res.status(400).json({ ok: false, mensaje: "El correo es obligatorio y debe ser texto" });
+  }
+
+  if (!password || typeof password !== "string") {
+    return res.status(400).json({ ok: false, mensaje: "La contraseña es obligatoria y debe ser texto" });
+  }
+
+  // Validación de email
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ ok: false, mensaje: "El correo electrónico no es válido" });
   }
 
   const sql = "SELECT id, nombre, email, plan, password FROM usuarios WHERE email = ?";
-  db.query(sql, [email], async (err, results) => {
+  db.query(sql, [email.toLowerCase()], async (err, results) => {
     if (err) {
+      console.error("Error al consultar usuario:", err);
       return res.status(500).json({ ok: false, mensaje: "Error en el servidor" });
     }
     if (results.length === 0) {
@@ -122,10 +196,14 @@ app.post("/api/auth/login", (req, res) => {
         return res.status(401).json({ ok: false, mensaje: "Correo o contraseña incorrectos" });
       }
 
+      // Migrar contraseña antigua a bcrypt si es necesario
       if (storedPassword && !storedPassword.startsWith("$2")) {
         const newHash = await bcrypt.hash(password, 10);
         db.query("UPDATE usuarios SET password = ? WHERE id = ?", [newHash, user.id], () => {});
       }
+
+      // Generar JWT token con expiración de 24 horas
+      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "24h" });
 
       res.json({
         ok: true,
@@ -136,9 +214,10 @@ app.post("/api/auth/login", (req, res) => {
           email: user.email,
           plan: user.plan,
         },
-        token: "token-" + user.id + "-menumaster",
+        token: token,
       });
     } catch (error) {
+      console.error("Error al verificar la contraseña:", error);
       return res.status(500).json({ ok: false, mensaje: "Error al verificar la contraseña" });
     }
   });
@@ -240,8 +319,13 @@ app.post("/api/auth/reset-password", async (req, res) => {
 // ============================
 
 // GET - Obtener todos los menús
-app.get("/api/menus", (req, res) => {
+app.get("/api/menus", verificarToken, (req, res) => {
   const user_id = req.query.user_id;
+
+  // Validar que user_id sea número si se proporciona
+  if (user_id && isNaN(parseInt(user_id, 10))) {
+    return res.status(400).json({ ok: false, mensaje: "El ID de usuario debe ser un número" });
+  }
 
   const sql = user_id
     ? "SELECT * FROM menus WHERE user_id = ? ORDER BY created_at DESC"
@@ -251,6 +335,7 @@ app.get("/api/menus", (req, res) => {
 
   db.query(sql, params, (err, results) => {
     if (err) {
+      console.error("Error al obtener menús:", err);
       return res.status(500).json({ ok: false, mensaje: "Error al obtener menús" });
     }
     res.json({ ok: true, total: results.length, menus: results });
@@ -258,10 +343,17 @@ app.get("/api/menus", (req, res) => {
 });
 
 // GET - Obtener un menú por ID
-app.get("/api/menus/:id", (req, res) => {
+app.get("/api/menus/:id", verificarToken, (req, res) => {
+  const menuId = parseInt(req.params.id, 10);
+
+  if (isNaN(menuId)) {
+    return res.status(400).json({ ok: false, mensaje: "El ID del menú debe ser un número" });
+  }
+
   const sql = "SELECT * FROM menus WHERE id = ?";
-  db.query(sql, [req.params.id], (err, results) => {
+  db.query(sql, [menuId], (err, results) => {
     if (err) {
+      console.error("Error al obtener menú:", err);
       return res.status(500).json({ ok: false, mensaje: "Error al obtener menú" });
     }
     if (results.length === 0) {
@@ -272,16 +364,41 @@ app.get("/api/menus/:id", (req, res) => {
 });
 
 // POST - Crear menú
-app.post("/api/menus", (req, res) => {
+app.post("/api/menus", verificarToken, (req, res) => {
   const { nombre, estado, data_json, user_id } = req.body;
 
-  if (!nombre) {
-    return res.status(400).json({ ok: false, mensaje: "El nombre es obligatorio" });
+  // Validación de campos obligatorios
+  if (!nombre || typeof nombre !== "string") {
+    return res.status(400).json({ ok: false, mensaje: "El nombre es obligatorio y debe ser texto" });
+  }
+
+  // Validación de nombre (no vacío, máximo 255 caracteres)
+  const trimmedNombre = nombre.trim();
+  if (trimmedNombre.length === 0 || trimmedNombre.length > 255) {
+    return res.status(400).json({ ok: false, mensaje: "El nombre debe tener entre 1 y 255 caracteres" });
+  }
+
+  // Validación de estado
+  const menuState = estado || "Borrador";
+  if (!isValidMenuState(menuState)) {
+    return res.status(400).json({ ok: false, mensaje: "Estado de menú inválido. Debe ser: Borrador, Publicado o Archivado" });
+  }
+
+  // Validación de data_json si se proporciona
+  if (data_json && !isValidJSON(data_json)) {
+    return res.status(400).json({ ok: false, mensaje: "data_json debe ser un JSON válido" });
+  }
+
+  // Validación de user_id
+  const finalUserId = user_id || req.userId || 1;
+  if (isNaN(parseInt(finalUserId, 10))) {
+    return res.status(400).json({ ok: false, mensaje: "El ID de usuario debe ser un número" });
   }
 
   const sql = "INSERT INTO menus (nombre, estado, data_json, user_id) VALUES (?, ?, ?, ?)";
-  db.query(sql, [nombre, estado || "Borrador", data_json || "{}", user_id || 1], (err, result) => {
+  db.query(sql, [trimmedNombre, menuState, data_json || "{}", finalUserId], (err, result) => {
     if (err) {
+      console.error("Error al crear menú:", err);
       return res.status(500).json({ ok: false, mensaje: "Error al crear menú" });
     }
     res.status(201).json({
@@ -293,11 +410,39 @@ app.post("/api/menus", (req, res) => {
 });
 
 // PUT - Actualizar menú
-app.put("/api/menus/:id", (req, res) => {
+app.put("/api/menus/:id", verificarToken, (req, res) => {
+  const menuId = parseInt(req.params.id, 10);
+
+  if (isNaN(menuId)) {
+    return res.status(400).json({ ok: false, mensaje: "El ID del menú debe ser un número" });
+  }
+
   const { nombre, estado, data_json } = req.body;
-  const sql = "UPDATE menus SET nombre = ?, estado = ?, data_json = ? WHERE id = ?";
-  db.query(sql, [nombre, estado, data_json, req.params.id], (err, result) => {
+
+  // Validación de campos
+  if (nombre && typeof nombre !== "string") {
+    return res.status(400).json({ ok: false, mensaje: "El nombre debe ser texto" });
+  }
+
+  if (nombre) {
+    const trimmedNombre = nombre.trim();
+    if (trimmedNombre.length === 0 || trimmedNombre.length > 255) {
+      return res.status(400).json({ ok: false, mensaje: "El nombre debe tener entre 1 y 255 caracteres" });
+    }
+  }
+
+  if (estado && !isValidMenuState(estado)) {
+    return res.status(400).json({ ok: false, mensaje: "Estado de menú inválido. Debe ser: Borrador, Publicado o Archivado" });
+  }
+
+  if (data_json && !isValidJSON(data_json)) {
+    return res.status(400).json({ ok: false, mensaje: "data_json debe ser un JSON válido" });
+  }
+
+  const sql = "UPDATE menus SET nombre = COALESCE(?, nombre), estado = COALESCE(?, estado), data_json = COALESCE(?, data_json) WHERE id = ?";
+  db.query(sql, [nombre || null, estado || null, data_json || null, menuId], (err, result) => {
     if (err) {
+      console.error("Error al actualizar menú:", err);
       return res.status(500).json({ ok: false, mensaje: "Error al actualizar menú" });
     }
     if (result.affectedRows === 0) {
@@ -308,16 +453,51 @@ app.put("/api/menus/:id", (req, res) => {
 });
 
 // DELETE - Eliminar menú
-app.delete("/api/menus/:id", (req, res) => {
+app.delete("/api/menus/:id", verificarToken, (req, res) => {
+  const menuId = parseInt(req.params.id, 10);
+
+  if (isNaN(menuId)) {
+    return res.status(400).json({ ok: false, mensaje: "El ID del menú debe ser un número" });
+  }
+
   const sql = "DELETE FROM menus WHERE id = ?";
-  db.query(sql, [req.params.id], (err, result) => {
+  db.query(sql, [menuId], (err, result) => {
     if (err) {
+      console.error("Error al eliminar menú:", err);
       return res.status(500).json({ ok: false, mensaje: "Error al eliminar menú" });
     }
     if (result.affectedRows === 0) {
       return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
     }
     res.json({ ok: true, mensaje: "Menú eliminado correctamente" });
+  });
+});
+
+// ============================
+// MIDDLEWARE CENTRALIZADO DE ERRORES
+// ============================
+app.use((err, req, res, next) => {
+  console.error("Error capturado:", {
+    mensaje: err.message,
+    stack: err.stack,
+    timestamp: new Date().toISOString(),
+  });
+
+  // No exponer detalles del error al cliente
+  const statusCode = err.statusCode || 500;
+  const mensaje = statusCode === 500 ? "Error interno del servidor" : err.message;
+
+  res.status(statusCode).json({
+    ok: false,
+    mensaje: mensaje,
+  });
+});
+
+// Ruta 404
+app.use((req, res) => {
+  res.status(404).json({
+    ok: false,
+    mensaje: "Ruta no encontrada",
   });
 });
 
