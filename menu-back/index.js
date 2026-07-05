@@ -60,6 +60,7 @@ db.getConnection((err, connection) => {
 
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
+// Obter menus, opcionalmente filtrando por user_id
 app.get("/api/menus", verificarToken, (req, res) => {
   const user_id = req.query.user_id;
   const sql = user_id ? "SELECT * FROM menus WHERE user_id = ? ORDER BY created_at DESC" : "SELECT * FROM menus ORDER BY created_at DESC";
@@ -114,12 +115,12 @@ app.delete("/api/menus/:id", verificarToken, (req, res) => {
 });
 
 app.post("/api/auth/register", async (req, res) => {
-  const { nombre, email, password, negocio } = req.body;
+  const { nombre, email, password, negocio} = req.body;
   if (!nombre || !email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
   try {
     const hash = await bcrypt.hash(password, 10);
     db.query("INSERT INTO usuarios (nombre, email, password, negocio) VALUES (?, ?, ?, ?)",
-      [nombre, email, hash, negocio || ""],
+      [nombre, email, hash,  negocio || ""],
       (err, result) => {
         if (err) {
           if (err.code === "ER_DUP_ENTRY") return res.status(400).json({ ok: false, mensaje: "Correo ya registrado" });
@@ -130,6 +131,31 @@ app.post("/api/auth/register", async (req, res) => {
   } catch (e) {
     res.status(500).json({ ok: false, mensaje: "Error al procesar contraseña" });
   }
+});
+
+app.put("/api/auth/password", verificarToken, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ ok: false, mensaje: "Contraseña actual y nueva son obligatorias" });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ ok: false, mensaje: "La nueva contraseña debe tener al menos 8 caracteres" });
+  }
+
+  db.query("SELECT password FROM usuarios WHERE id = ?", [req.usuario.id], async (err, results) => {
+    if (err) return res.status(500).json({ ok: false, mensaje: err.message });
+    if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
+
+    const currentHash = results[0].password;
+    const matches = await bcrypt.compare(currentPassword, currentHash);
+    if (!matches) return res.status(401).json({ ok: false, mensaje: "Contraseña actual incorrecta" });
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    db.query("UPDATE usuarios SET password = ? WHERE id = ?", [newHash, req.usuario.id], (updateErr) => {
+      if (updateErr) return res.status(500).json({ ok: false, mensaje: updateErr.message });
+      res.json({ ok: true, mensaje: "Contraseña actualizada" });
+    });
+  });
 });
 
 app.post("/api/auth/login", (req, res) => {
