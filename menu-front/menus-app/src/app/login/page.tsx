@@ -7,38 +7,99 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [negocio, setNegocio] = useState("");
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [loading, setLoading] = useState(false);
+
+  // Validar formato de email
+  const isValidEmail = (email: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  // Validar contraseña mínimo 8 caracteres
+  const isValidPassword = (password: string): boolean => {
+    return password.length >= 8;
+  };
+
+  // Validar formulario
+  const validateForm = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (modo === "registro") {
+      if (!nombre.trim()) {
+        newErrors.nombre = "El nombre es obligatorio";
+      }
+      if (!negocio.trim()) {
+        newErrors.negocio = "El nombre del negocio es obligatorio";
+      }
+    }
+
+    if (!email.trim()) {
+      newErrors.email = "El correo es obligatorio";
+    } else if (!isValidEmail(email)) {
+      newErrors.email = "El correo electrónico no es válido";
+    }
+
+    if (!password) {
+      newErrors.password = "La contraseña es obligatoria";
+    } else if (!isValidPassword(password)) {
+      newErrors.password = "La contraseña debe tener al menos 8 caracteres";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async () => {
-    const API = process.env.NEXT_PUBLIC_API_URL;
+    // Validar antes de enviar
+    if (!validateForm()) {
+      return;
+    }
 
-    if (modo === "login") {
-      const res = await fetch(`${API}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        localStorage.setItem("usuario", JSON.stringify(data.usuario));
-        // Guardar cookie para el middleware
-        document.cookie = `usuario=${data.usuario.id}; path=/; max-age=${60 * 60 * 24 * 7}`;
-        window.location.href = "/";
+    const API = process.env.NEXT_PUBLIC_API_URL;
+    setLoading(true);
+
+    try {
+      if (modo === "login") {
+        const res = await fetch(`${API}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          localStorage.setItem("usuario", JSON.stringify(data.usuario));
+          localStorage.setItem("token", data.token);
+          document.cookie = `usuario=${data.usuario.id}; path=/; max-age=${60 * 60 * 24 * 7}`;
+          document.cookie = `token=${data.token}; path=/; max-age=${60 * 60 * 24}`;
+          window.location.href = "/";
+        } else {
+          setErrors({ submit: data.mensaje || "Error al iniciar sesión" });
+        }
       } else {
-        alert(data.mensaje);
+        const res = await fetch(`${API}/api/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre, email, password, negocio }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          setErrors({ submit: "¡Cuenta creada! Ahora inicia sesión." });
+          setTimeout(() => {
+            setModo("login");
+            setNombre("");
+            setEmail("");
+            setPassword("");
+            setNegocio("");
+            setErrors({});
+          }, 1500);
+        } else {
+          setErrors({ submit: data.mensaje || "Error al registrar" });
+        }
       }
-    } else {
-      const res = await fetch(`${API}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre, email, password, negocio }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        alert("¡Cuenta creada! Ahora inicia sesión.");
-        setModo("login");
-      } else {
-        alert(data.mensaje);
-      }
+    } catch (error) {
+      setErrors({ submit: "Error de conexión. Intenta más tarde." });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -146,13 +207,14 @@ export default function Login() {
                   type="text" placeholder="Ej. Juan Pérez"
                   value={nombre} onChange={e => setNombre(e.target.value)}
                   style={{
-                    width: "100%", background: "#0f0f13", border: "1px solid #2a2a35",
+                    width: "100%", background: "#0f0f13", border: errors.nombre ? "1px solid #ef4444" : "1px solid #2a2a35",
                     borderRadius: 8, padding: "11px 14px", color: "white", fontSize: 13,
                     outline: "none", boxSizing: "border-box",
                   }}
-                  onFocus={e => (e.target.style.borderColor = "#a855f7")}
-                  onBlur={e => (e.target.style.borderColor = "#2a2a35")}
+                  onFocus={e => (e.target.style.borderColor = errors.nombre ? "#ef4444" : "#a855f7")}
+                  onBlur={e => (e.target.style.borderColor = errors.nombre ? "#ef4444" : "#2a2a35")}
                 />
+                {errors.nombre && <p style={{ color: "#ef4444", fontSize: 11, margin: "4px 0 0" }}>{errors.nombre}</p>}
               </div>
             )}
 
@@ -165,13 +227,14 @@ export default function Login() {
                   type="text" placeholder="Ej. Restaurante El Buen Sabor"
                   value={negocio} onChange={e => setNegocio(e.target.value)}
                   style={{
-                    width: "100%", background: "#0f0f13", border: "1px solid #2a2a35",
+                    width: "100%", background: "#0f0f13", border: errors.negocio ? "1px solid #ef4444" : "1px solid #2a2a35",
                     borderRadius: 8, padding: "11px 14px", color: "white", fontSize: 13,
                     outline: "none", boxSizing: "border-box",
                   }}
-                  onFocus={e => (e.target.style.borderColor = "#a855f7")}
-                  onBlur={e => (e.target.style.borderColor = "#2a2a35")}
+                  onFocus={e => (e.target.style.borderColor = errors.negocio ? "#ef4444" : "#a855f7")}
+                  onBlur={e => (e.target.style.borderColor = errors.negocio ? "#ef4444" : "#2a2a35")}
                 />
+                {errors.negocio && <p style={{ color: "#ef4444", fontSize: 11, margin: "4px 0 0" }}>{errors.negocio}</p>}
               </div>
             )}
 
@@ -183,13 +246,14 @@ export default function Login() {
                 type="email" placeholder="tucorreo@gmail.com"
                 value={email} onChange={e => setEmail(e.target.value)}
                 style={{
-                  width: "100%", background: "#0f0f13", border: "1px solid #2a2a35",
+                  width: "100%", background: "#0f0f13", border: errors.email ? "1px solid #ef4444" : "1px solid #2a2a35",
                   borderRadius: 8, padding: "11px 14px", color: "white", fontSize: 13,
                   outline: "none", boxSizing: "border-box",
                 }}
-                onFocus={e => (e.target.style.borderColor = "#a855f7")}
-                onBlur={e => (e.target.style.borderColor = "#2a2a35")}
+                onFocus={e => (e.target.style.borderColor = errors.email ? "#ef4444" : "#a855f7")}
+                onBlur={e => (e.target.style.borderColor = errors.email ? "#ef4444" : "#2a2a35")}
               />
+              {errors.email && <p style={{ color: "#ef4444", fontSize: 11, margin: "4px 0 0" }}>{errors.email}</p>}
             </div>
 
             <div>
@@ -200,13 +264,14 @@ export default function Login() {
                 type="password" placeholder="••••••••"
                 value={password} onChange={e => setPassword(e.target.value)}
                 style={{
-                  width: "100%", background: "#0f0f13", border: "1px solid #2a2a35",
+                  width: "100%", background: "#0f0f13", border: errors.password ? "1px solid #ef4444" : "1px solid #2a2a35",
                   borderRadius: 8, padding: "11px 14px", color: "white", fontSize: 13,
                   outline: "none", boxSizing: "border-box",
                 }}
-                onFocus={e => (e.target.style.borderColor = "#a855f7")}
-                onBlur={e => (e.target.style.borderColor = "#2a2a35")}
+                onFocus={e => (e.target.style.borderColor = errors.password ? "#ef4444" : "#a855f7")}
+                onBlur={e => (e.target.style.borderColor = errors.password ? "#ef4444" : "#2a2a35")}
               />
+              {errors.password && <p style={{ color: "#ef4444", fontSize: 11, margin: "4px 0 0" }}>{errors.password}</p>}
             </div>
 
             {modo === "login" && (
@@ -217,16 +282,32 @@ export default function Login() {
               </div>
             )}
 
-            <button onClick={handleSubmit} style={{
-              background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-              border: "none", borderRadius: 10, padding: "13px",
-              color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer",
-              marginTop: 4, transition: "opacity 0.2s",
-            }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
-              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+            {errors.submit && (
+              <div style={{
+                background: errors.submit.includes("Error") || errors.submit.includes("no es válido") ? "#7f1d1d" : "#166534",
+                border: errors.submit.includes("Error") || errors.submit.includes("no es válido") ? "1px solid #ef4444" : "1px solid #22c55e",
+                borderRadius: 8,
+                padding: "12px",
+                color: errors.submit.includes("Error") || errors.submit.includes("no es válido") ? "#fecaca" : "#86efac",
+                fontSize: 12,
+              }}>
+                {errors.submit}
+              </div>
+            )}
+
+            <button 
+              onClick={handleSubmit}
+              disabled={loading || Object.keys(errors).length > 0}
+              style={{
+                background: loading || Object.keys(errors).length > 0 ? "#7c3aed66" : "linear-gradient(135deg, #7c3aed, #a855f7)",
+                border: "none", borderRadius: 10, padding: "13px",
+                color: "white", fontWeight: 700, fontSize: 14, cursor: loading || Object.keys(errors).length > 0 ? "not-allowed" : "pointer",
+                marginTop: 4, transition: "opacity 0.2s", opacity: loading || Object.keys(errors).length > 0 ? 0.6 : 1,
+              }}
+              onMouseEnter={e => !loading && Object.keys(errors).length === 0 && (e.currentTarget.style.opacity = "0.9")}
+              onMouseLeave={e => !loading && Object.keys(errors).length === 0 && (e.currentTarget.style.opacity = "1")}
             >
-              {modo === "login" ? "Iniciar sesión →" : "Crear cuenta gratis →"}
+              {loading ? "Procesando..." : (modo === "login" ? "Iniciar sesión →" : "Crear cuenta gratis →")}
             </button>
 
           </div>
