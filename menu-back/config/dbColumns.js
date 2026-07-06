@@ -2,8 +2,8 @@ module.exports = {
   usuarios: {
     table: "usuarios",
     id: "id",
-    nombre: "nombre_u",
-    negocio: "nombre_n",
+    nombre: "nombre",
+    negocio: "negocio",
     email: "email",
     password: "password",
     plan: "plan",
@@ -12,12 +12,11 @@ module.exports = {
   menus: {
     table: "menus",
     id: "id",
-    usuarioId: "usuario_id",
-    nombre: "nombre_m",
-    descripcion: "descripcion",
+    usuarioId: "user_id",
+    nombre: "nombre",
     estado: "estado",
-    favorito: "favorito",
-    fechaCreacion: "fecha_creacion",
+    dataJson: "data_json",
+    fechaCreacion: "created_at",
   },
   negocios: {
     table: "negocios",
