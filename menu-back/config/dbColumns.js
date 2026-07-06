@@ -1,0 +1,33 @@
+module.exports = {
+  usuarios: {
+    table: "usuarios",
+    id: "id",
+    nombre: "nombre_u",
+    negocio: "nombre_n",
+    email: "email",
+    password: "password",
+    plan: "plan",
+    fechaRegistro: "fecha_registro",
+  },
+  menus: {
+    table: "menus",
+    id: "id",
+    usuarioId: "usuario_id",
+    nombre: "nombre_m",
+    descripcion: "descripcion",
+    estado: "estado",
+    favorito: "favorito",
+    fechaCreacion: "fecha_creacion",
+  },
+  negocios: {
+    table: "negocios",
+    id: "id",
+    usuarioId: "usuario_id",
+    nombre: "nombre_n",
+    descripcion: "descripcion",
+    tipo: "tipo",
+    telefono: "telefono",
+    email: "email",
+    sitioWeb: "sitio web",
+  },
+};

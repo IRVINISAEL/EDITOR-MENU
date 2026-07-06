@@ -11,6 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || "tu-clave-secreta-super-segura-cambiar-en-produccion";
 const PASSWORD_RESET_EXPIRATION_MINUTES = parseInt(process.env.PASSWORD_RESET_EXPIRATION_MINUTES || "60", 10);
+const C = require("./config/dbColumns");
 
 app.use(cors());
 app.use(express.json());
@@ -65,7 +66,18 @@ app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 // Obter menus, opcionalmente filtrando por user_id
 app.get("/api/menus", verificarToken, (req, res) => {
   const user_id = req.query.user_id;
-  const sql = user_id ? "SELECT * FROM menus WHERE user_id = ? ORDER BY created_at DESC" : "SELECT * FROM menus ORDER BY created_at DESC";
+  const columns = [
+    C.menus.id,
+    C.menus.usuarioId,
+    C.menus.nombre,
+    C.menus.descripcion,
+    C.menus.estado,
+    C.menus.favorito,
+    C.menus.fechaCreacion,
+  ].join(", ");
+  const sql = user_id
+    ? `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? ORDER BY ${C.menus.fechaCreacion} DESC`
+    : `SELECT ${columns} FROM ${C.menus.table} ORDER BY ${C.menus.fechaCreacion} DESC`;
   const params = user_id ? [user_id] : [];
   db.query(sql, params, (err, results) => {
     if (err) { console.error("ERROR GET MENUS:", err); return res.status(500).json({ ok: false, mensaje: err.message }); }
@@ -75,11 +87,24 @@ app.get("/api/menus", verificarToken, (req, res) => {
 
 // Se agregó verificarToken aquí (antes era pública, hallazgo de seguridad corregido)
 app.get("/api/menus/:id", verificarToken, (req, res) => {
-  db.query("SELECT * FROM menus WHERE id = ?", [req.params.id], (err, results) => {
-    if (err) return res.status(500).json({ ok: false, mensaje: err.message });
-    if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
-    res.json({ ok: true, menu: results[0] });
-  });
+  const columns = [
+    C.menus.id,
+    C.menus.usuarioId,
+    C.menus.nombre,
+    C.menus.descripcion,
+    C.menus.estado,
+    C.menus.favorito,
+    C.menus.fechaCreacion,
+  ].join(", ");
+  db.query(
+    `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.id} = ?`,
+    [req.params.id],
+    (err, results) => {
+      if (err) return res.status(500).json({ ok: false, mensaje: err.message });
+      if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
+      res.json({ ok: true, menu: results[0] });
+    }
+  );
 });
 
 app.post("/api/menus", verificarToken, (req, res) => {
@@ -87,29 +112,33 @@ app.post("/api/menus", verificarToken, (req, res) => {
   const { nombre, estado, data_json, user_id } = req.body;
   if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
   const dataJson = typeof data_json === "object" ? JSON.stringify(data_json) : (data_json || "{}");
-  db.query("INSERT INTO menus (nombre, estado, data_json, user_id) VALUES (?, ?, ?, ?)",
+  db.query(
+    `INSERT INTO ${C.menus.table} (${C.menus.nombre}, ${C.menus.estado}, data_json, ${C.menus.usuarioId}) VALUES (?, ?, ?, ?)`,
     [nombre, estado || "Borrador", dataJson, user_id || 1],
     (err, result) => {
       if (err) { console.error("ERROR INSERT:", err); return res.status(500).json({ ok: false, mensaje: err.message }); }
       res.status(201).json({ ok: true, menuId: result.insertId });
-    });
+    }
+  );
 });
 
 app.put("/api/menus/:id", verificarToken, (req, res) => {
   const { nombre, estado, data_json } = req.body;
   if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
   const dataJson = typeof data_json === "object" ? JSON.stringify(data_json) : (data_json || "{}");
-  db.query("UPDATE menus SET nombre = ?, estado = ?, data_json = ? WHERE id = ?",
+  db.query(
+    `UPDATE ${C.menus.table} SET ${C.menus.nombre} = ?, ${C.menus.estado} = ?, data_json = ? WHERE ${C.menus.id} = ?`,
     [nombre, estado, dataJson, req.params.id],
     (err, result) => {
       if (err) { console.error("ERROR UPDATE:", err); return res.status(500).json({ ok: false, mensaje: err.message }); }
       if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
       res.json({ ok: true, mensaje: "Actualizado" });
-    });
+    }
+  );
 });
 
 app.delete("/api/menus/:id", verificarToken, (req, res) => {
-  db.query("DELETE FROM menus WHERE id = ?", [req.params.id], (err, result) => {
+  db.query(`DELETE FROM ${C.menus.table} WHERE ${C.menus.id} = ?`, [req.params.id], (err, result) => {
     if (err) return res.status(500).json({ ok: false, mensaje: err.message });
     if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "No encontrado" });
     res.json({ ok: true });
@@ -121,7 +150,8 @@ app.post("/api/auth/register", async (req, res) => {
   if (!nombre || !email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
   try {
     const hash = await bcrypt.hash(password, 10);
-    db.query("INSERT INTO usuarios (nombre, email, password, negocio) VALUES (?, ?, ?, ?)",
+    db.query(
+      `INSERT INTO ${C.usuarios.table} (${C.usuarios.nombre}, ${C.usuarios.email}, ${C.usuarios.password}, ${C.usuarios.negocio}) VALUES (?, ?, ?, ?)`,
       [nombre, email, hash,  negocio || ""],
       (err, result) => {
         if (err) {
@@ -144,26 +174,32 @@ app.put("/api/auth/password", verificarToken, async (req, res) => {
     return res.status(400).json({ ok: false, mensaje: "La nueva contraseña debe tener al menos 8 caracteres" });
   }
 
-  db.query("SELECT password FROM usuarios WHERE id = ?", [req.usuario.id], async (err, results) => {
+  db.query(`SELECT ${C.usuarios.password} FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`, [req.usuario.id], async (err, results) => {
     if (err) return res.status(500).json({ ok: false, mensaje: err.message });
     if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
 
-    const currentHash = results[0].password;
+    const currentHash = results[0][C.usuarios.password];
+    console.log(currentHash)
     const matches = await bcrypt.compare(currentPassword, currentHash);
     if (!matches) return res.status(401).json({ ok: false, mensaje: "Contraseña actual incorrecta" });
 
     const newHash = await bcrypt.hash(newPassword, 10);
-    db.query("UPDATE usuarios SET password = ? WHERE id = ?", [newHash, req.usuario.id], (updateErr) => {
-      if (updateErr) return res.status(500).json({ ok: false, mensaje: updateErr.message });
-      res.json({ ok: true, mensaje: "Contraseña actualizada" });
-    });
+    db.query(
+      `UPDATE ${C.usuarios.table} SET ${C.usuarios.password} = ? WHERE ${C.usuarios.id} = ?`,
+      [newHash, req.usuario.id],
+      (updateErr) => {
+        if (updateErr) return res.status(500).json({ ok: false, mensaje: updateErr.message });
+        res.json({ ok: true, mensaje: "Contraseña actualizada" });
+      }
+    );
   });
 });
 
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
-  db.query("SELECT id, nombre, email, plan, password FROM usuarios WHERE email = ?",
+  db.query(
+    `SELECT ${C.usuarios.id} AS id, ${C.usuarios.nombre} AS nombre, ${C.usuarios.email} AS email, ${C.usuarios.plan} AS plan, ${C.usuarios.password} AS password FROM ${C.usuarios.table} WHERE ${C.usuarios.email} = ?`,
     [email],
     async (err, results) => {
       if (err) return res.status(500).json({ ok: false, mensaje: err.message });
@@ -177,7 +213,8 @@ app.post("/api/auth/login", (req, res) => {
         { expiresIn: "7d" }
       );
       res.json({ ok: true, usuario, token });
-    });
+    }
+  );
 });
 
 // Nuevo endpoint: subir imagen a Cloudinary y asociarla a un menú
@@ -206,7 +243,7 @@ app.post("/api/upload", verificarToken, (req, res) => {
 
       // CA-03 / RN-06: guardar la URL en data_json del menú, si se indicó uno
       if (menu_id) {
-        db.query("SELECT data_json FROM menus WHERE id = ?", [menu_id], (err2, rows) => {
+        db.query(`SELECT data_json FROM ${C.menus.table} WHERE ${C.menus.id} = ?`, [menu_id], (err2, rows) => {
           if (err2 || rows.length === 0) {
             return res.status(201).json({
               ok: true, url: imageUrl,
@@ -217,7 +254,7 @@ app.post("/api/upload", verificarToken, (req, res) => {
           try { data = JSON.parse(rows[0].data_json || "{}"); } catch { data = {}; }
           data.imagen_url = imageUrl;
 
-          db.query("UPDATE menus SET data_json = ? WHERE id = ?",
+          db.query(`UPDATE ${C.menus.table} SET data_json = ? WHERE ${C.menus.id} = ?`,
             [JSON.stringify(data), menu_id],
             (err3) => {
               if (err3) {
