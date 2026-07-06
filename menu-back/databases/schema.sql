@@ -74,7 +74,7 @@ CREATE TABLE `negocios` (
   `id` int(11) NOT NULL,
   `usuario_id` int(11) NOT NULL,
   `nombre_n` varchar(100) NOT NULL,
-  `descripcion` varchar(100) DEFAULT NULL,
+  `descripcion_n` varchar(100) DEFAULT NULL,
   `tipo` varchar(100) DEFAULT NULL,
   `telefono` int(10) DEFAULT NULL,
   `email` varchar(100) NOT NULL,
