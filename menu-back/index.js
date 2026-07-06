@@ -70,9 +70,7 @@ app.get("/api/menus", verificarToken, (req, res) => {
     C.menus.id,
     C.menus.usuarioId,
     C.menus.nombre,
-    C.menus.descripcion,
     C.menus.estado,
-    C.menus.favorito,
     C.menus.fechaCreacion,
   ].join(", ");
   const sql = user_id
@@ -91,9 +89,7 @@ app.get("/api/menus/:id", verificarToken, (req, res) => {
     C.menus.id,
     C.menus.usuarioId,
     C.menus.nombre,
-    C.menus.descripcion,
     C.menus.estado,
-    C.menus.favorito,
     C.menus.fechaCreacion,
   ].join(", ");
   db.query(
