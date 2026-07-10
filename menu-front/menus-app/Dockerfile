@@ -22,9 +22,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Salida "standalone" de Next.js: server mínimo con solo lo necesario
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# --chown asegura que el usuario "node" (no-root) sea dueño de estos archivos
+COPY --from=builder --chown=node:node /app/public ./public
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+
+# No correr como root
+USER node
 
 EXPOSE 3000
 CMD ["node", "server.js"]
