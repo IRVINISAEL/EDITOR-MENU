@@ -2,6 +2,8 @@ services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
+    networks:
+      - red-datos
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       MYSQL_DATABASE: ${DB_NAME:-menumaster}
@@ -22,6 +24,9 @@ services:
     build:
       context: ./menu-back
     restart: unless-stopped
+    networks:
+      - red-datos
+      - red-app
     depends_on:
       mysql:
         condition: service_healthy
@@ -39,6 +44,12 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
     ports:
       - "4000:4000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   frontend:
     build:
@@ -46,10 +57,25 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     restart: unless-stopped
+    networks:
+      - red-app
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  red-datos:
+    driver: bridge
+  red-app:
+    driver: bridge
 
 volumes:
   mysql_data:
