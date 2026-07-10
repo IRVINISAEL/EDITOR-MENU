@@ -1,0 +1,55 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-menumaster}
+      MYSQL_USER: ${DB_USER:-menumaster_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-menumaster_pass}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./menu-back/databases/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./menu-back
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-menumaster_user}
+      DB_PASSWORD: ${DB_PASSWORD:-menumaster_pass}
+      DB_NAME: ${DB_NAME:-menumaster}
+      DB_PORT: 3306
+      PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:-menumaster_jwt_secret_2024}
+      PASSWORD_RESET_EXPIRATION_MINUTES: ${PASSWORD_RESET_EXPIRATION_MINUTES:-60}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    ports:
+      - "4000:4000"
+
+  frontend:
+    build:
+      context: ./menu-front/menus-app
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  mysql_data:
