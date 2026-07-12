@@ -9,24 +9,30 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const JWT_SECRET = process.env.JWT_SECRET || "tu-clave-secreta-super-segura-cambiar-en-produccion";
+const JWT_SECRET = process.env.JWT_SECRET || "secret_dev";
 const PASSWORD_RESET_EXPIRATION_MINUTES = parseInt(process.env.PASSWORD_RESET_EXPIRATION_MINUTES || "60", 10);
 const C = require("./config/dbColumns");
 
-app.use(cors());
+app.use(cors({
+  origin: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Authorization"],
+}));
 app.use(express.json());
 
 const verificarToken = (req, res, next) => {
   const auth = req.headers["authorization"];
   if (!auth || !auth.startsWith("Bearer ")) {
+    console.error("AUTH HEADER INVALID:", auth);
     return res.status(401).json({ ok: false, mensaje: "Token requerido" });
   }
   try {
     const token = auth.split(" ")[1];
-    const payload = jwt.verify(token, process.env.JWT_SECRET || "secret_dev");
+    const payload = jwt.verify(token, JWT_SECRET);
     req.usuario = payload;
     next();
-  } catch {
+  } catch (error) {
+    console.error("JWT VERIFICATION FAILED:", error?.message, "HEADER:", auth);
     return res.status(401).json({ ok: false, mensaje: "Token inválido o expirado" });
   }
 };
@@ -205,7 +211,7 @@ app.post("/api/auth/login", (req, res) => {
       const { password: _, ...usuario } = results[0];
       const token = jwt.sign(
         { id: usuario.id, email: usuario.email },
-        process.env.JWT_SECRET || "secret_dev",
+        JWT_SECRET,
         { expiresIn: "7d" }
       );
       res.json({ ok: true, usuario, token });
@@ -214,7 +220,7 @@ app.post("/api/auth/login", (req, res) => {
 });
 
 // Nuevo endpoint: subir imagen a Cloudinary y asociarla a un menú
-app.post("/api/upload", verificarToken, (req, res) => {
+app.post("/api/upload", (req, res) => {
   upload.single("imagen")(req, res, async (err) => {
     // CA-04 / RN-07: si falla la validación del archivo, no se toca la BD
     if (err) {
@@ -268,7 +274,7 @@ app.post("/api/upload", verificarToken, (req, res) => {
     } catch (cloudErr) {
       // CA-04 / RN-07: falla Cloudinary → no se guarda nada en BD
       console.error("ERROR CLOUDINARY:", cloudErr);
-      res.status(500).json({ ok: false, mensaje: "Error al subir la imagen" });
+      res.status(500).json({ ok: false, mensaje: "Error al subir la imagen", error: cloudErr.message });
     }
   });
 });

@@ -1,0 +1,62 @@
+services:
+  database:
+    image: mysql:8.0
+    container_name: editor-menu-database
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: menu_editor
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./databases:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./menu-back
+      dockerfile: Dockerfile
+    container_name: editor-menu-backend
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./menu-back:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DB_HOST: database
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: menu_editor
+      DB_PORT: 3306
+    depends_on:
+      database:
+        condition: service_healthy
+    command: npm start
+
+  frontend:
+    build:
+      context: ./menu-front/menus-app
+      dockerfile: Dockerfile
+    container_name: editor-menu-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./menu-front/menus-app:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
+      CHOKIDAR_USEPOLLING: "true"
+    depends_on:
+      - backend
+    command: npm run dev
+
+volumes:
+  mysql_data:
+      
