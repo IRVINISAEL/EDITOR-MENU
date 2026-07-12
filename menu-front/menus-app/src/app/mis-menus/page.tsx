@@ -53,19 +53,21 @@ export default function MisMenus() {
   const cargarMenus = async () => {
     setCargando(true);
     try {
-      const usuarioData = localStorage.getItem("usuario");
-      const usuario = usuarioData ? JSON.parse(usuarioData) : { id: 1 };
       const res = await fetch(`${API}/api/menus`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const data = await res.json();
+      // CA-04: el backend ya filtra por el usuario del token; si la
+      // respuesta no es válida, se informa al usuario en vez de fallar en silencio.
       if (data.ok) {
-        // Filtrar solo los del usuario actual
-        const misMenus = data.menus.filter((m: Menu) => m.user_id === (usuario.id || 1));
-        setMenus(misMenus);
+        setMenus(data.menus);
+      } else {
+        console.error("Error cargando menús:", data.mensaje);
+        alert(data.mensaje || "No se pudieron cargar tus menús.");
       }
     } catch {
       console.error("Error cargando menús");
+      alert("Error de conexión al cargar tus menús.");
     } finally {
       setCargando(false);
     }
