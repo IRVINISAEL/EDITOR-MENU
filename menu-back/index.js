@@ -114,18 +114,19 @@ app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
 // Obter menus, opcionalmente filtrando por user_id
 app.get("/api/menus", verificarToken, (req, res, next) => {
-  const user_id = req.query.user_id;
+  // RN-05: el usuario se obtiene del token verificado, nunca de un parámetro
+  // enviado por el cliente (evita que un usuario vea menús de otro).
   const columns = [
     C.menus.id, C.menus.usuarioId, C.menus.nombre, C.menus.estado, C.menus.fechaCreacion,
   ].join(", ");
-  const sql = user_id
-    ? `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? AND ${C.menus.eliminadoAt} IS NULL ORDER BY ${C.menus.fechaCreacion} DESC`
-    : `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.eliminadoAt} IS NULL ORDER BY ${C.menus.fechaCreacion} DESC`;
-  const params = user_id ? [user_id] : [];
-  db.query(sql, params, (err, results) => {
-    if (err) return next(err);
-    res.json({ ok: true, menus: results });
-  });
+  db.query(
+    `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? AND ${C.menus.eliminadoAt} IS NULL ORDER BY ${C.menus.fechaCreacion} DESC`,
+    [req.usuario.id],
+    (err, results) => {
+      if (err) return next(err);
+      res.json({ ok: true, menus: results });
+    }
+  );
 });
 
 app.get("/api/menus/papelera", verificarToken, (req, res, next) => {
