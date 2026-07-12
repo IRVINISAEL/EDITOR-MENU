@@ -68,6 +68,48 @@ db.getConnection((err, connection) => {
   iniciarPurgaProgramada(db);
 });
 
+// Middleware: verificar que el usuario sea propietario del menú
+const verificarPropietarioMenu = (req, res, next) => {
+  const menuId = req.params.id;
+  const usuarioId = req.usuario.id;
+
+  db.query(
+    `SELECT ${C.menus.usuarioId} 
+     FROM ${C.menus.table} 
+     WHERE ${C.menus.id} = ?`,
+    [menuId],
+    (err, results) => {
+      if (err) {
+        return next(err);
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Menú no encontrado",
+        });
+      }
+
+      const propietarioId = results[0][C.menus.usuarioId];
+
+      if (Number(propietarioId) !== Number(usuarioId)) {
+        logAccesoDenegado(
+          req,
+          403,
+          "Intento de acceso a menú de otro usuario"
+        );
+
+        return res.status(403).json({
+          ok: false,
+          mensaje: "No tienes permisos para modificar este menú",
+        });
+      }
+
+      next();
+    }
+  );
+};
+
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
 // Obter menus, opcionalmente filtrando por user_id
@@ -101,7 +143,7 @@ app.get("/api/menus/papelera", verificarToken, (req, res, next) => {
 });
 
 // Se agregó verificarToken aquí (antes era pública, hallazgo de seguridad corregido)
-app.get("/api/menus/:id", verificarToken, (req, res) => {
+app.get("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res) => {
   const columns = [
     C.menus.id,
     C.menus.usuarioId,
@@ -135,7 +177,7 @@ app.post("/api/menus", verificarToken, (req, res, next) => {
   );
 });
 
-app.put("/api/menus/:id", verificarToken, (req, res) => {
+app.put("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res) => {
   const { nombre, estado, data_json } = req.body;
   if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
   const dataJson = typeof data_json === "object" ? JSON.stringify(data_json) : (data_json || "{}");
@@ -150,7 +192,7 @@ app.put("/api/menus/:id", verificarToken, (req, res) => {
   );
 });
 
-app.delete("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, next) => {
+app.put("/api/menus/:id/restaurar", verificarToken, verificarPropietarioMenu, (req, res, next) => {
   db.query(
     `UPDATE ${C.menus.table} SET ${C.menus.eliminadoAt} = NOW() WHERE ${C.menus.id} = ? AND ${C.menus.eliminadoAt} IS NULL`,
     [req.params.id],
