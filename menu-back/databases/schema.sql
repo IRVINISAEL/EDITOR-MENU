@@ -61,7 +61,8 @@ CREATE TABLE `menus` (
   `descripcion` varchar(100) NOT NULL,
   `estado` varchar(100) NOT NULL,
   `favorito` tinyint(1) NOT NULL,
-  `fecha_creacion` datetime NOT NULL
+  `fecha_creacion` datetime NOT NULL,
+  `eliminado_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
