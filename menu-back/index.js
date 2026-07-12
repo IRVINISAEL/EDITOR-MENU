@@ -6,6 +6,10 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const cloudinary = require("./cloudinary");
 require("dotenv").config();
+const { logAccesoDenegado } = require("./config/logger");
+const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
+const { verificarBloqueoLogin, registrarIntentoFallido, registrarIntentoExitoso } = require("./middleware/loginLimiter");
+const { iniciarPurgaProgramada } = require("./jobs/purgaPapelera");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -19,6 +23,7 @@ app.use(express.json());
 const verificarToken = (req, res, next) => {
   const auth = req.headers["authorization"];
   if (!auth || !auth.startsWith("Bearer ")) {
+    logAccesoDenegado(req, 401, "Token requerido");
     return res.status(401).json({ ok: false, mensaje: "Token requerido" });
   }
   try {
@@ -27,6 +32,7 @@ const verificarToken = (req, res, next) => {
     req.usuario = payload;
     next();
   } catch {
+    logAccesoDenegado(req, 401, "Token inválido o expirado");
     return res.status(401).json({ ok: false, mensaje: "Token inválido o expirado" });
   }
 };
@@ -59,28 +65,39 @@ db.getConnection((err, connection) => {
   if (err) { console.error("❌ Error MySQL:", err); return; }
   console.log("✅ Conectado a MySQL correctamente");
   connection.release();
+  iniciarPurgaProgramada(db);
 });
 
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
 // Obter menus, opcionalmente filtrando por user_id
-app.get("/api/menus", verificarToken, (req, res) => {
+app.get("/api/menus", verificarToken, (req, res, next) => {
   const user_id = req.query.user_id;
   const columns = [
-    C.menus.id,
-    C.menus.usuarioId,
-    C.menus.nombre,
-    C.menus.estado,
-    C.menus.fechaCreacion,
+    C.menus.id, C.menus.usuarioId, C.menus.nombre, C.menus.estado, C.menus.fechaCreacion,
   ].join(", ");
   const sql = user_id
-    ? `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? ORDER BY ${C.menus.fechaCreacion} DESC`
-    : `SELECT ${columns} FROM ${C.menus.table} ORDER BY ${C.menus.fechaCreacion} DESC`;
+    ? `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? AND ${C.menus.eliminadoAt} IS NULL ORDER BY ${C.menus.fechaCreacion} DESC`
+    : `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.eliminadoAt} IS NULL ORDER BY ${C.menus.fechaCreacion} DESC`;
   const params = user_id ? [user_id] : [];
   db.query(sql, params, (err, results) => {
-    if (err) { console.error("ERROR GET MENUS:", err); return res.status(500).json({ ok: false, mensaje: err.message }); }
+    if (err) return next(err);
     res.json({ ok: true, menus: results });
   });
+});
+
+app.get("/api/menus/papelera", verificarToken, (req, res, next) => {
+  const columns = [
+    C.menus.id, C.menus.usuarioId, C.menus.nombre, C.menus.estado, C.menus.fechaCreacion, C.menus.eliminadoAt,
+  ].join(", ");
+  db.query(
+    `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? AND ${C.menus.eliminadoAt} IS NOT NULL ORDER BY ${C.menus.eliminadoAt} DESC`,
+    [req.usuario.id],
+    (err, results) => {
+      if (err) return next(err);
+      res.json({ ok: true, menus: results });
+    }
+  );
 });
 
 // Se agregó verificarToken aquí (antes era pública, hallazgo de seguridad corregido)
@@ -93,7 +110,7 @@ app.get("/api/menus/:id", verificarToken, (req, res) => {
     C.menus.fechaCreacion,
   ].join(", ");
   db.query(
-    `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.id} = ?`,
+    `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.id} = ? AND ${C.menus.eliminadoAt} IS NULL`,
     [req.params.id],
     (err, results) => {
       if (err) return res.status(500).json({ ok: false, mensaje: err.message });
@@ -103,9 +120,9 @@ app.get("/api/menus/:id", verificarToken, (req, res) => {
   );
 });
 
-app.post("/api/menus", verificarToken, (req, res) => {
-  console.log("BODY:", req.body);
+app.post("/api/menus", verificarToken, (req, res, next) => {
   const { nombre, estado, data_json, user_id } = req.body;
+
   if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
   const dataJson = typeof data_json === "object" ? JSON.stringify(data_json) : (data_json || "{}");
   db.query(
@@ -133,12 +150,28 @@ app.put("/api/menus/:id", verificarToken, (req, res) => {
   );
 });
 
-app.delete("/api/menus/:id", verificarToken, (req, res) => {
-  db.query(`DELETE FROM ${C.menus.table} WHERE ${C.menus.id} = ?`, [req.params.id], (err, result) => {
-    if (err) return res.status(500).json({ ok: false, mensaje: err.message });
-    if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "No encontrado" });
-    res.json({ ok: true });
-  });
+app.delete("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, next) => {
+  db.query(
+    `UPDATE ${C.menus.table} SET ${C.menus.eliminadoAt} = NOW() WHERE ${C.menus.id} = ? AND ${C.menus.eliminadoAt} IS NULL`,
+    [req.params.id],
+    (err, result) => {
+      if (err) return next(err);
+      if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "No encontrado" });
+      res.json({ ok: true, mensaje: "Menú movido a la papelera" });
+    }
+  );
+});
+
+app.put("/api/menus/:id/restaurar", verificarToken, verificarPropietarioMenu, (req, res, next) => {
+  db.query(
+    `UPDATE ${C.menus.table} SET ${C.menus.eliminadoAt} = NULL WHERE ${C.menus.id} = ? AND ${C.menus.eliminadoAt} IS NOT NULL`,
+    [req.params.id],
+    (err, result) => {
+      if (err) return next(err);
+      if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "El menú no está en la papelera" });
+      res.json({ ok: true, mensaje: "Menú restaurado" });
+    }
+  );
 });
 
 app.post("/api/auth/register", async (req, res) => {
@@ -175,8 +208,8 @@ app.put("/api/auth/password", verificarToken, async (req, res) => {
     if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
 
     const currentHash = results[0][C.usuarios.password];
-    console.log(currentHash)
     const matches = await bcrypt.compare(currentPassword, currentHash);
+    
     if (!matches) return res.status(401).json({ ok: false, mensaje: "Contraseña actual incorrecta" });
 
     const newHash = await bcrypt.hash(newPassword, 10);
@@ -191,24 +224,37 @@ app.put("/api/auth/password", verificarToken, async (req, res) => {
   });
 });
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", verificarBloqueoLogin, (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
   db.query(
     `SELECT ${C.usuarios.id} AS id, ${C.usuarios.nombre} AS nombre, ${C.usuarios.email} AS email, ${C.usuarios.plan} AS plan, ${C.usuarios.password} AS password FROM ${C.usuarios.table} WHERE ${C.usuarios.email} = ?`,
     [email],
     async (err, results) => {
-      if (err) return res.status(500).json({ ok: false, mensaje: err.message });
-      if (results.length === 0) return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
-      const valido = await bcrypt.compare(password, results[0].password);
-      if (!valido) return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
-      const { password: _, ...usuario } = results[0];
-      const token = jwt.sign(
-        { id: usuario.id, email: usuario.email },
-        process.env.JWT_SECRET || "secret_dev",
-        { expiresIn: "7d" }
-      );
-      res.json({ ok: true, usuario, token });
+      if (err) return next(err);
+      if (results.length === 0) {
+        registrarIntentoFallido(req);
+        logAccesoDenegado(req, 401, "Credenciales incorrectas (correo no encontrado)");
+        return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
+      }
+      try {
+        const valido = await bcrypt.compare(password, results[0].password);
+        if (!valido) {
+          registrarIntentoFallido(req);
+          logAccesoDenegado(req, 401, "Credenciales incorrectas");
+          return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
+        }
+        registrarIntentoExitoso(req);
+        const { password: _, ...usuario } = results[0];
+        const token = jwt.sign(
+          { id: usuario.id, email: usuario.email },
+          process.env.JWT_SECRET || "secret_dev",
+          { expiresIn: "7d" }
+        );
+        res.json({ ok: true, usuario, token });
+      } catch (e) {
+        next(e);
+      }
     }
   );
 });
@@ -272,6 +318,9 @@ app.post("/api/upload", verificarToken, (req, res) => {
     }
   });
 });
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`✅ Servidor en http://localhost:${PORT}`);

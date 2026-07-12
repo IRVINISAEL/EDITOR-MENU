@@ -17,6 +17,7 @@ module.exports = {
     estado: "estado",
     dataJson: "data_json",
     fechaCreacion: "created_at",
+    eliminadoAt: "eliminado_at",
   },
   negocios: {
     table: "negocios",
