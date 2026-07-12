@@ -8,6 +8,7 @@ const cloudinary = require("./cloudinary");
 require("dotenv").config();
 const { logAccesoDenegado } = require("./config/logger");
 const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
+const { verificarBloqueoLogin, registrarIntentoFallido, registrarIntentoExitoso } = require("./middleware/loginLimiter");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -176,7 +177,7 @@ app.put("/api/auth/password", verificarToken, async (req, res) => {
 
     const currentHash = results[0][C.usuarios.password];
     const matches = await bcrypt.compare(currentPassword, currentHash);
-
+    
     if (!matches) return res.status(401).json({ ok: false, mensaje: "Contraseña actual incorrecta" });
 
     const newHash = await bcrypt.hash(newPassword, 10);
@@ -191,24 +192,37 @@ app.put("/api/auth/password", verificarToken, async (req, res) => {
   });
 });
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", verificarBloqueoLogin, (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
   db.query(
     `SELECT ${C.usuarios.id} AS id, ${C.usuarios.nombre} AS nombre, ${C.usuarios.email} AS email, ${C.usuarios.plan} AS plan, ${C.usuarios.password} AS password FROM ${C.usuarios.table} WHERE ${C.usuarios.email} = ?`,
     [email],
     async (err, results) => {
-      if (err) return res.status(500).json({ ok: false, mensaje: err.message });
-      if (results.length === 0) return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
-      const valido = await bcrypt.compare(password, results[0].password);
-      if (!valido) return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
-      const { password: _, ...usuario } = results[0];
-      const token = jwt.sign(
-        { id: usuario.id, email: usuario.email },
-        process.env.JWT_SECRET || "secret_dev",
-        { expiresIn: "7d" }
-      );
-      res.json({ ok: true, usuario, token });
+      if (err) return next(err);
+      if (results.length === 0) {
+        registrarIntentoFallido(req);
+        logAccesoDenegado(req, 401, "Credenciales incorrectas (correo no encontrado)");
+        return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
+      }
+      try {
+        const valido = await bcrypt.compare(password, results[0].password);
+        if (!valido) {
+          registrarIntentoFallido(req);
+          logAccesoDenegado(req, 401, "Credenciales incorrectas");
+          return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
+        }
+        registrarIntentoExitoso(req);
+        const { password: _, ...usuario } = results[0];
+        const token = jwt.sign(
+          { id: usuario.id, email: usuario.email },
+          process.env.JWT_SECRET || "secret_dev",
+          { expiresIn: "7d" }
+        );
+        res.json({ ok: true, usuario, token });
+      } catch (e) {
+        next(e);
+      }
     }
   );
 });
