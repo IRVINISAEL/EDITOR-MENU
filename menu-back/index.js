@@ -144,19 +144,20 @@ app.get("/api/menus/papelera", verificarToken, (req, res, next) => {
 });
 
 // Se agregó verificarToken aquí (antes era pública, hallazgo de seguridad corregido)
-app.get("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res) => {
+app.get("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, next) => {
   const columns = [
     C.menus.id,
     C.menus.usuarioId,
     C.menus.nombre,
     C.menus.estado,
+    C.menus.dataJson,
     C.menus.fechaCreacion,
   ].join(", ");
   db.query(
     `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.id} = ? AND ${C.menus.eliminadoAt} IS NULL`,
     [req.params.id],
     (err, results) => {
-      if (err) return res.status(500).json({ ok: false, mensaje: err.message });
+      if (err) return next(err);
       if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
       res.json({ ok: true, menu: results[0] });
     }
