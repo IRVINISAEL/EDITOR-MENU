@@ -6,6 +6,8 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const cloudinary = require("./cloudinary");
 require("dotenv").config();
+const { logAccesoDenegado } = require("./config/logger");
+const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -19,6 +21,7 @@ app.use(express.json());
 const verificarToken = (req, res, next) => {
   const auth = req.headers["authorization"];
   if (!auth || !auth.startsWith("Bearer ")) {
+    logAccesoDenegado(req, 401, "Token requerido");
     return res.status(401).json({ ok: false, mensaje: "Token requerido" });
   }
   try {
@@ -27,6 +30,7 @@ const verificarToken = (req, res, next) => {
     req.usuario = payload;
     next();
   } catch {
+    logAccesoDenegado(req, 401, "Token inválido o expirado");
     return res.status(401).json({ ok: false, mensaje: "Token inválido o expirado" });
   }
 };
@@ -64,21 +68,17 @@ db.getConnection((err, connection) => {
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
 // Obter menus, opcionalmente filtrando por user_id
-app.get("/api/menus", verificarToken, (req, res) => {
+app.get("/api/menus", verificarToken, (req, res, next) => {
   const user_id = req.query.user_id;
   const columns = [
-    C.menus.id,
-    C.menus.usuarioId,
-    C.menus.nombre,
-    C.menus.estado,
-    C.menus.fechaCreacion,
+    C.menus.id, C.menus.usuarioId, C.menus.nombre, C.menus.estado, C.menus.fechaCreacion,
   ].join(", ");
   const sql = user_id
     ? `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? ORDER BY ${C.menus.fechaCreacion} DESC`
     : `SELECT ${columns} FROM ${C.menus.table} ORDER BY ${C.menus.fechaCreacion} DESC`;
   const params = user_id ? [user_id] : [];
   db.query(sql, params, (err, results) => {
-    if (err) { console.error("ERROR GET MENUS:", err); return res.status(500).json({ ok: false, mensaje: err.message }); }
+    if (err) return next(err);
     res.json({ ok: true, menus: results });
   });
 });
@@ -103,9 +103,9 @@ app.get("/api/menus/:id", verificarToken, (req, res) => {
   );
 });
 
-app.post("/api/menus", verificarToken, (req, res) => {
-  console.log("BODY:", req.body);
+app.post("/api/menus", verificarToken, (req, res, next) => {
   const { nombre, estado, data_json, user_id } = req.body;
+
   if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
   const dataJson = typeof data_json === "object" ? JSON.stringify(data_json) : (data_json || "{}");
   db.query(
@@ -175,8 +175,8 @@ app.put("/api/auth/password", verificarToken, async (req, res) => {
     if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
 
     const currentHash = results[0][C.usuarios.password];
-    console.log(currentHash)
     const matches = await bcrypt.compare(currentPassword, currentHash);
+
     if (!matches) return res.status(401).json({ ok: false, mensaje: "Contraseña actual incorrecta" });
 
     const newHash = await bcrypt.hash(newPassword, 10);
@@ -272,6 +272,9 @@ app.post("/api/upload", verificarToken, (req, res) => {
     }
   });
 });
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`✅ Servidor en http://localhost:${PORT}`);
