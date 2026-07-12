@@ -193,7 +193,7 @@ app.put("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res) =
   );
 });
 
-app.put("/api/menus/:id/restaurar", verificarToken, verificarPropietarioMenu, (req, res, next) => {
+app.delete("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, next) => {
   db.query(
     `UPDATE ${C.menus.table} SET ${C.menus.eliminadoAt} = NOW() WHERE ${C.menus.id} = ? AND ${C.menus.eliminadoAt} IS NULL`,
     [req.params.id],
