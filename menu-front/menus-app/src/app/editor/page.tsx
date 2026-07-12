@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -90,6 +91,46 @@ export default function Editor() {
       } catch {}
     }
   }, []);
+
+  const router = useRouter();
+
+  // Confirm before closing tab or navigating away when there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!guardado && !guardando) {
+        e.preventDefault();
+        e.returnValue = ""; // Required for Chrome
+        return "";
+      }
+      return undefined as unknown as string;
+    };
+
+    const handlePopState = () => {
+      if (!guardado && !guardando) {
+        const leave = window.confirm("¿Estás seguro que quieres salir sin guardar tus cambios?");
+        if (!leave) {
+          history.pushState(null, "", location.href);
+        }
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [guardado, guardando]);
+
+  const handleBackClick = (e: any) => {
+    e.preventDefault();
+    if (!guardado && !guardando) {
+      const leave = window.confirm("¿Estás seguro que quieres salir sin guardar tus cambios?");
+      if (!leave) return;
+    }
+    router.push("/mis-menus");
+  };
 
   const editarNombreSeccion = (seccionId: number, valor: string) => {
     setSecciones(prev => prev.map(s => s.id === seccionId ? { ...s, nombre: valor } : s));
@@ -270,8 +311,8 @@ export default function Editor() {
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "8px 16px", gap: 8, flexWrap: "wrap",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <a href="/mis-menus" style={{ color: "#888", fontSize: 12, textDecoration: "none" }}>← Volver</a>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <a href="/mis-menus" onClick={handleBackClick} style={{ color: "#888", fontSize: 12, textDecoration: "none" }}>← Volver</a>
             <span style={{ color: "#333" }}>|</span>
             
             <input
