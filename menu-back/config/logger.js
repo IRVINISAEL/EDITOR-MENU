@@ -1,12 +1,4 @@
-const path = require("path");
-const fs = require("fs");
 const winston = require("winston");
-
-const logsDir = path.join(__dirname, "..", "logs");
-
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
 
 const CAMPOS_SENSIBLES = [
   "password",
@@ -45,12 +37,15 @@ function sanitizar(valor) {
 
 const sanitizeFormat = winston.format((info) => {
   const { level, message, timestamp, stack, ...meta } = info;
+
   Object.assign(info, sanitizar(meta));
+
   return info;
 });
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
+
   format: winston.format.combine(
     winston.format.timestamp({
       format: "YYYY-MM-DD HH:mm:ss.SSS",
@@ -59,19 +54,16 @@ const logger = winston.createLogger({
     sanitizeFormat(),
     winston.format.json()
   ),
+
   defaultMeta: {
     servicio: "menu-back",
   },
+
   transports: [
-    new winston.transports.File({
-      filename: path.join(logsDir, "error.log"),
-      level: "error",
-    }),
-    new winston.transports.File({
-      filename: path.join(logsDir, "combined.log"),
-    }),
+    new winston.transports.Console(),
   ],
 });
+
 
 if (process.env.NODE_ENV !== "production") {
   logger.add(
@@ -81,6 +73,7 @@ if (process.env.NODE_ENV !== "production") {
         winston.format.printf(
           ({ level, message, timestamp, ...meta }) => {
             const { servicio, ...resto } = meta;
+
             const extra = Object.keys(resto).length
               ? ` ${JSON.stringify(resto)}`
               : "";
@@ -93,6 +86,7 @@ if (process.env.NODE_ENV !== "production") {
   );
 }
 
+
 function logError(req, err, statusCode = 500) {
   logger.error(err.message || "Error interno", {
     endpoint: req.originalUrl,
@@ -104,6 +98,7 @@ function logError(req, err, statusCode = 500) {
   });
 }
 
+
 function logAccesoDenegado(req, statusCode, motivo) {
   logger.warn("Acceso denegado", {
     endpoint: req.originalUrl,
@@ -114,6 +109,7 @@ function logAccesoDenegado(req, statusCode, motivo) {
     motivo,
   });
 }
+
 
 module.exports = {
   logger,
