@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-const categorias = ["Todas", "Restaurante", "Cafetería", "Postres", "Italiano", "Moderno"];
+const categorias = ["Todas", "Restaurante", "Cafetería", "Postres", "Italiano", "Moderno", "Mexicano", "Japonés", "Vegano", "Favoritos"];
 
 const plantillas = [
   {
@@ -229,11 +229,30 @@ export default function Plantillas() {
   const [busqueda, setBusqueda] = useState("");
   const [preview, setPreview] = useState<Plantilla | null>(null);
 
+  const [favoritos, setFavoritos] = useState<number[]>(() => {
+    try { return JSON.parse(localStorage.getItem("favoritos_plantillas") || "[]"); } catch { return []; }
+  });
+  const [pagina, setPagina] = useState(1);
+  const POR_PAGINA = 12;
+
+  const toggleFavorito = (id: number) => {
+    setFavoritos(prev => {
+      const nuevo = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
+      localStorage.setItem("favoritos_plantillas", JSON.stringify(nuevo));
+      return nuevo;
+    });
+  };
+
   const plantillasFiltradas = plantillas.filter((p) => {
+    if (categoriaActiva === "Favoritos") return favoritos.includes(p.id);
     const coincideCategoria = categoriaActiva === "Todas" || p.categoria === categoriaActiva;
-    const coincideBusqueda = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
+    const q = busqueda.toLowerCase();
+    const coincideBusqueda = p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q);
     return coincideCategoria && coincideBusqueda;
   });
+
+  const totalPaginas = Math.ceil(plantillasFiltradas.length / POR_PAGINA);
+  const plantillasPagina = plantillasFiltradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   const usarPlantilla = (p: Plantilla) => {
     localStorage.setItem("plantilla_cargada", JSON.stringify(p.config));
@@ -248,6 +267,7 @@ export default function Plantillas() {
         width: 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
         position: "fixed", height: "100vh", zIndex: 10,
+        top: 0, left: 0,
       }}>
         <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -290,7 +310,7 @@ export default function Plantillas() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: 220, flex: 1, padding: 32 }}>
+      <main style={{ marginLeft: "clamp(0px, 220px, 220px)", flex: 1, padding: "clamp(16px, 4vw, 32px)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
           <div>
             <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>Plantillas</h1>
@@ -298,14 +318,14 @@ export default function Plantillas() {
           </div>
           <input
             type="text" placeholder="🔍 Buscar plantillas..."
-            value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+            value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
             style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 16px", color: "white", fontSize: 13, outline: "none", width: 220 }}
           />
         </div>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
           {categorias.map((cat) => (
-            <button key={cat} onClick={() => setCategoriaActiva(cat)} style={{
+            <button key={cat} onClick={() => { setCategoriaActiva(cat); setPagina(1); }} style={{
               background: categoriaActiva === cat ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "#1e1e28",
               border: categoriaActiva === cat ? "none" : "1px solid #2a2a35",
               borderRadius: 20, padding: "8px 18px",
@@ -315,8 +335,8 @@ export default function Plantillas() {
           ))}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
-          {plantillasFiltradas.map((p) => (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 20 }}>
+          {plantillasPagina.map((p) => (
             <div key={p.id} style={{ position: "relative" }}
               onMouseEnter={e => { const o = e.currentTarget.querySelector(".overlay") as HTMLElement; if (o) o.style.opacity = "1"; }}
               onMouseLeave={e => { const o = e.currentTarget.querySelector(".overlay") as HTMLElement; if (o) o.style.opacity = "0"; }}
@@ -325,10 +345,17 @@ export default function Plantillas() {
                 <div style={{ position: "absolute", top: 10, right: 10, zIndex: 2, background: "linear-gradient(135deg, #7c3aed, #a855f7)", borderRadius: 20, padding: "3px 10px", color: "white", fontSize: 10, fontWeight: 700 }}>⭐ Popular</div>
               )}
               <div style={{ background: p.color, borderRadius: 12, overflow: "hidden", border: "1px solid #2a2a35", cursor: "pointer", aspectRatio: "3/4", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, position: "relative" }}>
+                <button
+                  onClick={e => { e.stopPropagation(); toggleFavorito(p.id); }}
+                  style={{ position: "absolute", top: 10, left: 10, zIndex: 3, background: "rgba(0,0,0,0.4)", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 15, lineHeight: "28px" }}
+                  title={favoritos.includes(p.id) ? "Quitar favorito" : "Agregar favorito"}
+                >
+                  {favoritos.includes(p.id) ? "❤️" : "🤍"}
+                </button>
                 <div style={{ fontSize: 48 }}>{p.emoji}</div>
-                <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 16, color: p.textColor, textAlign: "center" }}>MENÚ</div>
-                <div style={{ color: p.textColor, opacity: 0.6, fontSize: 11, textAlign: "center" }}>
-                  — Entradas —<br />— Platos Fuertes —<br />— Postres —
+                <div style={{ fontFamily: p.config.fuenteActiva + ", serif", fontWeight: 700, fontSize: 14, color: p.textColor, textAlign: "center", padding: "0 8px" }}>MENÚ</div>
+                <div style={{ color: p.textColor, opacity: 0.6, fontSize: 10, textAlign: "center", padding: "0 12px" }}>
+                  {p.config.secciones.map(s => s.nombre).slice(0, 3).join(" · ")}
                 </div>
 
                 <div className="overlay" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, opacity: 0, transition: "opacity 0.2s", borderRadius: 12 }}>
@@ -359,6 +386,18 @@ export default function Plantillas() {
             <div style={{ color: "#666", fontSize: 13 }}>Crear desde cero</div>
           </div>
         </div>
+      {totalPaginas > 1 && (
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 32 }}>
+            <button onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={pagina === 1}
+              style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 16px", color: pagina === 1 ? "#444" : "white", cursor: pagina === 1 ? "default" : "pointer" }}>← Anterior</button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
+              <button key={n} onClick={() => setPagina(n)}
+                style={{ background: pagina === n ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 14px", color: "white", cursor: "pointer", fontWeight: pagina === n ? 700 : 400 }}>{n}</button>
+            ))}
+            <button onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))} disabled={pagina === totalPaginas}
+              style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 16px", color: pagina === totalPaginas ? "#444" : "white", cursor: pagina === totalPaginas ? "default" : "pointer" }}>Siguiente →</button>
+          </div>
+        )}
       </main>
 
       {/* MODAL VISTA PREVIA */}

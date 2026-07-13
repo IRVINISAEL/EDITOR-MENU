@@ -1,0 +1,33 @@
+module.exports = {
+  usuarios: {
+    table: "usuarios",
+    id: "id",
+    nombre: "nombre",
+    negocio: "negocio",
+    email: "email",
+    password: "password",
+    plan: "plan",
+    fechaRegistro: "fecha_registro",
+  },
+  menus: {
+    table: "menus",
+    id: "id",
+    usuarioId: "user_id",
+    nombre: "nombre",
+    estado: "estado",
+    dataJson: "data_json",
+    fechaCreacion: "created_at",
+    eliminadoAt: "eliminado_at",
+  },
+  negocios: {
+    table: "negocios",
+    id: "id",
+    usuarioId: "usuario_id",
+    nombre: "nombre_n",
+    descripcion: "descripcion",
+    tipo: "tipo",
+    telefono: "telefono",
+    email: "email",
+    sitioWeb: "sitio web",
+  },
+};

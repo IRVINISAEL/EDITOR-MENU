@@ -11,11 +11,28 @@ const navItems = [
   { icon: "💳", label: "Facturación", href: "/planes" },
   { icon: "⚙️", label: "Configuración", href: "/configuracion" },
 ];
+const plantillasPopulares = [
+  { id: 2, nombre: "Moderno Minimalista", color: "#1a1a1a", textColor: "#ffffff", emoji: "⬛" },
+  { id: 4, nombre: "Pastelería Dulce",    color: "#fce4ec", textColor: "#880e4f", emoji: "🍰" },
+  { id: 8, nombre: "Tacos & Antojitos",   color: "#fff3e0", textColor: "#bf360c", emoji: "🌮" },
+  { id: 9, nombre: "Sushi & Japonés",     color: "#0d0d0d", textColor: "#e8d5b0", emoji: "🍱" },
+];
 
 export default function Dashboard() {
   const [activeNav] = useState("Dashboard");
   const [usuario, setUsuario] = useState<{ nombre: string; plan: string } | null>(null);
   const [menuRecientes, setMenuRecientes] = useState<{ id: number; nombre: string; estado: string }[]>([]);
+
+  const [mobile, setMobile] = useState(false);
+
+  useEffect(() => {
+    const resize = () => setMobile(window.innerWidth <= 768);
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    return () => window.removeEventListener("resize", resize);
+  }, []);
 
   useEffect(() => {
     // Cargar usuario del localStorage
@@ -23,7 +40,7 @@ export default function Dashboard() {
     if (data) setUsuario(JSON.parse(data));
 
     // Cargar menús reales del backend
-    fetch("https://menu-master-backend-production-9bfc.up.railway.app/api/menus")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menus`)
       .then(res => res.json())
       .then(data => {
         if (data.ok) setMenuRecientes(data.menus.slice(0, 3));
@@ -33,6 +50,7 @@ export default function Dashboard() {
 
   const handleCerrarSesion = () => {
     localStorage.removeItem("usuario");
+    document.cookie = "usuario=; path=/; max-age=0";
     window.location.href = "/login";
   };
 
@@ -41,11 +59,15 @@ export default function Dashboard() {
 
       {/* SIDEBAR */}
       <aside style={{
-        width: 220, background: "#16161d", display: "flex", flexDirection: "column",
-        padding: "24px 0", borderRight: "1px solid #2a2a35",
-        position: "fixed", height: "100vh", zIndex: 10,
+        width: mobile ? "100%" : 220, background: "#16161d", display: "flex",
+        flexDirection: mobile ? "row" : "column",
+        padding: mobile ? "0" : "24px 0", borderRight: mobile ? "none" : "1px solid #2a2a35",
+        borderBottom: mobile ? "1px solid #2a2a35" : "none",
+        position: "fixed", height: mobile ? "56px" : "100vh", zIndex: 10,
+        top: 0, left: 0, alignItems: mobile ? "center" : "flex-start",
+        overflowX: mobile ? "auto" : "visible",
       }}>
-        <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35" }}>
+        <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35", display: mobile ? "none" : "block" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 10 }} />
             <div>
@@ -55,16 +77,29 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <nav
+            style={{
+              flex: mobile ? "unset" : 1,
+              padding: mobile ? "0 8px" : "16px 12px",
+              display: "flex",
+              flexDirection: mobile ? "row" : "column",
+              overflowX: mobile ? "auto" : "visible",
+              gap: mobile ? 4 : 4,
+              alignItems: mobile ? "center" : "flex-start",
+              whiteSpace: mobile ? "nowrap" : "normal",
+            }}
+          >
           {navItems.map((item) => (
             <a key={item.label} href={item.href} style={{ textDecoration: "none" }}>
               <div style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "10px 12px", borderRadius: 8,
+                display: "flex", flexDirection: mobile ? "column" : "row",
+                alignItems: "center", gap: mobile ? 2 : 10,
+                padding: mobile ? "8px 10px" : "10px 12px", borderRadius: 8,
                 background: activeNav === item.label ? "linear-gradient(135deg, #7c3aed22, #a855f722)" : "transparent",
                 color: activeNav === item.label ? "#a855f7" : "#888",
-                cursor: "pointer", fontSize: 13, fontWeight: activeNav === item.label ? 600 : 400,
-                borderLeft: activeNav === item.label ? "2px solid #a855f7" : "2px solid transparent",
+                cursor: "pointer", fontSize: mobile ? 11 : 13, fontWeight: activeNav === item.label ? 600 : 400,
+                borderLeft: mobile ? "none" : activeNav === item.label ? "2px solid #a855f7" : "2px solid transparent",
+                borderBottom: mobile && activeNav === item.label ? "2px solid #a855f7" : "none",
                 transition: "all 0.2s",
               }}
                 onMouseEnter={e => { if (activeNav !== item.label) (e.currentTarget as HTMLElement).style.color = "white"; }}
@@ -77,7 +112,7 @@ export default function Dashboard() {
           ))}
         </nav>
 
-        <div style={{ padding: "12px", borderTop: "1px solid #2a2a35", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ padding: "12px", borderTop: "1px solid #2a2a35", display: mobile ? "none" : "flex", flexDirection: "column", gap: 4 }}>
           <a href="/landing" style={{ textDecoration: "none" }}>
             <div style={{
               display: "flex", alignItems: "center", gap: 10,
@@ -104,22 +139,36 @@ export default function Dashboard() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: 220, flex: 1, padding: 32 }}>
+      <main style={{ marginLeft: mobile ? 0 : 220, flex: 1, padding: mobile ? 16 : 32, paddingTop: mobile ? 72 : 32 }}>
 
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+        <div style={{ display: "flex",
+            flexDirection: mobile ? "column" : "row",
+            justifyContent: "space-between",
+            alignItems: mobile ? "flex-start" : "center",
+            gap: mobile ? 16 : 0, marginBottom: 32 }}>
           <div>
             <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>
               ¡Bienvenido, {usuario?.nombre || "Usuario"}! 👋
             </h1>
-            <p style={{ color: "#666", fontSize: 13, margin: "4px 0 0" }}>
-              Aquí tienes un resumen de tu cuenta
+            <p
+              style={{
+                color: "#999",
+                fontSize: 13,
+                margin: "4px 0 0",
+                lineHeight: 1.6,
+              }}
+            >
+              Desde este panel puedes crear, editar y administrar todos tus menús de
+              forma rápida.
             </p>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18 }}>🔔</button>
+            <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18,  minWidth: mobile ? 120 : "auto",
+                whiteSpace: "nowrap",}}>🔔</button>
             <a href="/analiticas">
-              <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18 }}>📊</button>
+              <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18, minWidth: mobile ? 120 : "auto",
+                whiteSpace: "nowrap", }}>📊</button>
             </a>
             <div style={{
               width: 36, height: 36, borderRadius: "50%",
@@ -131,14 +180,69 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        
+        {/* ACCESOS RÁPIDOS */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 12,
+              marginBottom: 24,
+            }}
+          >
+            <a href="/editor" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+                  border: "none",
+                  color: "white",
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                ➕ Crear nuevo menú
+              </button>
+            </a>
+
+            <a href="/mis-menus" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  background: "#1e1e28",
+                  border: "1px solid #2a2a35",
+                  color: "white",
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                }}
+              >
+                📂 Ver mis menús
+              </button>
+            </a>
+
+            <a href="/plantillas" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  background: "#1e1e28",
+                  border: "1px solid #2a2a35",
+                  color: "white",
+                  padding: "12px 18px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                }}
+              >
+                🎨 Usar plantilla
+              </button>
+            </a>
+          </div>
 
         {/* Stats Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
           {[
-            { label: "Menús creados", value: String(menuRecientes.length || 0), icon: "📋", href: "/mis-menus" },
-            { label: "Publicados", value: String(menuRecientes.filter(m => m.estado === "Publicado").length || 0), icon: "✅", href: "/mis-menus" },
-            { label: "Vistas este mes", value: "256", icon: "👁️", href: "/analiticas" },
-            { label: "Plan actual", value: usuario?.plan || "Basico", icon: "⭐", highlight: true, href: "/planes" },
+            { label: "Menús guardados", value: String(menuRecientes.length || 0), icon: "", href: "/mis-menus" },
+            { label: "Estadisticas", value: "256", icon: "", href: "/analiticas" },
+            { label: "Plan actual", value: usuario?.plan || "Basico", icon: "", highlight: true, href: "/planes" },
           ].map((stat) => (
             <a key={stat.label} href={stat.href} style={{ textDecoration: "none" }}>
               <div style={{
@@ -158,54 +262,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Menús Recientes */}
-        <div style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 12, padding: 24, marginBottom: 24 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Menús recientes</h2>
-            <a href="/mis-menus" style={{ textDecoration: "none" }}>
-              <button style={{
-                background: "transparent", border: "1px solid #2a2a35",
-                borderRadius: 8, padding: "6px 14px", color: "#a855f7",
-                cursor: "pointer", fontSize: 12, fontWeight: 600,
-              }}>Ver todos</button>
-            </a>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-            {menuRecientes.length > 0 ? menuRecientes.map((menu) => (
-              <a key={menu.id} href="/editor" style={{ textDecoration: "none" }}>
-                <div style={{
-                  background: "#16161d", border: "1px solid #2a2a35",
-                  borderRadius: 10, padding: 16, cursor: "pointer",
-                  transition: "border-color 0.2s",
-                }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = "#a855f7")}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = "#2a2a35")}
-                >
-                  <div style={{ fontSize: 32, marginBottom: 12, textAlign: "center" }}>🍽️</div>
-                  <div style={{ color: "white", fontSize: 13, fontWeight: 600 }}>{menu.nombre}</div>
-                  <div style={{ color: "#555", fontSize: 11, marginTop: 4 }}>{menu.estado}</div>
-                </div>
-              </a>
-            )) : (
-              <div style={{ color: "#555", fontSize: 13, padding: 16 }}>No hay menús aún</div>
-            )}
-            <a href="/plantillas" style={{ textDecoration: "none" }}>
-              <div style={{
-                background: "#16161d", border: "2px dashed #2a2a35",
-                borderRadius: 10, padding: 16, cursor: "pointer",
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center", gap: 8,
-                minHeight: 100, transition: "border-color 0.2s",
-              }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = "#a855f7")}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = "#2a2a35")}
-              >
-                <div style={{ fontSize: 28, color: "#a855f7" }}>+</div>
-                <div style={{ color: "#666", fontSize: 12 }}>Crear nuevo menú</div>
-              </div>
-            </a>
-          </div>
-        </div>
 
         {/* Estadísticas rápidas */}
         <a href="/analiticas" style={{ textDecoration: "none" }}>
@@ -213,11 +269,15 @@ export default function Dashboard() {
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = "#a855f7")}
             onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = "#2a2a35")}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div style={{ display: "flex",
+                flexDirection: mobile ? "column" : "row",
+                justifyContent: "space-between",
+                alignItems: mobile ? "flex-start" : "center",
+                gap: mobile ? 16 : 0, marginBottom: 20 }}>
               <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Estadísticas rápidas</h2>
               <span style={{ color: "#a855f7", fontSize: 12, fontWeight: 600 }}>Ver analíticas →</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16 }}>
               {[
                 { label: "Vistas totales", value: "1,256" },
                 { label: "Descargas", value: "342" },
@@ -232,6 +292,66 @@ export default function Dashboard() {
             </div>
           </div>
         </a>
+
+        <div
+            style={{
+              background: "#16161d",
+              border: "1px solid #2a2a35",
+              borderLeft: "4px solid #a855f7",
+              padding: 18,
+              borderRadius: 10,
+              marginTop: 24,
+              marginBottom: 24,
+            }}
+          >
+            <div
+              style={{
+                color: "#a855f7",
+                fontWeight: 700,
+                marginBottom: 8,
+              }}
+            >
+              💡 Consejo
+            </div>
+
+            <div
+              style={{
+                color: "#bbb",
+                fontSize: 13,
+                lineHeight: 1.6,
+              }}
+            >
+              Si es tu primera vez utilizando Menu Master, comienza creando un nuevo
+              menú o selecciona una plantilla para acelerar el proceso.
+            </div>
+          </div>
+
+        {/* PLANTILLAS */}
+          <div style={{ marginTop: 24 }}>
+            <div style={{ display: "flex",
+              flexDirection: mobile ? "column" : "row",
+              justifyContent: "space-between",
+              alignItems: mobile ? "flex-start" : "center",
+              gap: mobile ? 16 : 0, marginBottom: 16 }}>
+              <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Plantillas populares</h2>
+              <a href="/plantillas" style={{ color: "#a855f7", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Ver todas →</a>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16 }}>
+              {plantillasPopulares.map((p) => (
+                <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
+                  <div style={{
+                    background: p.color, borderRadius: 12, aspectRatio: "3/4",
+                    display: "flex", flexDirection: "column", alignItems: "center",
+                    justifyContent: "center", gap: 8, cursor: "pointer",
+                    border: "1px solid #2a2a35",
+                  }}>
+                    <div style={{ fontSize: 36 }}>{p.emoji}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: p.textColor }}>{p.nombre}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
 
       </main>
     </div>

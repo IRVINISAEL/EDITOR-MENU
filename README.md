@@ -1,4 +1,4 @@
-# <img src="https://img.magnific.com/vector-premium/icono-tarjeta-menu-ilustracion-simple-icono-vector-tarjeta-menu-diseno-web-aislado-sobre-fondo-blanco_98396-28746.jpg?semt=ais_hybrid&w=740&q=80" width="40"/> Menu Master
+# Menu Master
 > SaaS para restaurantes y negocios de comida que permite crear, personalizar y compartir menús digitales de forma rápida, sin necesidad de conocimientos de diseño.
 
 ---
@@ -14,7 +14,7 @@
 
 ---
 
-## <img src="https://img.shields.io/badge/ Stack Tecnológico-1a1a2e?style=flat" /> > Stack tecnológico
+## <img src="https://img.shields.io/badge/ Stack Tecnológico-1a1a2e?style=flat" />  Stack tecnológico
 
 **Frontend** → `menu-front/`
 - Next.js 15
@@ -51,8 +51,8 @@ EDITOR-MENU/
 
 ```bash
 cd menu-front
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
@@ -61,10 +61,10 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ```bash
 cd menu-back
-npm install
+pnpm install
 cp .env.example .env
 # Llena las variables del .env con tus credenciales
-node index.js
+pnpm start
 ```
 
 ---
@@ -116,4 +116,4 @@ Usamos **GitHub Flow**. Consulta [`docs/github-flow.md`](docs/github-flow.md) pa
 
 ## 📄 Licencia
 
-Proyecto académico — SAAS Studio · 9° Cuatrimestre · 2025
+Proyecto académico — SAAS Studio · 9° Cuatrimestre · 2026

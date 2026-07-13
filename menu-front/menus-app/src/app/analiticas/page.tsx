@@ -70,11 +70,15 @@ export default function Analiticas() {
             </a>
           ))}
         </nav>
-        <div style={{ padding: "16px 12px", borderTop: "1px solid #2a2a35" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}>
+        <div
+            onClick={() => {
+              localStorage.removeItem("usuario");
+              document.cookie = "usuario=; path=/; max-age=0";
+              window.location.href = "/login";
+            }}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}>
             <span>🚪</span> Cerrar sesión
           </div>
-        </div>
       </aside>
 
       {/* MAIN */}
@@ -101,7 +105,7 @@ export default function Analiticas() {
         </div>
 
         {/* Stats Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>
           {[
             { label: "Vistas totales", value: "1,256", cambio: "+12%", positivo: true, icon: "👁️" },
             { label: "Descargas", value: "342", cambio: "+8%", positivo: true, icon: "⬇️" },
@@ -128,8 +132,7 @@ export default function Analiticas() {
         </div>
 
         {/* Gráfica + Top menús */}
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20 }}>
-
+       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
           {/* Gráfica de vistas */}
           <div style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 12, padding: 24 }}>
             <h2 style={{ color: "white", fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>Vistas por día</h2>

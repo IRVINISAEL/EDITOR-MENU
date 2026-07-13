@@ -1,245 +1,373 @@
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const cloudinary = require("./cloudinary");
 require("dotenv").config();
+const { logAccesoDenegado } = require("./config/logger");
+const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
+const { verificarBloqueoLogin, registrarIntentoFallido, registrarIntentoExitoso } = require("./middleware/loginLimiter");
+const { iniciarPurgaProgramada } = require("./jobs/purgaPapelera");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const JWT_SECRET = process.env.JWT_SECRET || "menumaster_secret_key";
+const JWT_SECRET = process.env.JWT_SECRET || "tu-clave-secreta-super-segura-cambiar-en-produccion";
+const PASSWORD_RESET_EXPIRATION_MINUTES = parseInt(process.env.PASSWORD_RESET_EXPIRATION_MINUTES || "60", 10);
+const C = require("./config/dbColumns");
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// ============================
-// MIDDLEWARE DE AUTENTICACIÓN JWT
-// ============================
-const verifyJWT = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1] || req.query.token;
-
-  if (!token) {
-    return res.status(401).json({ ok: false, mensaje: "Token no proporcionado" });
+const verificarToken = (req, res, next) => {
+  const auth = req.headers["authorization"];
+  if (!auth || !auth.startsWith("Bearer ")) {
+    logAccesoDenegado(req, 401, "Token requerido");
+    return res.status(401).json({ ok: false, mensaje: "Token requerido" });
   }
-
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.usuario = decoded;
+    const token = auth.split(" ")[1];
+    const payload = jwt.verify(token, process.env.JWT_SECRET || "secret_dev");
+    req.usuario = payload;
     next();
-  } catch (err) {
+  } catch {
+    logAccesoDenegado(req, 401, "Token inválido o expirado");
     return res.status(401).json({ ok: false, mensaje: "Token inválido o expirado" });
   }
 };
 
-// ============================
-// CONEXIÓN A MYSQL
-// ============================
-const db = mysql.createConnection({
-  host: process.env.DB_HOST || "localhost",
-  port: parseInt(process.env.DB_PORT || "3306"),
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "root1234",
-  database: process.env.DB_NAME || "menumaster",
+// RN-04: solo formatos permitidos | RN-05: tamaño máximo (5MB)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const permitidos = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!permitidos.includes(file.mimetype)) {
+      return cb(new Error("Formato no soportado. Usa JPG, PNG o WEBP"));
+    }
+    cb(null, true);
+  },
 });
 
-db.connect((err) => {
-  if (err) {
-    console.error("❌ Error conectando a MySQL:", err.message);
-    console.log("⚠️ Servidor corriendo sin base de datos");
-    return;
-  }
+const db = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+db.getConnection((err, connection) => {
+  if (err) { console.error("❌ Error MySQL:", err); return; }
   console.log("✅ Conectado a MySQL correctamente");
-  console.log(`🗄️  DB_HOST: ${process.env.DB_HOST}`);
-  console.log(`🗄️  DB_NAME: ${process.env.DB_NAME}`);
+  connection.release();
+  iniciarPurgaProgramada(db);
 });
 
-// ============================
-// RUTA DE PRUEBA
-// ============================
-app.get("/", (req, res) => {
-  res.json({
-    mensaje: "✅ Menu Master API funcionando con MySQL",
-    version: "2.0.0",
-  });
-});
+// Middleware: verificar que el usuario sea propietario del menú
+const verificarPropietarioMenu = (req, res, next) => {
+  const menuId = req.params.id;
+  const usuarioId = req.usuario.id;
 
-// ============================
-// RUTAS DE USUARIOS
-// ============================
-
-// POST - Registro
-app.post("/api/auth/register", (req, res) => {
-  const { nombre, email, password, negocio } = req.body;
-
-  if (!nombre || !email || !password) {
-    return res.status(400).json({ ok: false, mensaje: "Todos los campos son obligatorios" });
-  }
-
-  const sql = "INSERT INTO usuarios (nombre, email, password, negocio) VALUES (?, ?, ?, ?)";
-  db.query(sql, [nombre, email, password, negocio || ""], (err, result) => {
-    if (err) {
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({ ok: false, mensaje: "Este correo ya está registrado" });
+  db.query(
+    `SELECT ${C.menus.usuarioId} 
+     FROM ${C.menus.table} 
+     WHERE ${C.menus.id} = ?`,
+    [menuId],
+    (err, results) => {
+      if (err) {
+        return next(err);
       }
-      return res.status(500).json({ ok: false, mensaje: "Error al registrar usuario" });
+
+      if (results.length === 0) {
+        return res.status(404).json({
+          ok: false,
+          mensaje: "Menú no encontrado",
+        });
+      }
+
+      const propietarioId = results[0][C.menus.usuarioId];
+
+      if (Number(propietarioId) !== Number(usuarioId)) {
+        logAccesoDenegado(
+          req,
+          403,
+          "Intento de acceso a menú de otro usuario"
+        );
+
+        return res.status(403).json({
+          ok: false,
+          mensaje: "No tienes permisos para modificar este menú",
+        });
+      }
+
+      next();
     }
-    res.status(201).json({
-      ok: true,
-      mensaje: "Usuario registrado correctamente",
-      userId: result.insertId,
-    });
-  });
+  );
+};
+
+app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
+
+// Obter menus, opcionalmente filtrando por user_id
+app.get("/api/menus", verificarToken, (req, res, next) => {
+  // RN-05: el usuario se obtiene del token verificado, nunca de un parámetro
+  // enviado por el cliente (evita que un usuario vea menús de otro).
+  const columns = [
+    C.menus.id, C.menus.usuarioId, C.menus.nombre, C.menus.estado, C.menus.fechaCreacion,
+  ].join(", ");
+  db.query(
+    `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? AND ${C.menus.eliminadoAt} IS NULL ORDER BY ${C.menus.fechaCreacion} DESC`,
+    [req.usuario.id],
+    (err, results) => {
+      if (err) return next(err);
+      res.json({ ok: true, menus: results });
+    }
+  );
 });
 
-// POST - Login
-app.post("/api/auth/login", (req, res) => {
-  const { email, password } = req.body;
+app.get("/api/menus/papelera", verificarToken, (req, res, next) => {
+  const columns = [
+    C.menus.id, C.menus.usuarioId, C.menus.nombre, C.menus.estado, C.menus.fechaCreacion, C.menus.eliminadoAt,
+  ].join(", ");
+  db.query(
+    `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? AND ${C.menus.eliminadoAt} IS NOT NULL ORDER BY ${C.menus.eliminadoAt} DESC`,
+    [req.usuario.id],
+    (err, results) => {
+      if (err) return next(err);
+      res.json({ ok: true, menus: results });
+    }
+  );
+});
 
-  if (!email || !password) {
-    return res.status(400).json({ ok: false, mensaje: "Email y contraseña son obligatorios" });
+// Se agregó verificarToken aquí (antes era pública, hallazgo de seguridad corregido)
+app.get("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, next) => {
+  const columns = [
+    C.menus.id,
+    C.menus.usuarioId,
+    C.menus.nombre,
+    C.menus.estado,
+    C.menus.dataJson,
+    C.menus.fechaCreacion,
+  ].join(", ");
+  db.query(
+    `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.id} = ? AND ${C.menus.eliminadoAt} IS NULL`,
+    [req.params.id],
+    (err, results) => {
+      if (err) return next(err);
+      if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
+      res.json({ ok: true, menu: results[0] });
+    }
+  );
+});
+
+app.post("/api/menus", verificarToken, (req, res, next) => {
+  const { nombre, estado, data_json, user_id } = req.body;
+
+  if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
+  const dataJson = typeof data_json === "object" ? JSON.stringify(data_json) : (data_json || "{}");
+  db.query(
+    `INSERT INTO ${C.menus.table} (${C.menus.nombre}, ${C.menus.estado}, data_json, ${C.menus.usuarioId}) VALUES (?, ?, ?, ?)`,
+    [nombre, estado || "Borrador", dataJson, user_id || 1],
+    (err, result) => {
+      if (err) { console.error("ERROR INSERT:", err); return res.status(500).json({ ok: false, mensaje: err.message }); }
+      res.status(201).json({ ok: true, menuId: result.insertId });
+    }
+  );
+});
+
+app.put("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res) => {
+  const { nombre, estado, data_json } = req.body;
+  if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
+  const dataJson = typeof data_json === "object" ? JSON.stringify(data_json) : (data_json || "{}");
+  db.query(
+    `UPDATE ${C.menus.table} SET ${C.menus.nombre} = ?, ${C.menus.estado} = ?, data_json = ? WHERE ${C.menus.id} = ?`,
+    [nombre, estado, dataJson, req.params.id],
+    (err, result) => {
+      if (err) { console.error("ERROR UPDATE:", err); return res.status(500).json({ ok: false, mensaje: err.message }); }
+      if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
+      res.json({ ok: true, mensaje: "Actualizado" });
+    }
+  );
+});
+
+app.delete("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, next) => {
+  db.query(
+    `UPDATE ${C.menus.table} SET ${C.menus.eliminadoAt} = NOW() WHERE ${C.menus.id} = ? AND ${C.menus.eliminadoAt} IS NULL`,
+    [req.params.id],
+    (err, result) => {
+      if (err) return next(err);
+      if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "No encontrado" });
+      res.json({ ok: true, mensaje: "Menú movido a la papelera" });
+    }
+  );
+});
+
+app.put("/api/menus/:id/restaurar", verificarToken, verificarPropietarioMenu, (req, res, next) => {
+  db.query(
+    `UPDATE ${C.menus.table} SET ${C.menus.eliminadoAt} = NULL WHERE ${C.menus.id} = ? AND ${C.menus.eliminadoAt} IS NOT NULL`,
+    [req.params.id],
+    (err, result) => {
+      if (err) return next(err);
+      if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "El menú no está en la papelera" });
+      res.json({ ok: true, mensaje: "Menú restaurado" });
+    }
+  );
+});
+
+app.post("/api/auth/register", async (req, res) => {
+  const { nombre, email, password, negocio} = req.body;
+  if (!nombre || !email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    db.query(
+      `INSERT INTO ${C.usuarios.table} (${C.usuarios.nombre}, ${C.usuarios.email}, ${C.usuarios.password}, ${C.usuarios.negocio}) VALUES (?, ?, ?, ?)`,
+      [nombre, email, hash,  negocio || ""],
+      (err, result) => {
+        if (err) {
+          if (err.code === "ER_DUP_ENTRY") return res.status(400).json({ ok: false, mensaje: "Correo ya registrado" });
+          return res.status(500).json({ ok: false, mensaje: err.message });
+        }
+        res.status(201).json({ ok: true, userId: result.insertId });
+      });
+  } catch (e) {
+    res.status(500).json({ ok: false, mensaje: "Error al procesar contraseña" });
+  }
+});
+
+app.put("/api/auth/password", verificarToken, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ ok: false, mensaje: "Contraseña actual y nueva son obligatorias" });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ ok: false, mensaje: "La nueva contraseña debe tener al menos 8 caracteres" });
   }
 
-  const sql = "SELECT id, nombre, email, plan FROM usuarios WHERE email = ? AND password = ?";
-  db.query(sql, [email, password], (err, results) => {
-    if (err) {
-      return res.status(500).json({ ok: false, mensaje: "Error en el servidor" });
-    }
-    if (results.length === 0) {
-      return res.status(401).json({ ok: false, mensaje: "Correo o contraseña incorrectos" });
-    }
+  db.query(`SELECT ${C.usuarios.password} FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`, [req.usuario.id], async (err, results) => {
+    if (err) return res.status(500).json({ ok: false, mensaje: err.message });
+    if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
+
+    const currentHash = results[0][C.usuarios.password];
+    const matches = await bcrypt.compare(currentPassword, currentHash);
     
-    const usuario = results[0];
-    const token = jwt.sign(
-      { id: usuario.id, nombre: usuario.nombre, email: usuario.email },
-      JWT_SECRET,
-      { expiresIn: "24h" }
+    if (!matches) return res.status(401).json({ ok: false, mensaje: "Contraseña actual incorrecta" });
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    db.query(
+      `UPDATE ${C.usuarios.table} SET ${C.usuarios.password} = ? WHERE ${C.usuarios.id} = ?`,
+      [newHash, req.usuario.id],
+      (updateErr) => {
+        if (updateErr) return res.status(500).json({ ok: false, mensaje: updateErr.message });
+        res.json({ ok: true, mensaje: "Contraseña actualizada" });
+      }
     );
-    
-    res.json({
-      ok: true,
-      mensaje: "Login exitoso",
-      usuario: usuario,
-      token: token,
-    });
   });
 });
 
-// ============================
-// RUTAS DE MENÚS
-// ============================
-
-// GET - Obtener todos los menús (PROTEGIDO - Solo del usuario autenticado)
-app.get("/api/menus", verifyJWT, (req, res) => {
-  // CA-01: Obtener el user_id exclusivamente del JWT
-  const user_id = req.usuario.id;
-
-  // CA-02: Ignorar completamente cualquier parámetro user_id enviado por el cliente
-  const sql = "SELECT * FROM menus WHERE user_id = ? ORDER BY created_at DESC";
-
-  db.query(sql, [user_id], (err, results) => {
-    if (err) {
-      return res.status(500).json({ ok: false, mensaje: "Error al obtener menús" });
-    }
-    res.json({ ok: true, total: results.length, menus: results });
-  });
-});
-
-// GET - Obtener un menú por ID (PROTEGIDO - Verificar propiedad)
-app.get("/api/menus/:id", verifyJWT, (req, res) => {
-  const user_id = req.usuario.id;
-  const menu_id = req.params.id;
-
-  const sql = "SELECT * FROM menus WHERE id = ? AND user_id = ?";
-  db.query(sql, [menu_id, user_id], (err, results) => {
-    if (err) {
-      return res.status(500).json({ ok: false, mensaje: "Error al obtener menú" });
-    }
-    if (results.length === 0) {
-      return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
-    }
-    res.json({ ok: true, menu: results[0] });
-  });
-});
-
-// POST - Crear menú (PROTEGIDO - Usar usuario autenticado)
-app.post("/api/menus", verifyJWT, (req, res) => {
-  const { nombre, estado, data_json } = req.body;
-  const user_id = req.usuario.id;
-
-  if (!nombre) {
-    return res.status(400).json({ ok: false, mensaje: "El nombre es obligatorio" });
-  }
-
-  const sql = "INSERT INTO menus (nombre, estado, data_json, user_id) VALUES (?, ?, ?, ?)";
-  db.query(sql, [nombre, estado || "Borrador", data_json || "{}", user_id], (err, result) => {
-    if (err) {
-      return res.status(500).json({ ok: false, mensaje: "Error al crear menú" });
-    }
-    res.status(201).json({
-      ok: true,
-      mensaje: "Menú creado correctamente",
-      menuId: result.insertId,
-    });
-  });
-});
-
-// PUT - Actualizar menú (PROTEGIDO - Verificar propiedad)
-app.put("/api/menus/:id", verifyJWT, (req, res) => {
-  const { nombre, estado, data_json } = req.body;
-  const user_id = req.usuario.id;
-  const menu_id = req.params.id;
-
-  // Verificar que el menú pertenece al usuario autenticado
-  const checkSql = "SELECT id FROM menus WHERE id = ? AND user_id = ?";
-  db.query(checkSql, [menu_id, user_id], (err, results) => {
-    if (err) {
-      return res.status(500).json({ ok: false, mensaje: "Error al actualizar menú" });
-    }
-    if (results.length === 0) {
-      return res.status(403).json({ ok: false, mensaje: "No tienes permiso para actualizar este menú" });
-    }
-
-    const updateSql = "UPDATE menus SET nombre = ?, estado = ?, data_json = ? WHERE id = ?";
-    db.query(updateSql, [nombre, estado, data_json, menu_id], (err, result) => {
-      if (err) {
-        return res.status(500).json({ ok: false, mensaje: "Error al actualizar menú" });
+app.post("/api/auth/login", verificarBloqueoLogin, (req, res, next) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
+  db.query(
+    `SELECT ${C.usuarios.id} AS id, ${C.usuarios.nombre} AS nombre, ${C.usuarios.email} AS email, ${C.usuarios.plan} AS plan, ${C.usuarios.password} AS password FROM ${C.usuarios.table} WHERE ${C.usuarios.email} = ?`,
+    [email],
+    async (err, results) => {
+      if (err) return next(err);
+      if (results.length === 0) {
+        registrarIntentoFallido(req);
+        logAccesoDenegado(req, 401, "Credenciales incorrectas (correo no encontrado)");
+        return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
       }
-      res.json({ ok: true, mensaje: "Menú actualizado correctamente" });
-    });
-  });
-});
-
-// DELETE - Eliminar menú (PROTEGIDO - Verificar propiedad)
-app.delete("/api/menus/:id", verifyJWT, (req, res) => {
-  const user_id = req.usuario.id;
-  const menu_id = req.params.id;
-
-  // Verificar que el menú pertenece al usuario autenticado antes de eliminar
-  const checkSql = "SELECT id FROM menus WHERE id = ? AND user_id = ?";
-  db.query(checkSql, [menu_id, user_id], (err, results) => {
-    if (err) {
-      return res.status(500).json({ ok: false, mensaje: "Error al eliminar menú" });
-    }
-    if (results.length === 0) {
-      return res.status(403).json({ ok: false, mensaje: "No tienes permiso para eliminar este menú" });
-    }
-
-    const deleteSql = "DELETE FROM menus WHERE id = ?";
-    db.query(deleteSql, [menu_id], (err, result) => {
-      if (err) {
-        return res.status(500).json({ ok: false, mensaje: "Error al eliminar menú" });
+      try {
+        const valido = await bcrypt.compare(password, results[0].password);
+        if (!valido) {
+          registrarIntentoFallido(req);
+          logAccesoDenegado(req, 401, "Credenciales incorrectas");
+          return res.status(401).json({ ok: false, mensaje: "Credenciales incorrectas" });
+        }
+        registrarIntentoExitoso(req);
+        const { password: _, ...usuario } = results[0];
+        const token = jwt.sign(
+          { id: usuario.id, email: usuario.email },
+          process.env.JWT_SECRET || "secret_dev",
+          { expiresIn: "7d" }
+        );
+        res.json({ ok: true, usuario, token });
+      } catch (e) {
+        next(e);
       }
-      res.json({ ok: true, mensaje: "Menú eliminado correctamente" });
-    });
+    }
+  );
+});
+
+// Nuevo endpoint: subir imagen a Cloudinary y asociarla a un menú
+app.post("/api/upload", verificarToken, (req, res) => {
+  upload.single("imagen")(req, res, async (err) => {
+    // CA-04 / RN-07: si falla la validación del archivo, no se toca la BD
+    if (err) {
+      return res.status(400).json({ ok: false, mensaje: err.message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ ok: false, mensaje: "Imagen requerida" });
+    }
+
+    try {
+      // CA-01: subir a Cloudinary
+      const resultado = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "menumaster/menus" },
+          (error, result) => (error ? reject(error) : resolve(result))
+        );
+        stream.end(req.file.buffer);
+      });
+
+      const imageUrl = resultado.secure_url;
+      const { menu_id } = req.body;
+
+      // CA-03 / RN-06: guardar la URL en data_json del menú, si se indicó uno
+      if (menu_id) {
+        db.query(`SELECT data_json FROM ${C.menus.table} WHERE ${C.menus.id} = ?`, [menu_id], (err2, rows) => {
+          if (err2 || rows.length === 0) {
+            return res.status(201).json({
+              ok: true, url: imageUrl,
+              mensaje: "Imagen subida, pero no se pudo asociar al menú"
+            });
+          }
+          let data = {};
+          try { data = JSON.parse(rows[0].data_json || "{}"); } catch { data = {}; }
+          data.imagen_url = imageUrl;
+
+          db.query(`UPDATE ${C.menus.table} SET data_json = ? WHERE ${C.menus.id} = ?`,
+            [JSON.stringify(data), menu_id],
+            (err3) => {
+              if (err3) {
+                return res.status(201).json({
+                  ok: true, url: imageUrl,
+                  mensaje: "Imagen subida, pero error al guardar en el menú"
+                });
+              }
+              res.status(201).json({ ok: true, url: imageUrl, menuActualizado: true });
+            });
+        });
+      } else {
+        res.status(201).json({ ok: true, url: imageUrl });
+      }
+    } catch (cloudErr) {
+      // CA-04 / RN-07: falla Cloudinary → no se guarda nada en BD
+      console.error("ERROR CLOUDINARY:", cloudErr);
+      res.status(500).json({ ok: false, mensaje: "Error al subir la imagen" });
+    }
   });
 });
 
-// ============================
-// ARRANCAR SERVIDOR
-// ============================
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`🗄️  DB_HOST: ${process.env.DB_HOST}`);
-  console.log(`🗄️  DB_NAME: ${process.env.DB_NAME}`);
-  console.log(`🗄️  DB_PORT: ${process.env.DB_PORT}`);
+  console.log(`✅ Servidor en http://localhost:${PORT}`);
+  console.log(`DB_HOST: ${process.env.DB_HOST}`);
+  console.log(`DB_NAME: ${process.env.DB_NAME}`);
 });
