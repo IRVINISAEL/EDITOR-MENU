@@ -1,14 +1,35 @@
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const JWT_SECRET = process.env.JWT_SECRET || "menumaster_secret_key";
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// ============================
+// MIDDLEWARE DE AUTENTICACIÓN JWT
+// ============================
+const verifyJWT = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1] || req.query.token;
+
+  if (!token) {
+    return res.status(401).json({ ok: false, mensaje: "Token no proporcionado" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.usuario = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ ok: false, mensaje: "Token inválido o expirado" });
+  }
+};
 
 // ============================
 // CONEXIÓN A MYSQL
@@ -86,11 +107,19 @@ app.post("/api/auth/login", (req, res) => {
     if (results.length === 0) {
       return res.status(401).json({ ok: false, mensaje: "Correo o contraseña incorrectos" });
     }
+    
+    const usuario = results[0];
+    const token = jwt.sign(
+      { id: usuario.id, nombre: usuario.nombre, email: usuario.email },
+      JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+    
     res.json({
       ok: true,
       mensaje: "Login exitoso",
-      usuario: results[0],
-      token: "token-" + results[0].id + "-menumaster",
+      usuario: usuario,
+      token: token,
     });
   });
 });
@@ -99,17 +128,15 @@ app.post("/api/auth/login", (req, res) => {
 // RUTAS DE MENÚS
 // ============================
 
-// GET - Obtener todos los menús
-app.get("/api/menus", (req, res) => {
-  const user_id = req.query.user_id;
+// GET - Obtener todos los menús (PROTEGIDO - Solo del usuario autenticado)
+app.get("/api/menus", verifyJWT, (req, res) => {
+  // CA-01: Obtener el user_id exclusivamente del JWT
+  const user_id = req.usuario.id;
 
-  const sql = user_id
-    ? "SELECT * FROM menus WHERE user_id = ? ORDER BY created_at DESC"
-    : "SELECT * FROM menus ORDER BY created_at DESC";
+  // CA-02: Ignorar completamente cualquier parámetro user_id enviado por el cliente
+  const sql = "SELECT * FROM menus WHERE user_id = ? ORDER BY created_at DESC";
 
-  const params = user_id ? [user_id] : [];
-
-  db.query(sql, params, (err, results) => {
+  db.query(sql, [user_id], (err, results) => {
     if (err) {
       return res.status(500).json({ ok: false, mensaje: "Error al obtener menús" });
     }
@@ -117,10 +144,13 @@ app.get("/api/menus", (req, res) => {
   });
 });
 
-// GET - Obtener un menú por ID
-app.get("/api/menus/:id", (req, res) => {
-  const sql = "SELECT * FROM menus WHERE id = ?";
-  db.query(sql, [req.params.id], (err, results) => {
+// GET - Obtener un menú por ID (PROTEGIDO - Verificar propiedad)
+app.get("/api/menus/:id", verifyJWT, (req, res) => {
+  const user_id = req.usuario.id;
+  const menu_id = req.params.id;
+
+  const sql = "SELECT * FROM menus WHERE id = ? AND user_id = ?";
+  db.query(sql, [menu_id, user_id], (err, results) => {
     if (err) {
       return res.status(500).json({ ok: false, mensaje: "Error al obtener menú" });
     }
@@ -131,16 +161,17 @@ app.get("/api/menus/:id", (req, res) => {
   });
 });
 
-// POST - Crear menú
-app.post("/api/menus", (req, res) => {
-  const { nombre, estado, data_json, user_id } = req.body;
+// POST - Crear menú (PROTEGIDO - Usar usuario autenticado)
+app.post("/api/menus", verifyJWT, (req, res) => {
+  const { nombre, estado, data_json } = req.body;
+  const user_id = req.usuario.id;
 
   if (!nombre) {
     return res.status(400).json({ ok: false, mensaje: "El nombre es obligatorio" });
   }
 
   const sql = "INSERT INTO menus (nombre, estado, data_json, user_id) VALUES (?, ?, ?, ?)";
-  db.query(sql, [nombre, estado || "Borrador", data_json || "{}", user_id || 1], (err, result) => {
+  db.query(sql, [nombre, estado || "Borrador", data_json || "{}", user_id], (err, result) => {
     if (err) {
       return res.status(500).json({ ok: false, mensaje: "Error al crear menú" });
     }
@@ -152,32 +183,54 @@ app.post("/api/menus", (req, res) => {
   });
 });
 
-// PUT - Actualizar menú
-app.put("/api/menus/:id", (req, res) => {
+// PUT - Actualizar menú (PROTEGIDO - Verificar propiedad)
+app.put("/api/menus/:id", verifyJWT, (req, res) => {
   const { nombre, estado, data_json } = req.body;
-  const sql = "UPDATE menus SET nombre = ?, estado = ?, data_json = ? WHERE id = ?";
-  db.query(sql, [nombre, estado, data_json, req.params.id], (err, result) => {
+  const user_id = req.usuario.id;
+  const menu_id = req.params.id;
+
+  // Verificar que el menú pertenece al usuario autenticado
+  const checkSql = "SELECT id FROM menus WHERE id = ? AND user_id = ?";
+  db.query(checkSql, [menu_id, user_id], (err, results) => {
     if (err) {
       return res.status(500).json({ ok: false, mensaje: "Error al actualizar menú" });
     }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
+    if (results.length === 0) {
+      return res.status(403).json({ ok: false, mensaje: "No tienes permiso para actualizar este menú" });
     }
-    res.json({ ok: true, mensaje: "Menú actualizado correctamente" });
+
+    const updateSql = "UPDATE menus SET nombre = ?, estado = ?, data_json = ? WHERE id = ?";
+    db.query(updateSql, [nombre, estado, data_json, menu_id], (err, result) => {
+      if (err) {
+        return res.status(500).json({ ok: false, mensaje: "Error al actualizar menú" });
+      }
+      res.json({ ok: true, mensaje: "Menú actualizado correctamente" });
+    });
   });
 });
 
-// DELETE - Eliminar menú
-app.delete("/api/menus/:id", (req, res) => {
-  const sql = "DELETE FROM menus WHERE id = ?";
-  db.query(sql, [req.params.id], (err, result) => {
+// DELETE - Eliminar menú (PROTEGIDO - Verificar propiedad)
+app.delete("/api/menus/:id", verifyJWT, (req, res) => {
+  const user_id = req.usuario.id;
+  const menu_id = req.params.id;
+
+  // Verificar que el menú pertenece al usuario autenticado antes de eliminar
+  const checkSql = "SELECT id FROM menus WHERE id = ? AND user_id = ?";
+  db.query(checkSql, [menu_id, user_id], (err, results) => {
     if (err) {
       return res.status(500).json({ ok: false, mensaje: "Error al eliminar menú" });
     }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
+    if (results.length === 0) {
+      return res.status(403).json({ ok: false, mensaje: "No tienes permiso para eliminar este menú" });
     }
-    res.json({ ok: true, mensaje: "Menú eliminado correctamente" });
+
+    const deleteSql = "DELETE FROM menus WHERE id = ?";
+    db.query(deleteSql, [menu_id], (err, result) => {
+      if (err) {
+        return res.status(500).json({ ok: false, mensaje: "Error al eliminar menú" });
+      }
+      res.json({ ok: true, mensaje: "Menú eliminado correctamente" });
+    });
   });
 });
 
