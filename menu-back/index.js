@@ -64,25 +64,57 @@ app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
 // Obter menus, opcionalmente filtrando por user_id
 app.get("/api/menus", verificarToken, (req, res) => {
+<<<<<<< HEAD
   const user_id = req.query.user_id;
   const sql = user_id ? "SELECT * FROM menus WHERE user_id = ? ORDER BY created_at DESC" : "SELECT * FROM menus ORDER BY created_at DESC";
   const params = user_id ? [user_id] : [];
   db.query(sql, params, (err, results) => {
     if (err) { console.error("ERROR GET MENUS:", err); return res.status(500).json({ ok: false, mensaje: err.message }); }
     res.json({ ok: true, menus: results });
+=======
+  const userId = req.userId;
+  const sql = "SELECT * FROM menus WHERE user_id = ? ORDER BY created_at DESC";
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error("Error al obtener menús:", err);
+      return res.status(500).json({ ok: false, mensaje: "Error al obtener menús" });
+    }
+    res.json({ ok: true, total: results.length, menus: results });
+>>>>>>> 8d201bb (fix: secure menu ownership by authenticated user)
   });
 });
 
 // Se agregó verificarToken aquí (antes era pública, hallazgo de seguridad corregido)
 app.get("/api/menus/:id", verificarToken, (req, res) => {
+<<<<<<< HEAD
   db.query("SELECT * FROM menus WHERE id = ?", [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ ok: false, mensaje: err.message });
     if (results.length === 0) return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
+=======
+  const menuId = parseInt(req.params.id, 10);
+  const userId = req.userId;
+
+  if (isNaN(menuId)) {
+    return res.status(400).json({ ok: false, mensaje: "El ID del menú debe ser un número" });
+  }
+
+  const sql = "SELECT * FROM menus WHERE id = ? AND user_id = ?";
+  db.query(sql, [menuId, userId], (err, results) => {
+    if (err) {
+      console.error("Error al obtener menú:", err);
+      return res.status(500).json({ ok: false, mensaje: "Error al obtener menú" });
+    }
+    if (results.length === 0) {
+      return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
+    }
+>>>>>>> 8d201bb (fix: secure menu ownership by authenticated user)
     res.json({ ok: true, menu: results[0] });
   });
 });
 
 app.post("/api/menus", verificarToken, (req, res) => {
+<<<<<<< HEAD
   console.log("BODY:", req.body);
   const { nombre, estado, data_json, user_id } = req.body;
   if (!nombre) return res.status(400).json({ ok: false, mensaje: "Nombre requerido" });
@@ -94,6 +126,10 @@ app.post("/api/menus", verificarToken, (req, res) => {
       res.status(201).json({ ok: true, menuId: result.insertId });
     });
 });
+=======
+  const { nombre, estado, data_json } = req.body;
+  const userId = req.userId;
+>>>>>>> 8d201bb (fix: secure menu ownership by authenticated user)
 
 app.put("/api/menus/:id", verificarToken, (req, res) => {
   const { nombre, estado, data_json } = req.body;
@@ -152,14 +188,33 @@ app.put("/api/auth/password", verificarToken, async (req, res) => {
     const matches = await bcrypt.compare(currentPassword, currentHash);
     if (!matches) return res.status(401).json({ ok: false, mensaje: "Contraseña actual incorrecta" });
 
+<<<<<<< HEAD
     const newHash = await bcrypt.hash(newPassword, 10);
     db.query("UPDATE usuarios SET password = ? WHERE id = ?", [newHash, req.usuario.id], (updateErr) => {
       if (updateErr) return res.status(500).json({ ok: false, mensaje: updateErr.message });
       res.json({ ok: true, mensaje: "Contraseña actualizada" });
+=======
+  // Validación de data_json si se proporciona
+  if (data_json && !isValidJSON(data_json)) {
+    return res.status(400).json({ ok: false, mensaje: "data_json debe ser un JSON válido" });
+  }
+
+  const sql = "INSERT INTO menus (nombre, estado, data_json, user_id) VALUES (?, ?, ?, ?)";
+  db.query(sql, [trimmedNombre, menuState, data_json || "{}", userId], (err, result) => {
+    if (err) {
+      console.error("Error al crear menú:", err);
+      return res.status(500).json({ ok: false, mensaje: "Error al crear menú" });
+    }
+    res.status(201).json({
+      ok: true,
+      mensaje: "Menú creado correctamente",
+      menuId: result.insertId,
+>>>>>>> 8d201bb (fix: secure menu ownership by authenticated user)
     });
   });
 });
 
+<<<<<<< HEAD
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
@@ -240,6 +295,127 @@ app.post("/api/upload", verificarToken, (req, res) => {
   });
 });
 
+=======
+// PUT - Actualizar menú
+app.put("/api/menus/:id", verificarToken, (req, res) => {
+  const menuId = parseInt(req.params.id, 10);
+  const userId = req.userId;
+
+  if (isNaN(menuId)) {
+    return res.status(400).json({ ok: false, mensaje: "El ID del menú debe ser un número" });
+  }
+
+  const { nombre, estado, data_json } = req.body;
+
+  // Validación de campos
+  if (nombre && typeof nombre !== "string") {
+    return res.status(400).json({ ok: false, mensaje: "El nombre debe ser texto" });
+  }
+
+  if (nombre) {
+    const trimmedNombre = nombre.trim();
+    if (trimmedNombre.length === 0 || trimmedNombre.length > 255) {
+      return res.status(400).json({ ok: false, mensaje: "El nombre debe tener entre 1 y 255 caracteres" });
+    }
+  }
+
+  if (estado && !isValidMenuState(estado)) {
+    return res.status(400).json({ ok: false, mensaje: "Estado de menú inválido. Debe ser: Borrador, Publicado o Archivado" });
+  }
+
+  if (data_json && !isValidJSON(data_json)) {
+    return res.status(400).json({ ok: false, mensaje: "data_json debe ser un JSON válido" });
+  }
+
+  const checkSql = "SELECT id FROM menus WHERE id = ? AND user_id = ?";
+  db.query(checkSql, [menuId, userId], (err, results) => {
+    if (err) {
+      console.error("Error al verificar menú:", err);
+      return res.status(500).json({ ok: false, mensaje: "Error al actualizar menú" });
+    }
+    if (results.length === 0) {
+      return res.status(403).json({ ok: false, mensaje: "No tienes permiso para actualizar este menú" });
+    }
+
+    const updateSql = "UPDATE menus SET nombre = COALESCE(?, nombre), estado = COALESCE(?, estado), data_json = COALESCE(?, data_json) WHERE id = ? AND user_id = ?";
+    db.query(updateSql, [nombre || null, estado || null, data_json || null, menuId, userId], (err, result) => {
+      if (err) {
+        console.error("Error al actualizar menú:", err);
+        return res.status(500).json({ ok: false, mensaje: "Error al actualizar menú" });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
+      }
+      res.json({ ok: true, mensaje: "Menú actualizado correctamente" });
+    });
+  });
+});
+
+// DELETE - Eliminar menú
+app.delete("/api/menus/:id", verificarToken, (req, res) => {
+  const menuId = parseInt(req.params.id, 10);
+  const userId = req.userId;
+
+  if (isNaN(menuId)) {
+    return res.status(400).json({ ok: false, mensaje: "El ID del menú debe ser un número" });
+  }
+
+  const checkSql = "SELECT id FROM menus WHERE id = ? AND user_id = ?";
+  db.query(checkSql, [menuId, userId], (err, results) => {
+    if (err) {
+      console.error("Error al verificar menú:", err);
+      return res.status(500).json({ ok: false, mensaje: "Error al eliminar menú" });
+    }
+    if (results.length === 0) {
+      return res.status(403).json({ ok: false, mensaje: "No tienes permiso para eliminar este menú" });
+    }
+
+    const deleteSql = "DELETE FROM menus WHERE id = ? AND user_id = ?";
+    db.query(deleteSql, [menuId, userId], (err, result) => {
+      if (err) {
+        console.error("Error al eliminar menú:", err);
+        return res.status(500).json({ ok: false, mensaje: "Error al eliminar menú" });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
+      }
+      res.json({ ok: true, mensaje: "Menú eliminado correctamente" });
+    });
+  });
+});
+
+// ============================
+// MIDDLEWARE CENTRALIZADO DE ERRORES
+// ============================
+app.use((err, req, res, next) => {
+  console.error("Error capturado:", {
+    mensaje: err.message,
+    stack: err.stack,
+    timestamp: new Date().toISOString(),
+  });
+
+  // No exponer detalles del error al cliente
+  const statusCode = err.statusCode || 500;
+  const mensaje = statusCode === 500 ? "Error interno del servidor" : err.message;
+
+  res.status(statusCode).json({
+    ok: false,
+    mensaje: mensaje,
+  });
+});
+
+// Ruta 404
+app.use((req, res) => {
+  res.status(404).json({
+    ok: false,
+    mensaje: "Ruta no encontrada",
+  });
+});
+
+// ============================
+// ARRANCAR SERVIDOR
+// ============================
+>>>>>>> 8d201bb (fix: secure menu ownership by authenticated user)
 app.listen(PORT, () => {
   console.log(`✅ Servidor en http://localhost:${PORT}`);
   console.log(`DB_HOST: ${process.env.DB_HOST}`);
