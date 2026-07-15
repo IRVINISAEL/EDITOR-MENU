@@ -82,6 +82,7 @@ export default function Editor() {
       try {
         const config = JSON.parse(guardada);
         if (config.id) setMenuId(config.id);
+        if (config.nombre) setNombreMenu(config.nombre);
         if (config.fuenteActiva) setFuenteActiva(config.fuenteActiva);
         if (config.fondoActivo) setFondoActivo(config.fondoActivo);
         if (config.tamaño) setTamaño(config.tamaño);
@@ -252,7 +253,8 @@ export default function Editor() {
           nombre: nombreMenu,
           estado,
           data_json: JSON.stringify({
-            categorias: secciones,
+            secciones,
+            nombreMenu,
             fuenteActiva,
             fondoActivo,
             tamaño,
