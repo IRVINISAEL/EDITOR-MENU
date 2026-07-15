@@ -113,6 +113,7 @@ export default function MisMenus() {
         ? JSON.parse(menu.data_json)
         : (menu.data_json || {});
       config.id = menu.id;
+      config.nombre = menu.nombre;
       localStorage.setItem("plantilla_cargada", JSON.stringify(config));
     } catch (err) {
       console.error("Error al cargar el menu para editar:", err);
