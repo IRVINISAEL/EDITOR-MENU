@@ -117,7 +117,7 @@ app.get("/api/menus", verificarToken, (req, res, next) => {
   // RN-05: el usuario se obtiene del token verificado, nunca de un parámetro
   // enviado por el cliente (evita que un usuario vea menús de otro).
   const columns = [
-    C.menus.id, C.menus.usuarioId, C.menus.nombre, C.menus.estado, C.menus.fechaCreacion,
+    C.menus.id, C.menus.usuarioId, C.menus.nombre, C.menus.estado, C.menus.dataJson, C.menus.fechaCreacion,
   ].join(", ");
   db.query(
     `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? AND ${C.menus.eliminadoAt} IS NULL ORDER BY ${C.menus.fechaCreacion} DESC`,
