@@ -34,6 +34,7 @@ type Platillo = {
   imagen?: string;
   colorTexto?: string;
   imagenPos?: { x: number; y: number };
+  disponible?: boolean;
 };
 
 type Seccion = { id: number; nombre: string; platillos: Platillo[] };
@@ -93,6 +94,43 @@ export default function Editor() {
   }, []);
 
   const router = useRouter();
+
+  const parsePrecioNumerico = (valor: string | number) => {
+    if (typeof valor === "number") return valor;
+    const parsed = Number(String(valor).replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const guardarPlatillos = async (id: string | number) => {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Token no disponible");
+
+    const platillos = secciones.flatMap((seccion) =>
+      seccion.platillos.map((platillo) => ({
+        menu_id: id,
+        nombre_p: platillo.nombre,
+        descripcion_p: platillo.descripcion,
+        precio: parsePrecioNumerico(platillo.precio),
+        imagen_url: platillo.imagen || null,
+        disponible: platillo.disponible === false ? 0 : 1,
+      }))
+    );
+
+    const res = await fetch(`${API}/api/platillos/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ platillos }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.mensaje || "No se pudieron guardar los platillos");
+    }
+    return data;
+  };
 
   // Confirm before closing tab or navigating away when there are unsaved changes
   useEffect(() => {
@@ -264,7 +302,18 @@ export default function Editor() {
 
       const data = await res.json();
       if (data.ok || res.ok) {
-        if (data.menuId) setMenuId(data.menuId);
+        const savedMenuId = data.menuId || menuId;
+        if (savedMenuId) {
+          setMenuId(savedMenuId);
+          try {
+            await guardarPlatillos(savedMenuId);
+          } catch (platillosError) {
+            console.error(platillosError);
+            alert("❌ El menú se guardó, pero no se pudieron guardar los platillos.");
+            setGuardando(false);
+            return;
+          }
+        }
         setGuardado(true);
         alert(estado === "Publicado" ? "🚀 ¡Menú guardado y publicado exitosamente!" : "💾 ¡Borrador guardado correctamente!");
         window.location.href = "/mis-menus";
