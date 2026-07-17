@@ -324,6 +324,91 @@ app.put("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res) =
   );
 });
 
+app.put("/api/platillos/:id", verificarToken, verificarPropietarioMenu, (req, res, next) => {
+  const menuId = req.params.id;
+  const { platillos } = req.body;
+
+  if (!Array.isArray(platillos)) {
+    return res.status(400).json({ ok: false, mensaje: "Platillos requeridos" });
+  }
+
+  const platillosParaInsertar = platillos.map((platillo) => {
+    const rawPrecio = platillo[C.platillos.precio] ?? platillo.precio ?? "";
+    const precio = Number(String(rawPrecio).replace(/[^0-9.-]/g, "")) || 0;
+
+    return [
+      menuId,
+      platillo[C.platillos.nombre] ?? platillo.nombre ?? "",
+      platillo[C.platillos.descripcion] ?? platillo.descripcion ?? "",
+      precio,
+      platillo[C.platillos.imagen] ?? platillo.imagen ?? null,
+      platillo[C.platillos.disponible] ?? (platillo.disponible === false ? 0 : 1),
+    ];
+  });
+
+  db.getConnection((err, connection) => {
+    if (err) return next(err);
+
+    connection.beginTransaction((txErr) => {
+      if (txErr) {
+        connection.release();
+        return next(txErr);
+      }
+
+      connection.query(
+        `DELETE FROM ${C.platillos.table} WHERE ${C.platillos.menuId} = ?`,
+        [menuId],
+        (deleteErr) => {
+          if (deleteErr) {
+            return connection.rollback(() => {
+              connection.release();
+              next(deleteErr);
+            });
+          }
+
+          if (platillosParaInsertar.length === 0) {
+            return connection.commit((commitErr) => {
+              if (commitErr) {
+                return connection.rollback(() => {
+                  connection.release();
+                  next(commitErr);
+                });
+              }
+              connection.release();
+              res.json({ ok: true, mensaje: "Platillos guardados", total: 0 });
+            });
+          }
+
+          const placeholders = platillosParaInsertar.map(() => "(?, ?, ?, ?, ?, ?)").join(", ");
+          connection.query(
+            `INSERT INTO ${C.platillos.table} (${C.platillos.menuId}, ${C.platillos.nombre}, ${C.platillos.descripcion}, ${C.platillos.precio}, ${C.platillos.imagen}, ${C.platillos.disponible}) VALUES ${placeholders}`,
+            platillosParaInsertar.flat(),
+            (insertErr) => {
+              if (insertErr) {
+                return connection.rollback(() => {
+                  connection.release();
+                  next(insertErr);
+                });
+              }
+
+              connection.commit((commitErr) => {
+                if (commitErr) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    next(commitErr);
+                  });
+                }
+                connection.release();
+                res.json({ ok: true, mensaje: "Platillos guardados", total: platillosParaInsertar.length });
+              });
+            }
+          );
+        }
+      );
+    });
+  });
+});
+
 app.delete("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, next) => {
   db.query(
     `UPDATE ${C.menus.table} SET ${C.menus.eliminadoAt} = NOW() WHERE ${C.menus.id} = ? AND ${C.menus.eliminadoAt} IS NULL`,

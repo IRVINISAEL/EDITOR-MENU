@@ -38,4 +38,15 @@ module.exports = {
     email: "email",
     sitioWeb: "sitio web",
   },
+  platillos: {
+    table: "platillos",
+    id: "id",
+    menuId: "menu_id",
+    nombre: "nombre",
+    descripcion: "descripcion",
+    precio: "precio",
+    imagen: "imagen_url",
+    disponible: "disponible",
+
+  }
 };
