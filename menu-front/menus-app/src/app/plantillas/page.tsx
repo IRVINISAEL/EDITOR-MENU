@@ -263,7 +263,7 @@ export default function Plantillas() {
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
 
       {/* SIDEBAR */}
-      <aside style={{
+      <aside className="app-sidebar" style={{
         width: 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
         position: "fixed", height: "100vh", zIndex: 10,
@@ -310,7 +310,7 @@ export default function Plantillas() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: "clamp(0px, 220px, 220px)", flex: 1, padding: "clamp(16px, 4vw, 32px)" }}>
+      <main className="app-main" style={{ marginLeft: "clamp(0px, 220px, 220px)", flex: 1, padding: "clamp(16px, 4vw, 32px)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
           <div>
             <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>Plantillas</h1>

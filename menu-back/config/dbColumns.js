@@ -8,6 +8,8 @@ module.exports = {
     password: "password",
     plan: "plan",
     fechaRegistro: "fecha_registro",
+    resetToken: "reset_token",
+    resetTokenExpira: "reset_token_expira",
   },
   menus: {
     table: "menus",
