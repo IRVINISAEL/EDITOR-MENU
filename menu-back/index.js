@@ -4,6 +4,8 @@ const mysql = require("mysql2");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
+const crypto = require("crypto");
+const { Resend } = require("resend");
 const cloudinary = require("./cloudinary");
 require("dotenv").config();
 const { logAccesoDenegado } = require("./config/logger");
@@ -16,6 +18,8 @@ const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || "tu-clave-secreta-super-segura-cambiar-en-produccion";
 const PASSWORD_RESET_EXPIRATION_MINUTES = parseInt(process.env.PASSWORD_RESET_EXPIRATION_MINUTES || "60", 10);
 const C = require("./config/dbColumns");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 app.use(cors());
 app.use(express.json());
@@ -61,11 +65,29 @@ const db = mysql.createPool({
   queueLimit: 0
 });
 
+const dbAsync = db.promise();
+
 db.getConnection((err, connection) => {
   if (err) { console.error("❌ Error MySQL:", err); return; }
   console.log("✅ Conectado a MySQL correctamente");
   connection.release();
   iniciarPurgaProgramada(db);
+
+  db.query(
+    `CREATE TABLE IF NOT EXISTS ${C.vistasMenu.table} (
+      ${C.vistasMenu.id} INT AUTO_INCREMENT PRIMARY KEY,
+      ${C.vistasMenu.menuId} INT NOT NULL,
+      ${C.vistasMenu.fecha} TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY menu_id (${C.vistasMenu.menuId})
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    (errTabla) => {
+      if (errTabla) {
+        console.error("❌ Error creando tabla vistas_menu:", errTabla);
+      } else {
+        console.log("✅ Tabla vistas_menu lista");
+      }
+    }
+  );
 });
 
 // Middleware: verificar que el usuario sea propietario del menú
@@ -113,11 +135,35 @@ const verificarPropietarioMenu = (req, res, next) => {
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
 // Obter menus, opcionalmente filtrando por user_id
+// CA-01/CA-03: consulta pública de un menú, sin autenticación y sin datos del propietario
+app.get("/api/public/menus/:id", (req, res, next) => {
+  db.query(
+    `SELECT ${C.menus.id}, ${C.menus.nombre}, ${C.menus.dataJson} FROM ${C.menus.table} WHERE ${C.menus.id} = ? AND ${C.menus.estado} = 'Publicado' AND ${C.menus.eliminadoAt} IS NULL`,
+    [req.params.id],
+    (err, results) => {
+      if (err) return next(err);
+      if (results.length === 0) {
+        return res.status(404).json({ ok: false, mensaje: "Menú no disponible" });
+      }
+
+      db.query(
+        `INSERT INTO ${C.vistasMenu.table} (${C.vistasMenu.menuId}) VALUES (?)`,
+        [req.params.id],
+        (errVista) => {
+          if (errVista) console.error("ERROR registrando vista:", errVista);
+        }
+      );
+
+      res.json({ ok: true, menu: results[0] });
+    }
+  );
+});
+
 app.get("/api/menus", verificarToken, (req, res, next) => {
   // RN-05: el usuario se obtiene del token verificado, nunca de un parámetro
   // enviado por el cliente (evita que un usuario vea menús de otro).
   const columns = [
-    C.menus.id, C.menus.usuarioId, C.menus.nombre, C.menus.estado, C.menus.fechaCreacion,
+    C.menus.id, C.menus.usuarioId, C.menus.nombre, C.menus.estado, C.menus.dataJson, C.menus.fechaCreacion,
   ].join(", ");
   db.query(
     `SELECT ${columns} FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ? AND ${C.menus.eliminadoAt} IS NULL ORDER BY ${C.menus.fechaCreacion} DESC`,
@@ -143,6 +189,68 @@ app.get("/api/menus/papelera", verificarToken, (req, res, next) => {
   );
 });
 
+app.get("/api/menus/estadisticas", verificarToken, async (req, res, next) => {
+  const usuarioId = req.usuario.id;
+  try {
+    const [[{ total }]] = await dbAsync.query(
+      `SELECT COUNT(*) AS total
+       FROM ${C.vistasMenu.table} v
+       JOIN ${C.menus.table} m ON m.${C.menus.id} = v.${C.vistasMenu.menuId}
+       WHERE m.${C.menus.usuarioId} = ? AND m.${C.menus.eliminadoAt} IS NULL`,
+      [usuarioId]
+    );
+
+    const [[{ hoy }]] = await dbAsync.query(
+      `SELECT COUNT(*) AS hoy
+       FROM ${C.vistasMenu.table} v
+       JOIN ${C.menus.table} m ON m.${C.menus.id} = v.${C.vistasMenu.menuId}
+       WHERE m.${C.menus.usuarioId} = ? AND m.${C.menus.eliminadoAt} IS NULL
+         AND DATE(v.${C.vistasMenu.fecha}) = CURDATE()`,
+      [usuarioId]
+    );
+
+    const [tendencia] = await dbAsync.query(
+      `SELECT DATE(v.${C.vistasMenu.fecha}) AS fecha, COUNT(*) AS vistas
+       FROM ${C.vistasMenu.table} v
+       JOIN ${C.menus.table} m ON m.${C.menus.id} = v.${C.vistasMenu.menuId}
+       WHERE m.${C.menus.usuarioId} = ? AND m.${C.menus.eliminadoAt} IS NULL
+         AND v.${C.vistasMenu.fecha} >= (NOW() - INTERVAL 30 DAY)
+       GROUP BY DATE(v.${C.vistasMenu.fecha})
+       ORDER BY fecha ASC`,
+      [usuarioId]
+    );
+
+    const [topMenus] = await dbAsync.query(
+      `SELECT m.${C.menus.nombre} AS nombre, COUNT(v.${C.vistasMenu.id}) AS vistas
+       FROM ${C.menus.table} m
+       LEFT JOIN ${C.vistasMenu.table} v ON v.${C.vistasMenu.menuId} = m.${C.menus.id}
+       WHERE m.${C.menus.usuarioId} = ? AND m.${C.menus.eliminadoAt} IS NULL
+       GROUP BY m.${C.menus.id}
+       ORDER BY vistas DESC
+       LIMIT 5`,
+      [usuarioId]
+    );
+
+    const [[{ publicados }]] = await dbAsync.query(
+      `SELECT COUNT(*) AS publicados
+       FROM ${C.menus.table}
+       WHERE ${C.menus.usuarioId} = ? AND ${C.menus.estado} = 'Publicado' AND ${C.menus.eliminadoAt} IS NULL`,
+      [usuarioId]
+    );
+
+    res.json({
+      ok: true,
+      vistasTotales: total,
+      vistasHoy: hoy,
+      menusPublicados: publicados,
+      tendencia,
+      topMenus,
+    });
+  } catch (errStats) {
+    next(errStats);
+  }
+});
+
 // Se agregó verificarToken aquí (antes era pública, hallazgo de seguridad corregido)
 app.get("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, next) => {
   const columns = [
@@ -162,6 +270,28 @@ app.get("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, n
       res.json({ ok: true, menu: results[0] });
     }
   );
+});
+
+app.get("/api/menus/:id/estadisticas", verificarToken, verificarPropietarioMenu, async (req, res, next) => {
+  try {
+    const [[{ total }]] = await dbAsync.query(
+      `SELECT COUNT(*) AS total FROM ${C.vistasMenu.table} WHERE ${C.vistasMenu.menuId} = ?`,
+      [req.params.id]
+    );
+
+    const [tendencia] = await dbAsync.query(
+      `SELECT DATE(${C.vistasMenu.fecha}) AS fecha, COUNT(*) AS vistas
+       FROM ${C.vistasMenu.table}
+       WHERE ${C.vistasMenu.menuId} = ? AND ${C.vistasMenu.fecha} >= (NOW() - INTERVAL 30 DAY)
+       GROUP BY DATE(${C.vistasMenu.fecha})
+       ORDER BY fecha ASC`,
+      [req.params.id]
+    );
+
+    res.json({ ok: true, vistasTotales: total, tendencia });
+  } catch (errStats) {
+    next(errStats);
+  }
 });
 
 app.post("/api/menus", verificarToken, (req, res, next) => {
@@ -353,6 +483,86 @@ app.put("/api/auth/password", verificarToken, async (req, res) => {
   });
 });
 
+app.post("/api/auth/forgot-password", (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ ok: false, mensaje: "Correo electrónico requerido" });
+
+  db.query(`SELECT ${C.usuarios.id} FROM ${C.usuarios.table} WHERE ${C.usuarios.email} = ?`, [email], (err, results) => {
+    if (err) return res.status(500).json({ ok: false, mensaje: err.message });
+
+    if (results.length === 0) {
+      return res.json({ ok: true, mensaje: "Si el correo existe, se enviará un enlace de recuperación" });
+    }
+
+    const userId = results[0][C.usuarios.id];
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+    const expira = new Date(Date.now() + PASSWORD_RESET_EXPIRATION_MINUTES * 60 * 1000);
+
+    db.query(
+      `UPDATE ${C.usuarios.table} SET ${C.usuarios.resetToken} = ?, ${C.usuarios.resetTokenExpira} = ? WHERE ${C.usuarios.id} = ?`,
+      [hashedToken, expira, userId],
+      async (updateErr) => {
+        if (updateErr) return res.status(500).json({ ok: false, mensaje: updateErr.message });
+
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+        try {
+          await resend.emails.send({
+            from: process.env.SMTP_FROM || "onboarding@resend.dev",
+            to: email,
+            subject: "Recupera tu contraseña - MenuMaster",
+            html: `<p>Solicitaste recuperar tu contraseña.</p><p><a href="${resetLink}">Haz clic aquí para restablecerla</a></p><p>Este enlace expira en ${PASSWORD_RESET_EXPIRATION_MINUTES} minutos. Si tú no lo solicitaste, ignora este correo.</p>`,
+          });
+        } catch (mailErr) {
+          console.error("ERROR RESEND:", mailErr);
+        }
+
+        res.json({ ok: true, mensaje: "Si el correo existe, se enviará un enlace de recuperación" });
+      }
+    );
+  });
+});
+
+app.get("/api/auth/reset-password/:token", (req, res) => {
+  const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+  db.query(
+    `SELECT ${C.usuarios.id} FROM ${C.usuarios.table} WHERE ${C.usuarios.resetToken} = ? AND ${C.usuarios.resetTokenExpira} > NOW()`,
+    [hashedToken],
+    (err, results) => {
+      if (err) return res.status(500).json({ ok: false, mensaje: err.message });
+      if (results.length === 0) return res.status(400).json({ ok: false, mensaje: "Token inválido o expirado" });
+      res.json({ ok: true });
+    }
+  );
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ ok: false, mensaje: "Token y contraseña son obligatorios" });
+  if (password.length < 8) return res.status(400).json({ ok: false, mensaje: "La contraseña debe tener al menos 8 caracteres" });
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  db.query(
+    `SELECT ${C.usuarios.id} FROM ${C.usuarios.table} WHERE ${C.usuarios.resetToken} = ? AND ${C.usuarios.resetTokenExpira} > NOW()`,
+    [hashedToken],
+    async (err, results) => {
+      if (err) return res.status(500).json({ ok: false, mensaje: err.message });
+      if (results.length === 0) return res.status(400).json({ ok: false, mensaje: "Token inválido o expirado" });
+
+      const userId = results[0][C.usuarios.id];
+      const newHash = await bcrypt.hash(password, 10);
+      db.query(
+        `UPDATE ${C.usuarios.table} SET ${C.usuarios.password} = ?, ${C.usuarios.resetToken} = NULL, ${C.usuarios.resetTokenExpira} = NULL WHERE ${C.usuarios.id} = ?`,
+        [newHash, userId],
+        (updateErr) => {
+          if (updateErr) return res.status(500).json({ ok: false, mensaje: updateErr.message });
+          res.json({ ok: true, mensaje: "Contraseña actualizada correctamente" });
+        }
+      );
+    }
+  );
+});
+
 app.post("/api/auth/login", verificarBloqueoLogin, (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
@@ -388,7 +598,54 @@ app.post("/api/auth/login", verificarBloqueoLogin, (req, res, next) => {
   );
 });
 
-// Nuevo endpoint: subir imagen a Cloudinary y asociarla a un menú
+// HU-89: eliminación permanente de cuenta.
+// RN-01: solo el propietario (req.usuario.id viene del token, no del cliente).
+// RN-02: exige la contraseña actual como confirmación explícita.
+// RN-04: se eliminan en cascada las vistas y los menús asociados antes de
+// eliminar la cuenta, para no dejar datos huérfanos.
+app.delete("/api/auth/account", verificarToken, async (req, res, next) => {
+  const { password } = req.body;
+  if (!password) {
+    return res.status(400).json({ ok: false, mensaje: "Debes ingresar tu contraseña para confirmar" });
+  }
+
+  try {
+    const [rows] = await dbAsync.query(
+      `SELECT ${C.usuarios.password} FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`,
+      [req.usuario.id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
+    }
+
+    const coincide = await bcrypt.compare(password, rows[0][C.usuarios.password]);
+    if (!coincide) {
+      return res.status(401).json({ ok: false, mensaje: "Contraseña incorrecta" });
+    }
+
+    await dbAsync.query(
+      `DELETE v FROM ${C.vistasMenu.table} v
+       INNER JOIN ${C.menus.table} m ON m.${C.menus.id} = v.${C.vistasMenu.menuId}
+       WHERE m.${C.menus.usuarioId} = ?`,
+      [req.usuario.id]
+    );
+
+    await dbAsync.query(
+      `DELETE FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ?`,
+      [req.usuario.id]
+    );
+
+    await dbAsync.query(
+      `DELETE FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`,
+      [req.usuario.id]
+    );
+
+    res.json({ ok: true, mensaje: "Cuenta eliminada correctamente" });
+  } catch (errDelete) {
+    next(errDelete);
+  }
+});
+
 app.post("/api/upload", verificarToken, (req, res) => {
   upload.single("imagen")(req, res, async (err) => {
     // CA-04 / RN-07: si falla la validación del archivo, no se toca la BD

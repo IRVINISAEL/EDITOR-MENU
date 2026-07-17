@@ -7,6 +7,7 @@ const navItems = [
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
   { icon: "✏️", label: "Mis Diseños", href: "#" },
   { icon: "🖼️", label: "Medios", href: "#" },
+  { icon: "🗑️", label: "Papelera", href: "/papelera" },
   { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
   { icon: "💳", label: "Facturación", href: "/planes" },
   { icon: "⚙️", label: "Configuración", href: "/configuracion" },
@@ -34,6 +35,12 @@ export default function Configuracion() {
   const [guardado, setGuardado] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const API = process.env.NEXT_PUBLIC_API_URL;
+
+  // HU-89: eliminación de cuenta
+  const [modalEliminar, setModalEliminar] = useState(false);
+  const [passwordEliminar, setPasswordEliminar] = useState("");
+  const [errorEliminar, setErrorEliminar] = useState("");
+  const [eliminando, setEliminando] = useState(false);
 
   useEffect(() => {
     const usuario = localStorage.getItem("usuario");
@@ -120,6 +127,47 @@ export default function Configuracion() {
     setTimeout(() => { setGuardando(false); setGuardado(true); setTimeout(() => setGuardado(false), 2000); }, 600);
   };
 
+  const eliminarCuenta = async () => {
+    if (!passwordEliminar) {
+      setErrorEliminar("Ingresa tu contraseña para confirmar");
+      return;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setErrorEliminar("Necesitas iniciar sesión de nuevo");
+      return;
+    }
+
+    setErrorEliminar("");
+    setEliminando(true);
+
+    try {
+      const res = await fetch(`${API}/api/auth/account`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password: passwordEliminar }),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        setErrorEliminar(data.mensaje || "No se pudo eliminar la cuenta");
+        setEliminando(false);
+        return;
+      }
+
+      localStorage.removeItem("usuario");
+      localStorage.removeItem("token");
+      document.cookie = "usuario=; path=/; max-age=0";
+      window.location.href = "/login";
+    } catch {
+      setErrorEliminar("Error de conexión al servidor");
+      setEliminando(false);
+    }
+  };
+
   const inputStyle: React.CSSProperties = { background: "#16161d", border: "1px solid #2a2a35", borderRadius: 8, color: "white", fontSize: 13, outline: "none", padding: "10px 14px", width: "100%", boxSizing: "border-box" };
   const labelStyle: React.CSSProperties = { color: "#666", fontSize: 11, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, display: "block" };
 
@@ -133,7 +181,7 @@ export default function Configuracion() {
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
 
       {/* SIDEBAR */}
-      <aside style={{ width: 220, background: "#16161d", display: "flex", flexDirection: "column", padding: "24px 0", borderRight: "1px solid #2a2a35", position: "fixed", height: "100vh", zIndex: 10 }}>
+      <aside className="app-sidebar" style={{ width: 220, background: "#16161d", display: "flex", flexDirection: "column", padding: "24px 0", borderRight: "1px solid #2a2a35", position: "fixed", height: "100vh", zIndex: 10 }}>
         <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #2a2a35" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 10 }} />
@@ -164,7 +212,7 @@ export default function Configuracion() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: 220, flex: 1, padding: 32, maxWidth: 740 }}>
+      <main className="app-main" style={{ marginLeft: 220, flex: 1, padding: 32, maxWidth: 740 }}>
         <div style={{ marginBottom: 32 }}>
           <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>Configuración</h1>
           <p style={{ color: "#666", fontSize: 13, margin: "4px 0 0" }}>Ajusta tu cuenta y preferencias</p>
@@ -221,7 +269,7 @@ export default function Configuracion() {
             <div style={{ background: "#dc262622", border: "1px solid #dc262644", borderRadius: 12, padding: 20 }}>
               <div style={{ color: "#f87171", fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Zona de peligro</div>
               <div style={{ color: "#888", fontSize: 13, marginBottom: 12 }}>Eliminar tu cuenta borrará todos tus menús permanentemente.</div>
-              <button style={{ background: "transparent", border: "1px solid #dc2626", borderRadius: 8, padding: "8px 16px", color: "#f87171", fontSize: 13, cursor: "pointer" }}>🗑️ Eliminar mi cuenta</button>
+             <button onClick={() => setModalEliminar(true)} style={{ background: "transparent", border: "1px solid #dc2626", borderRadius: 8, padding: "8px 16px", color: "#f87171", fontSize: 13, cursor: "pointer" }}>🗑️ Eliminar mi cuenta</button>
             </div>
 
             <button onClick={guardarCuenta} style={{ background: guardado ? "#16a34a" : "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none", borderRadius: 10, padding: "14px 32px", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
@@ -289,6 +337,64 @@ export default function Configuracion() {
           </div>
         )}
       </main>
+
+      {/* Modal de confirmación para eliminar cuenta (CA-01, RN-02) */}
+      {modalEliminar && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center",
+          justifyContent: "center", zIndex: 100,
+        }}>
+          <div style={{
+            background: "#1e1e28", border: "1px solid #dc262644", borderRadius: 12,
+            padding: 28, width: 400, maxWidth: "90vw",
+          }}>
+            <div style={{ color: "#f87171", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+              ⚠️ Eliminar cuenta permanentemente
+            </div>
+            <p style={{ color: "#aaa", fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>
+              Esta acción no se puede deshacer. Se eliminarán tu cuenta, todos tus menús y no podrás
+              volver a iniciar sesión con este correo.
+            </p>
+
+            <label style={labelStyle}>CONFIRMA TU CONTRASEÑA</label>
+            <input
+              value={passwordEliminar}
+              onChange={(e) => setPasswordEliminar(e.target.value)}
+              type="password"
+              placeholder="••••••••"
+              style={inputStyle}
+            />
+
+            {errorEliminar && (
+              <div style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>⚠️ {errorEliminar}</div>
+            )}
+
+            <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+              <button
+                onClick={() => { setModalEliminar(false); setPasswordEliminar(""); setErrorEliminar(""); }}
+                style={{
+                  flex: 1, background: "transparent", border: "1px solid #2a2a35", borderRadius: 8,
+                  padding: "10px 16px", color: "#aaa", fontSize: 13, cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={eliminarCuenta}
+                disabled={eliminando}
+                style={{
+                  flex: 1, background: "#dc2626", border: "none", borderRadius: 8,
+                  padding: "10px 16px", color: "white", fontWeight: 600, fontSize: 13,
+                  cursor: eliminando ? "not-allowed" : "pointer", opacity: eliminando ? 0.7 : 1,
+                }}
+              >
+                {eliminando ? "Eliminando..." : "Sí, eliminar mi cuenta"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,6 +9,7 @@ const navItems = [
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
   { icon: "✏️", label: "Mis Diseños", href: "#" },
   { icon: "🖼️", label: "Medios", href: "#" },
+  { icon: "🗑️", label: "Papelera", href: "/papelera" },
   { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
   { icon: "💳", label: "Facturación", href: "/planes" },
   { icon: "⚙️", label: "Configuración", href: "/configuracion" },
@@ -109,10 +110,11 @@ export default function MisMenus() {
   // Cargar menú en editor
   const editarMenu = (menu: Menu) => {
     try {
-      const config = typeof menu.data_json === "string"
+      const config = typeof menu.data_json === "string" && menu.data_json
         ? JSON.parse(menu.data_json)
-        : menu.data_json;
+        : (menu.data_json || {});
       config.id = menu.id;
+      config.nombre = menu.nombre;
       localStorage.setItem("plantilla_cargada", JSON.stringify(config));
     } catch (err) {
       console.error("Error al cargar el menu para editar:", err);

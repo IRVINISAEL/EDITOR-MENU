@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },
@@ -7,39 +7,78 @@ const navItems = [
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
   { icon: "✏️", label: "Mis Diseños", href: "#" },
   { icon: "🖼️", label: "Medios", href: "#" },
+  { icon: "🗑️", label: "Papelera", href: "/papelera" },
   { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
   { icon: "💳", label: "Facturación", href: "/planes" },
   { icon: "⚙️", label: "Configuración", href: "/configuracion" },
 ];
 
-const topMenus = [
-  { nombre: "Menú Restaurante", vistas: 512 },
-  { nombre: "Menú Cafetería", vistas: 312 },
-  { nombre: "Menú Postres", vistas: 198 },
-  { nombre: "Menú Bebidas", vistas: 156 },
-  { nombre: "Menú Desayunos", vistas: 78 },
-];
+type TendenciaPunto = { fecha: string; vistas: number };
+type TopMenu = { nombre: string; vistas: number };
 
-// Datos simulados para la gráfica
-const datosGrafica = [
-  { dia: "1 May", vistas: 30 },
-  { dia: "8 May", vistas: 55 },
-  { dia: "15 May", vistas: 40 },
-  { dia: "22 May", vistas: 80 },
-  { dia: "31 May", vistas: 65 },
-];
+type Estadisticas = {
+  vistasTotales: number;
+  vistasHoy: number;
+  menusPublicados: number;
+  tendencia: TendenciaPunto[];
+  topMenus: TopMenu[];
+};
 
-const maxVistas = Math.max(...datosGrafica.map(d => d.vistas));
+function formatearFecha(fechaIso: string) {
+  const d = new Date(fechaIso);
+  return d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
+}
 
 export default function Analiticas() {
   const [activeNav] = useState("Dashboard");
-  const [periodo, setPeriodo] = useState("01 May 2024 - 31 May 2024");
+  const [datos, setDatos] = useState<Estadisticas | null>(null);
+  const [estado, setEstado] = useState<"loading" | "ok" | "error">("loading");
+
+  useEffect(() => {
+    const API = process.env.NEXT_PUBLIC_API_URL;
+
+    const cargarEstadisticas = async () => {
+      try {
+        const res = await fetch(`${API}/api/menus/estadisticas`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        const json = await res.json();
+        if (json.ok) {
+          setDatos(json);
+          setEstado("ok");
+        } else {
+          setEstado("error");
+        }
+      } catch {
+        setEstado("error");
+      }
+    };
+
+    cargarEstadisticas();
+  }, []);
+
+  const tendencia = datos?.tendencia || [];
+  const topMenus = datos?.topMenus || [];
+  const maxVistas = Math.max(1, ...tendencia.map((d) => d.vistas));
+  const maxTopMenu = Math.max(1, ...topMenus.map((m) => m.vistas));
+
+  const promedioDiario =
+    tendencia.length > 0
+      ? Math.round(tendencia.reduce((acc, d) => acc + d.vistas, 0) / tendencia.length)
+      : 0;
+
+  const statsCards = [
+    { label: "Vistas totales", value: datos?.vistasTotales ?? 0, icon: "👁️" },
+    { label: "Vistas hoy", value: datos?.vistasHoy ?? 0, icon: "📅" },
+    { label: "Promedio diario", value: promedioDiario, icon: "📊" },
+    { label: "Menús publicados", value: datos?.menusPublicados ?? 0, icon: "📋" },
+  ];
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
 
       {/* SIDEBAR */}
-      <aside style={{
+      <aside className="app-sidebar" style={{
         width: 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
         position: "fixed", height: "100vh", zIndex: 10,
@@ -82,50 +121,38 @@ export default function Analiticas() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: 220, flex: 1, padding: 32 }}>
+      <main className="app-main" style={{ marginLeft: 220, flex: 1, padding: 32 }}>
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
           <div>
             <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>Analíticas</h1>
-            <p style={{ color: "#666", fontSize: 13, margin: "4px 0 0" }}>Métricas de tus menús publicados</p>
+            <p style={{ color: "#666", fontSize: 13, margin: "4px 0 0" }}>Métricas reales de tus menús publicados (últimos 30 días)</p>
           </div>
-          <select
-            value={periodo}
-            onChange={e => setPeriodo(e.target.value)}
-            style={{
-              background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-              color: "white", padding: "8px 14px", fontSize: 12, outline: "none", cursor: "pointer",
-            }}
-          >
-            <option>01 May 2024 - 31 May 2024</option>
-            <option>01 Abr 2024 - 30 Abr 2024</option>
-            <option>01 Mar 2024 - 31 Mar 2024</option>
-          </select>
         </div>
+
+        {estado === "error" && (
+          <div style={{
+            background: "#dc262622", border: "1px solid #dc262644", color: "#f87171",
+            borderRadius: 12, padding: 16, marginBottom: 24, fontSize: 13,
+          }}>
+            No se pudieron cargar las estadísticas. Intenta recargar la página.
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16, marginBottom: 28 }}>
-          {[
-            { label: "Vistas totales", value: "1,256", cambio: "+12%", positivo: true, icon: "👁️" },
-            { label: "Descargas", value: "342", cambio: "+8%", positivo: true, icon: "⬇️" },
-            { label: "QR Escaneos", value: "786", cambio: "+18%", positivo: true, icon: "📱" },
-            { label: "Impresiones", value: "128", cambio: "+5%", positivo: true, icon: "🖨️" },
-          ].map((stat) => (
+          {statsCards.map((stat) => (
             <div key={stat.label} style={{
               background: "#1e1e28", border: "1px solid #2a2a35",
               borderRadius: 12, padding: 20,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                 <span style={{ fontSize: 20 }}>{stat.icon}</span>
-                <span style={{
-                  background: stat.positivo ? "#16a34a22" : "#dc262622",
-                  color: stat.positivo ? "#4ade80" : "#f87171",
-                  border: `1px solid ${stat.positivo ? "#16a34a44" : "#dc262644"}`,
-                  borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 600,
-                }}>{stat.cambio} vs mes anterior</span>
               </div>
-              <div style={{ color: "white", fontSize: 26, fontWeight: 700 }}>{stat.value}</div>
+              <div style={{ color: "white", fontSize: 26, fontWeight: 700 }}>
+                {estado === "loading" ? "…" : stat.value.toLocaleString("es-MX")}
+              </div>
               <div style={{ color: "#666", fontSize: 12, marginTop: 4 }}>{stat.label}</div>
             </div>
           ))}
@@ -137,56 +164,78 @@ export default function Analiticas() {
           <div style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 12, padding: 24 }}>
             <h2 style={{ color: "white", fontSize: 15, fontWeight: 600, margin: "0 0 24px" }}>Vistas por día</h2>
 
-            {/* Gráfica de barras simple */}
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 16, height: 160, paddingBottom: 8 }}>
-              {datosGrafica.map((d) => (
-                <div key={d.dia} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: "#666", fontSize: 10 }}>{d.vistas}</span>
-                  <div style={{
-                    width: "100%", borderRadius: "4px 4px 0 0",
-                    background: "linear-gradient(180deg, #a855f7, #7c3aed)",
-                    height: `${(d.vistas / maxVistas) * 120}px`,
-                    transition: "height 0.3s",
-                    minHeight: 4,
-                  }} />
-                  <span style={{ color: "#555", fontSize: 10, textAlign: "center" }}>{d.dia}</span>
-                </div>
-              ))}
-            </div>
+            {estado === "loading" && (
+              <p style={{ color: "#666", fontSize: 13 }}>Cargando…</p>
+            )}
 
-            {/* Línea base */}
-            <div style={{ borderTop: "1px solid #2a2a35", marginTop: 8 }} />
+            {estado === "ok" && tendencia.length === 0 && (
+              <p style={{ color: "#666", fontSize: 13 }}>
+                Todavía no hay vistas registradas. En cuanto alguien abra uno de tus menús publicados, aparecerán aquí.
+              </p>
+            )}
+
+            {estado === "ok" && tendencia.length > 0 && (
+              <>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 16, height: 160, paddingBottom: 8, overflowX: "auto" }}>
+                  {tendencia.map((d) => (
+                    <div key={d.fecha} style={{ flex: 1, minWidth: 28, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                      <span style={{ color: "#666", fontSize: 10 }}>{d.vistas}</span>
+                      <div style={{
+                        width: "100%", borderRadius: "4px 4px 0 0",
+                        background: "linear-gradient(180deg, #a855f7, #7c3aed)",
+                        height: `${(d.vistas / maxVistas) * 120}px`,
+                        transition: "height 0.3s",
+                        minHeight: 4,
+                      }} />
+                      <span style={{ color: "#555", fontSize: 10, textAlign: "center" }}>{formatearFecha(d.fecha)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ borderTop: "1px solid #2a2a35", marginTop: 8 }} />
+              </>
+            )}
           </div>
 
           {/* Top menús */}
           <div style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 12, padding: 24 }}>
             <h2 style={{ color: "white", fontSize: 15, fontWeight: 600, margin: "0 0 20px" }}>Top menús</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {topMenus.map((menu, i) => (
-                <div key={menu.nombre}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{
-                        width: 20, height: 20, borderRadius: "50%",
-                        background: i === 0 ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "#2a2a35",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        color: "white", fontSize: 10, fontWeight: 700,
-                      }}>{i + 1}</span>
-                      <span style={{ color: "white", fontSize: 12 }}>{menu.nombre}</span>
+
+            {estado === "loading" && (
+              <p style={{ color: "#666", fontSize: 13 }}>Cargando…</p>
+            )}
+
+            {estado === "ok" && topMenus.length === 0 && (
+              <p style={{ color: "#666", fontSize: 13 }}>Aún no tienes menús con vistas registradas.</p>
+            )}
+
+            {estado === "ok" && topMenus.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {topMenus.map((menu, i) => (
+                  <div key={`${menu.nombre}-${i}`}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{
+                          width: 20, height: 20, borderRadius: "50%",
+                          background: i === 0 ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "#2a2a35",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          color: "white", fontSize: 10, fontWeight: 700,
+                        }}>{i + 1}</span>
+                        <span style={{ color: "white", fontSize: 12 }}>{menu.nombre}</span>
+                      </div>
+                      <span style={{ color: "#666", fontSize: 12 }}>{menu.vistas}</span>
                     </div>
-                    <span style={{ color: "#666", fontSize: 12 }}>{menu.vistas}</span>
+                    {/* Barra de progreso */}
+                    <div style={{ background: "#2a2a35", borderRadius: 4, height: 4 }}>
+                      <div style={{
+                        height: 4, borderRadius: 4,
+                        background: i === 0 ? "linear-gradient(90deg, #7c3aed, #a855f7)" : "#3a3a45",
+                        width: `${(menu.vistas / maxTopMenu) * 100}%`,
+                      }} />
+                    </div>
                   </div>
-                  {/* Barra de progreso */}
-                  <div style={{ background: "#2a2a35", borderRadius: 4, height: 4 }}>
-                    <div style={{
-                      height: 4, borderRadius: 4,
-                      background: i === 0 ? "linear-gradient(90deg, #7c3aed, #a855f7)" : "#3a3a45",
-                      width: `${(menu.vistas / topMenus[0].vistas) * 100}%`,
-                    }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

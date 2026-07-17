@@ -8,6 +8,8 @@ module.exports = {
     password: "password",
     plan: "plan",
     fechaRegistro: "fecha_registro",
+    resetToken: "reset_token",
+    resetTokenExpira: "reset_token_expira",
   },
   menus: {
     table: "menus",
@@ -18,6 +20,12 @@ module.exports = {
     dataJson: "data_json",
     fechaCreacion: "created_at",
     eliminadoAt: "eliminado_at",
+  },
+  vistasMenu: {
+    table: "vistas_menu",
+    id: "id",
+    menuId: "menu_id",
+    fecha: "fecha",
   },
   negocios: {
     table: "negocios",
