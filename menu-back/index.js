@@ -65,11 +65,29 @@ const db = mysql.createPool({
   queueLimit: 0
 });
 
+const dbAsync = db.promise();
+
 db.getConnection((err, connection) => {
   if (err) { console.error("❌ Error MySQL:", err); return; }
   console.log("✅ Conectado a MySQL correctamente");
   connection.release();
   iniciarPurgaProgramada(db);
+
+  db.query(
+    `CREATE TABLE IF NOT EXISTS ${C.vistasMenu.table} (
+      ${C.vistasMenu.id} INT AUTO_INCREMENT PRIMARY KEY,
+      ${C.vistasMenu.menuId} INT NOT NULL,
+      ${C.vistasMenu.fecha} TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY menu_id (${C.vistasMenu.menuId})
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    (errTabla) => {
+      if (errTabla) {
+        console.error("❌ Error creando tabla vistas_menu:", errTabla);
+      } else {
+        console.log("✅ Tabla vistas_menu lista");
+      }
+    }
+  );
 });
 
 // Middleware: verificar que el usuario sea propietario del menú
@@ -127,6 +145,15 @@ app.get("/api/public/menus/:id", (req, res, next) => {
       if (results.length === 0) {
         return res.status(404).json({ ok: false, mensaje: "Menú no disponible" });
       }
+
+      db.query(
+        `INSERT INTO ${C.vistasMenu.table} (${C.vistasMenu.menuId}) VALUES (?)`,
+        [req.params.id],
+        (errVista) => {
+          if (errVista) console.error("ERROR registrando vista:", errVista);
+        }
+      );
+
       res.json({ ok: true, menu: results[0] });
     }
   );
@@ -162,6 +189,68 @@ app.get("/api/menus/papelera", verificarToken, (req, res, next) => {
   );
 });
 
+app.get("/api/menus/estadisticas", verificarToken, async (req, res, next) => {
+  const usuarioId = req.usuario.id;
+  try {
+    const [[{ total }]] = await dbAsync.query(
+      `SELECT COUNT(*) AS total
+       FROM ${C.vistasMenu.table} v
+       JOIN ${C.menus.table} m ON m.${C.menus.id} = v.${C.vistasMenu.menuId}
+       WHERE m.${C.menus.usuarioId} = ? AND m.${C.menus.eliminadoAt} IS NULL`,
+      [usuarioId]
+    );
+
+    const [[{ hoy }]] = await dbAsync.query(
+      `SELECT COUNT(*) AS hoy
+       FROM ${C.vistasMenu.table} v
+       JOIN ${C.menus.table} m ON m.${C.menus.id} = v.${C.vistasMenu.menuId}
+       WHERE m.${C.menus.usuarioId} = ? AND m.${C.menus.eliminadoAt} IS NULL
+         AND DATE(v.${C.vistasMenu.fecha}) = CURDATE()`,
+      [usuarioId]
+    );
+
+    const [tendencia] = await dbAsync.query(
+      `SELECT DATE(v.${C.vistasMenu.fecha}) AS fecha, COUNT(*) AS vistas
+       FROM ${C.vistasMenu.table} v
+       JOIN ${C.menus.table} m ON m.${C.menus.id} = v.${C.vistasMenu.menuId}
+       WHERE m.${C.menus.usuarioId} = ? AND m.${C.menus.eliminadoAt} IS NULL
+         AND v.${C.vistasMenu.fecha} >= (NOW() - INTERVAL 30 DAY)
+       GROUP BY DATE(v.${C.vistasMenu.fecha})
+       ORDER BY fecha ASC`,
+      [usuarioId]
+    );
+
+    const [topMenus] = await dbAsync.query(
+      `SELECT m.${C.menus.nombre} AS nombre, COUNT(v.${C.vistasMenu.id}) AS vistas
+       FROM ${C.menus.table} m
+       LEFT JOIN ${C.vistasMenu.table} v ON v.${C.vistasMenu.menuId} = m.${C.menus.id}
+       WHERE m.${C.menus.usuarioId} = ? AND m.${C.menus.eliminadoAt} IS NULL
+       GROUP BY m.${C.menus.id}
+       ORDER BY vistas DESC
+       LIMIT 5`,
+      [usuarioId]
+    );
+
+    const [[{ publicados }]] = await dbAsync.query(
+      `SELECT COUNT(*) AS publicados
+       FROM ${C.menus.table}
+       WHERE ${C.menus.usuarioId} = ? AND ${C.menus.estado} = 'Publicado' AND ${C.menus.eliminadoAt} IS NULL`,
+      [usuarioId]
+    );
+
+    res.json({
+      ok: true,
+      vistasTotales: total,
+      vistasHoy: hoy,
+      menusPublicados: publicados,
+      tendencia,
+      topMenus,
+    });
+  } catch (errStats) {
+    next(errStats);
+  }
+});
+
 // Se agregó verificarToken aquí (antes era pública, hallazgo de seguridad corregido)
 app.get("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, next) => {
   const columns = [
@@ -181,6 +270,28 @@ app.get("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res, n
       res.json({ ok: true, menu: results[0] });
     }
   );
+});
+
+app.get("/api/menus/:id/estadisticas", verificarToken, verificarPropietarioMenu, async (req, res, next) => {
+  try {
+    const [[{ total }]] = await dbAsync.query(
+      `SELECT COUNT(*) AS total FROM ${C.vistasMenu.table} WHERE ${C.vistasMenu.menuId} = ?`,
+      [req.params.id]
+    );
+
+    const [tendencia] = await dbAsync.query(
+      `SELECT DATE(${C.vistasMenu.fecha}) AS fecha, COUNT(*) AS vistas
+       FROM ${C.vistasMenu.table}
+       WHERE ${C.vistasMenu.menuId} = ? AND ${C.vistasMenu.fecha} >= (NOW() - INTERVAL 30 DAY)
+       GROUP BY DATE(${C.vistasMenu.fecha})
+       ORDER BY fecha ASC`,
+      [req.params.id]
+    );
+
+    res.json({ ok: true, vistasTotales: total, tendencia });
+  } catch (errStats) {
+    next(errStats);
+  }
 });
 
 app.post("/api/menus", verificarToken, (req, res, next) => {
