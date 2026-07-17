@@ -125,6 +125,21 @@ const verificarPropietarioMenu = (req, res, next) => {
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
 // Obter menus, opcionalmente filtrando por user_id
+// CA-01/CA-03: consulta pública de un menú, sin autenticación y sin datos del propietario
+app.get("/api/public/menus/:id", (req, res, next) => {
+  db.query(
+    `SELECT ${C.menus.id}, ${C.menus.nombre}, ${C.menus.dataJson} FROM ${C.menus.table} WHERE ${C.menus.id} = ? AND ${C.menus.estado} = 'Publicado' AND ${C.menus.eliminadoAt} IS NULL`,
+    [req.params.id],
+    (err, results) => {
+      if (err) return next(err);
+      if (results.length === 0) {
+        return res.status(404).json({ ok: false, mensaje: "Menú no disponible" });
+      }
+      res.json({ ok: true, menu: results[0] });
+    }
+  );
+});
+
 app.get("/api/menus", verificarToken, (req, res, next) => {
   // RN-05: el usuario se obtiene del token verificado, nunca de un parámetro
   // enviado por el cliente (evita que un usuario vea menús de otro).
