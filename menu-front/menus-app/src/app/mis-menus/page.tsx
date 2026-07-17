@@ -9,6 +9,7 @@ const navItems = [
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
   { icon: "✏️", label: "Mis Diseños", href: "#" },
   { icon: "🖼️", label: "Medios", href: "#" },
+  { icon: "🗑️", label: "Papelera", href: "/papelera" },
   { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
   { icon: "💳", label: "Facturación", href: "/planes" },
   { icon: "⚙️", label: "Configuración", href: "/configuracion" },
