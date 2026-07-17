@@ -21,6 +21,12 @@ module.exports = {
     fechaCreacion: "created_at",
     eliminadoAt: "eliminado_at",
   },
+  vistasMenu: {
+    table: "vistas_menu",
+    id: "id",
+    menuId: "menu_id",
+    fecha: "fecha",
+  },
   negocios: {
     table: "negocios",
     id: "id",
