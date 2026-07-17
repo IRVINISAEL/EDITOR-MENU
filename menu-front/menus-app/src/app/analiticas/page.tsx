@@ -40,7 +40,7 @@ export default function Analiticas() {
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
 
       {/* SIDEBAR */}
-      <aside style={{
+      <aside className="app-sidebar" style={{
         width: 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
         position: "fixed", height: "100vh", zIndex: 10,
@@ -83,7 +83,7 @@ export default function Analiticas() {
       </aside>
 
       {/* MAIN */}
-      <main style={{ marginLeft: 220, flex: 1, padding: 32 }}>
+      <main className="app-main" style={{ marginLeft: 220, flex: 1, padding: 32 }}>
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>

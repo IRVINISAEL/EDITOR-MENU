@@ -74,7 +74,25 @@ export default function Editor() {
   const [colorTitulo, setColorTitulo] = useState("");
   const [colorSubtitulo, setColorSubtitulo] = useState("");
   const [fuenteTitulo, setFuenteTitulo] = useState("");
-  const menuRef = useRef<HTMLDivElement>(null);
+ const menuRef = useRef<HTMLDivElement>(null);
+  const [mobile, setMobile] = useState(false);
+  const [anchoVentana, setAnchoVentana] = useState(1200);
+  const [panelAbierto, setPanelAbierto] = useState(false);
+
+  useEffect(() => {
+    const resize = () => {
+      setAnchoVentana(window.innerWidth);
+      setMobile(window.innerWidth <= 768);
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+
+  const MM_A_PX = 3.7795275591;
+  const anchoBasePx = (orientacion === "vertical" ? 210 : 297) * MM_A_PX;
+  const altoBasePx = (orientacion === "vertical" ? 297 : 210) * MM_A_PX;
+  const escala = mobile ? Math.min(1, (anchoVentana - 32) / anchoBasePx) : 1;
 
   useEffect(() => {
     const guardada = localStorage.getItem("plantilla_cargada");
@@ -282,13 +300,16 @@ export default function Editor() {
   };
   
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: mobile ? "column" : "row", height: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13", overflow: "hidden" }}>
 
       {/* SIDEBAR IZQUIERDO */}
       <aside style={{
-        width: 56, background: "#16161d", borderRight: "1px solid #2a2a35",
-        display: "flex", flexDirection: "column", alignItems: "center",
-        padding: "12px 0", gap: 4, zIndex: 10,
+        width: mobile ? "100%" : 56, background: "#16161d",
+        borderRight: mobile ? "none" : "1px solid #2a2a35",
+        borderBottom: mobile ? "1px solid #2a2a35" : "none",
+        display: "flex", flexDirection: mobile ? "row" : "column", alignItems: "center",
+        padding: mobile ? "8px" : "12px 0", gap: 4, zIndex: 10,
+        overflowX: mobile ? "auto" : "visible", flexShrink: 0,
       }}>
         <a href="/" style={{ textDecoration: "none" }}>
           <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 8, marginBottom: 12 }} />
@@ -323,7 +344,7 @@ export default function Editor() {
               style={{
                 background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
                 color: "white", fontSize: 13, fontWeight: 600, outline: "none",
-                padding: "4px 10px", width: 180,
+                padding: "4px 10px", width: mobile ? 130 : 180,
               }}
             />
             <span style={{
@@ -420,11 +441,14 @@ export default function Editor() {
         {/* CANVAS DE TRABAJO */}
         <div style={{
           flex: 1, overflow: "auto", background: "#0a0a0e",
-          display: "flex", alignItems: "flex-start", justifyContent: "center", padding: 32,
+          display: "flex", alignItems: "flex-start", justifyContent: "center", padding: mobile ? 16 : 32,
         }}>
+          <div style={{ width: anchoBasePx * escala, height: altoBasePx * escala }}>
           <div ref={menuRef} style={{
-            width: orientacion === "vertical" ? "210mm" : "297mm",
-            minHeight: orientacion === "vertical" ? "297mm" : "210mm",
+            width: anchoBasePx,
+            minHeight: altoBasePx,
+            transform: `scale(${escala})`,
+            transformOrigin: "top left",
             display: orientacion === "horizontal" ? "grid" : "block",
             gridTemplateColumns: orientacion === "horizontal" ? "repeat(2, 1fr)" : undefined,
             gap: orientacion === "horizontal" ? 24 : undefined,
@@ -620,6 +644,7 @@ export default function Editor() {
               </div>
             ))}
             <button onClick={agregarSeccion} style={{ background: "transparent", border: `2px dashed ${fondoActivo.acento}33`, borderRadius: 8, color: fondoActivo.acento, cursor: "pointer", fontSize: 11, padding: "8px 16px", width: "100%", fontWeight: 600, marginTop: 8 }}>➕ Agregar una nueva sección</button>
+          </div>
           </div>
         </div>
       </div>
