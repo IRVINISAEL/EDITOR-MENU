@@ -5,7 +5,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const cloudinary = require("./cloudinary");
 require("dotenv").config();
 const { logAccesoDenegado } = require("./config/logger");
@@ -19,15 +19,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "tu-clave-secreta-super-segura-camb
 const PASSWORD_RESET_EXPIRATION_MINUTES = parseInt(process.env.PASSWORD_RESET_EXPIRATION_MINUTES || "60", 10);
 const C = require("./config/dbColumns");
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || "587", 10),
-  secure: process.env.SMTP_PORT === "465",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 app.use(cors());
 app.use(express.json());
@@ -319,14 +311,14 @@ app.post("/api/auth/forgot-password", (req, res) => {
 
         const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
         try {
-          await transporter.sendMail({
-            from: process.env.SMTP_FROM || process.env.SMTP_USER,
+          await resend.emails.send({
+            from: process.env.SMTP_FROM || "onboarding@resend.dev",
             to: email,
             subject: "Recupera tu contraseña - MenuMaster",
             html: `<p>Solicitaste recuperar tu contraseña.</p><p><a href="${resetLink}">Haz clic aquí para restablecerla</a></p><p>Este enlace expira en ${PASSWORD_RESET_EXPIRATION_MINUTES} minutos. Si tú no lo solicitaste, ignora este correo.</p>`,
           });
         } catch (mailErr) {
-          console.error("ERROR SMTP:", mailErr);
+          console.error("ERROR RESEND:", mailErr);
         }
 
         res.json({ ok: true, mensaje: "Si el correo existe, se enviará un enlace de recuperación" });
