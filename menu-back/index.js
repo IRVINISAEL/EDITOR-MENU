@@ -513,7 +513,54 @@ app.post("/api/auth/login", verificarBloqueoLogin, (req, res, next) => {
   );
 });
 
-// Nuevo endpoint: subir imagen a Cloudinary y asociarla a un menú
+// HU-89: eliminación permanente de cuenta.
+// RN-01: solo el propietario (req.usuario.id viene del token, no del cliente).
+// RN-02: exige la contraseña actual como confirmación explícita.
+// RN-04: se eliminan en cascada las vistas y los menús asociados antes de
+// eliminar la cuenta, para no dejar datos huérfanos.
+app.delete("/api/auth/account", verificarToken, async (req, res, next) => {
+  const { password } = req.body;
+  if (!password) {
+    return res.status(400).json({ ok: false, mensaje: "Debes ingresar tu contraseña para confirmar" });
+  }
+
+  try {
+    const [rows] = await dbAsync.query(
+      `SELECT ${C.usuarios.password} FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`,
+      [req.usuario.id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
+    }
+
+    const coincide = await bcrypt.compare(password, rows[0][C.usuarios.password]);
+    if (!coincide) {
+      return res.status(401).json({ ok: false, mensaje: "Contraseña incorrecta" });
+    }
+
+    await dbAsync.query(
+      `DELETE v FROM ${C.vistasMenu.table} v
+       INNER JOIN ${C.menus.table} m ON m.${C.menus.id} = v.${C.vistasMenu.menuId}
+       WHERE m.${C.menus.usuarioId} = ?`,
+      [req.usuario.id]
+    );
+
+    await dbAsync.query(
+      `DELETE FROM ${C.menus.table} WHERE ${C.menus.usuarioId} = ?`,
+      [req.usuario.id]
+    );
+
+    await dbAsync.query(
+      `DELETE FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`,
+      [req.usuario.id]
+    );
+
+    res.json({ ok: true, mensaje: "Cuenta eliminada correctamente" });
+  } catch (errDelete) {
+    next(errDelete);
+  }
+});
+
 app.post("/api/upload", verificarToken, (req, res) => {
   upload.single("imagen")(req, res, async (err) => {
     // CA-04 / RN-07: si falla la validación del archivo, no se toca la BD
