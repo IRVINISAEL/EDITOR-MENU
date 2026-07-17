@@ -4,6 +4,8 @@ const mysql = require("mysql2");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 const cloudinary = require("./cloudinary");
 require("dotenv").config();
 const { logAccesoDenegado } = require("./config/logger");
@@ -16,6 +18,16 @@ const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || "tu-clave-secreta-super-segura-cambiar-en-produccion";
 const PASSWORD_RESET_EXPIRATION_MINUTES = parseInt(process.env.PASSWORD_RESET_EXPIRATION_MINUTES || "60", 10);
 const C = require("./config/dbColumns");
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || "587", 10),
+  secure: process.env.SMTP_PORT === "465",
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 app.use(cors());
 app.use(express.json());
@@ -266,6 +278,86 @@ app.put("/api/auth/password", verificarToken, async (req, res) => {
       }
     );
   });
+});
+
+app.post("/api/auth/forgot-password", (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ ok: false, mensaje: "Correo electrónico requerido" });
+
+  db.query(`SELECT ${C.usuarios.id} FROM ${C.usuarios.table} WHERE ${C.usuarios.email} = ?`, [email], (err, results) => {
+    if (err) return res.status(500).json({ ok: false, mensaje: err.message });
+
+    if (results.length === 0) {
+      return res.json({ ok: true, mensaje: "Si el correo existe, se enviará un enlace de recuperación" });
+    }
+
+    const userId = results[0][C.usuarios.id];
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+    const expira = new Date(Date.now() + PASSWORD_RESET_EXPIRATION_MINUTES * 60 * 1000);
+
+    db.query(
+      `UPDATE ${C.usuarios.table} SET ${C.usuarios.resetToken} = ?, ${C.usuarios.resetTokenExpira} = ? WHERE ${C.usuarios.id} = ?`,
+      [hashedToken, expira, userId],
+      async (updateErr) => {
+        if (updateErr) return res.status(500).json({ ok: false, mensaje: updateErr.message });
+
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+        try {
+          await transporter.sendMail({
+            from: process.env.SMTP_FROM || process.env.SMTP_USER,
+            to: email,
+            subject: "Recupera tu contraseña - MenuMaster",
+            html: `<p>Solicitaste recuperar tu contraseña.</p><p><a href="${resetLink}">Haz clic aquí para restablecerla</a></p><p>Este enlace expira en ${PASSWORD_RESET_EXPIRATION_MINUTES} minutos. Si tú no lo solicitaste, ignora este correo.</p>`,
+          });
+        } catch (mailErr) {
+          console.error("ERROR SMTP:", mailErr);
+        }
+
+        res.json({ ok: true, mensaje: "Si el correo existe, se enviará un enlace de recuperación" });
+      }
+    );
+  });
+});
+
+app.get("/api/auth/reset-password/:token", (req, res) => {
+  const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+  db.query(
+    `SELECT ${C.usuarios.id} FROM ${C.usuarios.table} WHERE ${C.usuarios.resetToken} = ? AND ${C.usuarios.resetTokenExpira} > NOW()`,
+    [hashedToken],
+    (err, results) => {
+      if (err) return res.status(500).json({ ok: false, mensaje: err.message });
+      if (results.length === 0) return res.status(400).json({ ok: false, mensaje: "Token inválido o expirado" });
+      res.json({ ok: true });
+    }
+  );
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ ok: false, mensaje: "Token y contraseña son obligatorios" });
+  if (password.length < 8) return res.status(400).json({ ok: false, mensaje: "La contraseña debe tener al menos 8 caracteres" });
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  db.query(
+    `SELECT ${C.usuarios.id} FROM ${C.usuarios.table} WHERE ${C.usuarios.resetToken} = ? AND ${C.usuarios.resetTokenExpira} > NOW()`,
+    [hashedToken],
+    async (err, results) => {
+      if (err) return res.status(500).json({ ok: false, mensaje: err.message });
+      if (results.length === 0) return res.status(400).json({ ok: false, mensaje: "Token inválido o expirado" });
+
+      const userId = results[0][C.usuarios.id];
+      const newHash = await bcrypt.hash(password, 10);
+      db.query(
+        `UPDATE ${C.usuarios.table} SET ${C.usuarios.password} = ?, ${C.usuarios.resetToken} = NULL, ${C.usuarios.resetTokenExpira} = NULL WHERE ${C.usuarios.id} = ?`,
+        [newHash, userId],
+        (updateErr) => {
+          if (updateErr) return res.status(500).json({ ok: false, mensaje: updateErr.message });
+          res.json({ ok: true, mensaje: "Contraseña actualizada correctamente" });
+        }
+      );
+    }
+  );
 });
 
 app.post("/api/auth/login", verificarBloqueoLogin, (req, res, next) => {
