@@ -51,6 +51,7 @@ export default function Papelera() {
   const [cargando, setCargando] = useState(true);
   const [restaurandoId, setRestaurandoId] = useState<number | null>(null);
   const [mobile, setMobile] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   useEffect(() => {
     const resize = () => setMobile(window.innerWidth <= 768);
@@ -102,17 +103,20 @@ export default function Papelera() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
+      <button className="hamburger-btn" onClick={() => setMenuAbierto(!menuAbierto)}>☰</button>
+      {menuAbierto && <div className="sidebar-overlay" onClick={() => setMenuAbierto(false)} />}
 
       <aside
+        className={`app-sidebar ${menuAbierto ? "abierto" : ""}`}
         style={{
-          width: mobile ? "100%" : 220,
+          width: 220,
           background: "#16161d",
           display: "flex",
           flexDirection: "column",
           padding: "24px 0",
           borderRight: "1px solid #2a2a35",
-          position: mobile ? "relative" : "fixed",
-          height: mobile ? "fit-content" : "100vh",
+          position: "fixed",
+          height: "100vh",
           zIndex: 10,
         }}
       >
@@ -130,8 +134,7 @@ export default function Papelera() {
             flex: 1,
             padding: "16px 12px",
             display: "flex",
-            flexDirection: mobile ? "row" : "column",
-            overflowX: mobile ? "auto" : "visible",
+            flexDirection: "column",
             gap: 8,
           }}
         >
@@ -159,8 +162,9 @@ export default function Papelera() {
       </aside>
 
       <main
+        className="app-main"
         style={{
-          marginLeft: mobile ? 0 : 220,
+          marginLeft: 220,
           flex: 1,
           padding: mobile ? 16 : 32,
         }}
