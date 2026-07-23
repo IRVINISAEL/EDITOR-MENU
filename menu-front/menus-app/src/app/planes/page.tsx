@@ -58,7 +58,7 @@ const WHATSAPP_NUMBER_2 = "5212383198822";
 
 export default function Planes() {
   const [activeNav] = useState("Facturación");
-
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const handleWhatsApp = (planNombre: string, planPrecio: number) => {
   const mensaje = `¡Hola! 👋 Estoy interesado en el plan *${planNombre}* ($${planPrecio}/mes) de Menu Master. Me gustaría más información y activar mi plan.`;
   const url1 = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(mensaje)}`;
@@ -69,9 +69,11 @@ export default function Planes() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
+      <button className="hamburger-btn" onClick={() => setMenuAbierto(!menuAbierto)}>☰</button>
+      {menuAbierto && <div className="sidebar-overlay" onClick={() => setMenuAbierto(false)} />}
 
       {/* SIDEBAR */}
-     <aside className="app-sidebar" style={{
+     <aside className={`app-sidebar ${menuAbierto ? "abierto" : ""}`} style={{
         width: 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
         position: "fixed", height: "100vh", zIndex: 10,

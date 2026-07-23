@@ -32,6 +32,7 @@ function formatearFecha(fechaIso: string) {
 export default function Analiticas() {
   const [activeNav] = useState("Dashboard");
   const [datos, setDatos] = useState<Estadisticas | null>(null);
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [estado, setEstado] = useState<"loading" | "ok" | "error">("loading");
 
   useEffect(() => {
@@ -75,10 +76,12 @@ export default function Analiticas() {
   ];
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
+   <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
+      <button className="hamburger-btn" onClick={() => setMenuAbierto(!menuAbierto)}>☰</button>
+      {menuAbierto && <div className="sidebar-overlay" onClick={() => setMenuAbierto(false)} />}
 
       {/* SIDEBAR */}
-      <aside className="app-sidebar" style={{
+      <aside className={`app-sidebar ${menuAbierto ? "abierto" : ""}`} style={{
         width: 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
         position: "fixed", height: "100vh", zIndex: 10,
