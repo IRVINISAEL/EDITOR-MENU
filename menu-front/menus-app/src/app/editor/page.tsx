@@ -78,6 +78,7 @@ export default function Editor() {
   const [mobile, setMobile] = useState(false);
   const [anchoVentana, setAnchoVentana] = useState(1200);
   const [panelAbierto, setPanelAbierto] = useState(false);
+  const [guiaAbierta, setGuiaAbierta] = useState(false);
 
   useEffect(() => {
     const resize = () => {
@@ -331,10 +332,11 @@ export default function Editor() {
         {/* BARRA SUPERIOR */}
         <div style={{
           minHeight: 52, background: "#16161d", borderBottom: "1px solid #2a2a35",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "8px 16px", gap: 8, flexWrap: "wrap",
+          display: "flex", flexDirection: mobile ? "column" : "row",
+          alignItems: mobile ? "stretch" : "center", justifyContent: "space-between",
+          padding: "8px 16px", gap: 8, flexWrap: mobile ? "nowrap" : "wrap",
         }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: mobile ? "wrap" : "nowrap" }}>
             <a href="/mis-menus" onClick={handleBackClick} style={{ color: "#888", fontSize: 12, textDecoration: "none" }}>← Volver</a>
             <span style={{ color: "#333" }}>|</span>
             
@@ -344,7 +346,7 @@ export default function Editor() {
               style={{
                 background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
                 color: "white", fontSize: 13, fontWeight: 600, outline: "none",
-                padding: "4px 10px", width: mobile ? 130 : 180,
+                padding: "4px 10px", width: mobile ? "100%" : 180, minWidth: 0,
               }}
             />
             <span style={{
@@ -357,10 +359,11 @@ export default function Editor() {
             </span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", width: mobile ? "100%" : "auto" }}>
             <select value={fuenteActiva} onChange={e => { setFuenteActiva(e.target.value); setGuardado(false); }} style={{
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
               color: "white", padding: "4px 8px", fontSize: 11, outline: "none",
+              flex: mobile ? "1 1 100px" : "unset",
             }}>
               {fuentes.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
@@ -389,19 +392,22 @@ export default function Editor() {
             </select>
           </div>
 
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ display: "flex", gap: 6, width: mobile ? "100%" : "auto" }}>
             <button onClick={exportarPDF} style={{
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-              color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
-            }}>📄 PDF</button>
+              color: "#aaa", padding: "7px 10px", cursor: "pointer", fontSize: 12,
+              flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
+            }}>📄 {mobile ? "" : "PDF"}</button>
             <button onClick={() => handleGuardar("Borrador")} style={{
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-              color: "#aaa", padding: "7px 12px", cursor: "pointer", fontSize: 12,
-            }}> Guardar borrador</button>
+              color: "#aaa", padding: "7px 10px", cursor: "pointer", fontSize: 12,
+              flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
+            }}>💾 {mobile ? "Guardar" : "Guardar borrador"}</button>
             <button onClick={() => handleGuardar("Publicado")} style={{
               background: "#7c3aed", border: "1px solid #7c3aed", borderRadius: 8,
-              color: "white", padding: "7px 12px", cursor: "pointer", fontSize: 12, fontWeight: 600,
-            }}>🚀 Publicar menú</button>
+              color: "white", padding: "7px 10px", cursor: "pointer", fontSize: 12, fontWeight: 600,
+              flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
+            }}>🚀 {mobile ? "Publicar" : "Publicar menú"}</button>
           </div>
         </div>
 
@@ -410,32 +416,46 @@ export default function Editor() {
             style={{
               background: "#16161d",
               borderBottom: "1px solid #2a2a35",
-              padding: "12px 20px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 20,
-              flexWrap: "wrap",
+              padding: mobile ? "10px 16px" : "12px 20px",
             }}
           >
-            <span style={{ color: "#fff", fontWeight: 600 }}>
-              🚀 Guía rápida para crear tu menú
-            </span>
-
             <div
+              onClick={() => mobile && setGuiaAbierta(!guiaAbierta)}
               style={{
                 display: "flex",
-                gap: 18,
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 20,
                 flexWrap: "wrap",
-                color: "#aaa",
-                fontSize: 13,
+                cursor: mobile ? "pointer" : "default",
               }}
             >
-              <span>① Escribe el nombre del menú</span>
-              <span>② Edita secciones y platillos</span>
-              <span>③ Personaliza colores y fuente</span>
-              <span>④ Guarda o exporta tu menú</span>
+              <span style={{ color: "#fff", fontWeight: 600, fontSize: mobile ? 13 : 14 }}>
+                🚀 Guía rápida para crear tu menú
+              </span>
+              {mobile && (
+                <span style={{ color: "#888", fontSize: 12 }}>{guiaAbierta ? "▲ Ocultar" : "▼ Ver pasos"}</span>
+              )}
             </div>
+
+            {(!mobile || guiaAbierta) && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: mobile ? "column" : "row",
+                  gap: mobile ? 8 : 18,
+                  flexWrap: "wrap",
+                  color: "#aaa",
+                  fontSize: 13,
+                  marginTop: mobile ? 10 : 0,
+                }}
+              >
+                <span>① Escribe el nombre del menú</span>
+                <span>② Edita secciones y platillos</span>
+                <span>③ Personaliza colores y fuente</span>
+                <span>④ Guarda o exporta tu menú</span>
+              </div>
+            )}
           </div>
 
         {/* CANVAS DE TRABAJO */}
@@ -651,7 +671,11 @@ export default function Editor() {
 
       {/* SIDEBAR DERECHO DE PROPIEDADES */}
       <aside style={{
-        width: 260, background: "#16161d", borderLeft: "1px solid #2a2a35",
+        width: mobile ? "100%" : 260,
+        maxHeight: mobile ? 320 : "none",
+        background: "#16161d",
+        borderLeft: mobile ? "none" : "1px solid #2a2a35",
+        borderTop: mobile ? "1px solid #2a2a35" : "none",
         display: "flex", flexDirection: "column", padding: 16, overflowY: "auto", gap: 20
       }}>
         <h3 style={{ color: "white", fontSize: 14, margin: 0, fontWeight: 600, borderBottom: "1px solid #2a2a35", paddingBottom: 8 }}>
