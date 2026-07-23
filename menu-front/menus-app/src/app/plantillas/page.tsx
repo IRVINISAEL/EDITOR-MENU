@@ -225,6 +225,7 @@ type Plantilla = typeof plantillas[0];
 
 export default function Plantillas() {
   const [activeNav] = useState("Plantillas");
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [categoriaActiva, setCategoriaActiva] = useState("Todas");
   const [busqueda, setBusqueda] = useState("");
   const [preview, setPreview] = useState<Plantilla | null>(null);
@@ -261,9 +262,11 @@ export default function Plantillas() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
+      <button className="hamburger-btn" onClick={() => setMenuAbierto(!menuAbierto)}>☰</button>
+      {menuAbierto && <div className="sidebar-overlay" onClick={() => setMenuAbierto(false)} />}
 
       {/* SIDEBAR */}
-      <aside className="app-sidebar" style={{
+      <aside className={`app-sidebar ${menuAbierto ? "abierto" : ""}`} style={{
         width: 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
         position: "fixed", height: "100vh", zIndex: 10,
