@@ -27,6 +27,17 @@ module.exports = {
     menuId: "menu_id",
     fecha: "fecha",
   },
+  configuracionUsuario: {
+    table: "configuracion_usuario",
+    id: "id",
+    usuarioId: "user_id",
+    moneda: "moneda",
+    idioma: "idioma",
+    autoguardado: "autoguardado",
+    notificacionesEmail: "notificaciones_email",
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  },
   negocios: {
     table: "negocios",
     id: "id",

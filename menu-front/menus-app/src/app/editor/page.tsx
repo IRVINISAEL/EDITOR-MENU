@@ -27,6 +27,10 @@ const fondos = [
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
+const SIMBOLO_MONEDA: Record<string, string> = {
+  MXN: "$", USD: "$", EUR: "€", COP: "$", ARS: "$", CLP: "$", PEN: "S/", BRL: "R$",
+};
+
 type Platillo = { 
   nombre: string; 
   precio: string; 
@@ -79,6 +83,20 @@ export default function Editor() {
   const [anchoVentana, setAnchoVentana] = useState(1200);
   const [panelAbierto, setPanelAbierto] = useState(false);
   const [guiaAbierta, setGuiaAbierta] = useState(false);
+
+  const [monedaUsuario, setMonedaUsuario] = useState("MXN");
+  const [autoguardadoActivo, setAutoguardadoActivo] = useState(true);
+
+  useEffect(() => {
+    const prefs = localStorage.getItem("preferencias");
+    if (prefs) {
+      try {
+        const p = JSON.parse(prefs);
+        setMonedaUsuario(p.moneda || "MXN");
+        setAutoguardadoActivo(p.autoGuardar ?? true);
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     const resize = () => {
@@ -194,8 +212,9 @@ export default function Editor() {
   };
 
   const agregarPlatillo = (seccionId: number) => {
+    const precioDefault = `${SIMBOLO_MONEDA[monedaUsuario] || "$"}0`;
     setSecciones(prev => prev.map(s =>
-      s.id === seccionId ? { ...s, platillos: [...s.platillos, { nombre: "Nuevo platillo", precio: "$0", descripcion: "Descripción" }] } : s
+      s.id === seccionId ? { ...s, platillos: [...s.platillos, { nombre: "Nuevo platillo", precio: precioDefault, descripcion: "Descripción" }] } : s
     ));
     setGuardado(false);
   };
@@ -208,8 +227,9 @@ export default function Editor() {
   };
 
   const agregarSeccion = () => {
+    const precioDefault = `${SIMBOLO_MONEDA[monedaUsuario] || "$"}0`;
     const nuevaId = secciones.length > 0 ? Math.max(...secciones.map(s => s.id)) + 1 : 1;
-    setSecciones(prev => [...prev, { id: nuevaId, nombre: "NUEVA SECCIÓN", platillos: [{ nombre: "Nuevo platillo", precio: "$0", descripcion: "Descripción" }] }]);
+    setSecciones(prev => [...prev, { id: nuevaId, nombre: "NUEVA SECCIÓN", platillos: [{ nombre: "Nuevo platillo", precio: precioDefault, descripcion: "Descripción" }] }]);
     setGuardado(false);
   };
 
@@ -250,9 +270,9 @@ export default function Editor() {
     }, 150);
   };
 
-  const handleGuardar = async (estado: "Borrador" | "Publicado") => {
+  const handleGuardar = async (estado: "Borrador" | "Publicado", silencioso = false) => {
     if (!nombreMenu || nombreMenu.trim() === "") {
-      alert("⚠️ Escribe un nombre para el menú antes de guardar");
+      if (!silencioso) alert("⚠️ Escribe un nombre para el menú antes de guardar");
       return;
     }
 
@@ -287,18 +307,30 @@ export default function Editor() {
       if (data.ok || res.ok) {
         if (data.menuId) setMenuId(data.menuId);
         setGuardado(true);
-        alert(estado === "Publicado" ? "🚀 ¡Menú guardado y publicado exitosamente!" : "💾 ¡Borrador guardado correctamente!");
-        window.location.href = "/mis-menus";
-      } else {
+        if (!silencioso) {
+          alert(estado === "Publicado" ? "🚀 ¡Menú guardado y publicado exitosamente!" : "💾 ¡Borrador guardado correctamente!");
+          window.location.href = "/mis-menus";
+        }
+      } else if (!silencioso) {
         alert("❌ Error: " + (data.mensaje || "No se pudo guardar el menú"));
       }
     } catch (err) {
       console.error(err);
-      alert("❌ Error de conexión al servidor.");
+      if (!silencioso) alert("❌ Error de conexión al servidor.");
     } finally {
       setGuardando(false);
     }
   };
+
+  useEffect(() => {
+    if (!autoguardadoActivo) return;
+    const intervalo = setInterval(() => {
+      if (!guardado && !guardando) {
+        handleGuardar("Borrador", true);
+      }
+    }, 2 * 60 * 1000);
+    return () => clearInterval(intervalo);
+  }, [autoguardadoActivo, guardado, guardando, nombreMenu, secciones, fuenteActiva, fondoActivo, tamaño, subtitulo, menuId]);
   
   return (
     <div style={{ display: "flex", flexDirection: mobile ? "column" : "row", height: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13", overflow: "hidden" }}>
