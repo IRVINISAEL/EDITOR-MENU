@@ -88,6 +88,27 @@ db.getConnection((err, connection) => {
       }
     }
   );
+
+  db.query(
+    `CREATE TABLE IF NOT EXISTS ${C.configuracionUsuario.table} (
+      ${C.configuracionUsuario.id} INT AUTO_INCREMENT PRIMARY KEY,
+      ${C.configuracionUsuario.usuarioId} INT NOT NULL UNIQUE,
+      ${C.configuracionUsuario.moneda} VARCHAR(10) NOT NULL DEFAULT 'MXN',
+      ${C.configuracionUsuario.idioma} VARCHAR(10) NOT NULL DEFAULT 'es',
+      ${C.configuracionUsuario.autoguardado} TINYINT(1) NOT NULL DEFAULT 1,
+      ${C.configuracionUsuario.notificacionesEmail} TINYINT(1) NOT NULL DEFAULT 1,
+      ${C.configuracionUsuario.createdAt} TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      ${C.configuracionUsuario.updatedAt} TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_config_usuario FOREIGN KEY (${C.configuracionUsuario.usuarioId}) REFERENCES ${C.usuarios.table}(${C.usuarios.id}) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    (errTablaConfig) => {
+      if (errTablaConfig) {
+        console.error("❌ Error creando tabla configuracion_usuario:", errTablaConfig);
+      } else {
+        console.log("✅ Tabla configuracion_usuario lista");
+      }
+    }
+  );
 });
 
 // Middleware: verificar que el usuario sea propietario del menú
@@ -131,6 +152,26 @@ const verificarPropietarioMenu = (req, res, next) => {
     }
   );
 };
+
+async function notificarSiHabilitado(usuarioId, { email, subject, html }) {
+  try {
+    const [rows] = await dbAsync.query(
+      `SELECT ${C.configuracionUsuario.notificacionesEmail} FROM ${C.configuracionUsuario.table} WHERE ${C.configuracionUsuario.usuarioId} = ?`,
+      [usuarioId]
+    );
+    const habilitado = rows.length === 0 ? true : !!rows[0][C.configuracionUsuario.notificacionesEmail];
+    if (!habilitado || !email) return;
+
+    await resend.emails.send({
+      from: process.env.SMTP_FROM || "onboarding@resend.dev",
+      to: email,
+      subject,
+      html,
+    });
+  } catch (mailErr) {
+    console.error("ERROR NOTIFICACION EMAIL:", mailErr);
+  }
+}
 
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
@@ -304,6 +345,13 @@ app.post("/api/menus", verificarToken, (req, res, next) => {
     [nombre, estado || "Borrador", dataJson, user_id || 1],
     (err, result) => {
       if (err) { console.error("ERROR INSERT:", err); return res.status(500).json({ ok: false, mensaje: err.message }); }
+      if (estado === "Publicado") {
+        notificarSiHabilitado(req.usuario.id, {
+          email: req.usuario.email,
+          subject: "Tu menú fue publicado - MenuMaster",
+          html: `<p>Tu menú "<strong>${nombre}</strong>" se publicó correctamente y ya está disponible para tus clientes.</p>`,
+        });
+      }
       res.status(201).json({ ok: true, menuId: result.insertId });
     }
   );
@@ -319,6 +367,13 @@ app.put("/api/menus/:id", verificarToken, verificarPropietarioMenu, (req, res) =
     (err, result) => {
       if (err) { console.error("ERROR UPDATE:", err); return res.status(500).json({ ok: false, mensaje: err.message }); }
       if (result.affectedRows === 0) return res.status(404).json({ ok: false, mensaje: "Menú no encontrado" });
+      if (estado === "Publicado") {
+        notificarSiHabilitado(req.usuario.id, {
+          email: req.usuario.email,
+          subject: "Tu menú fue publicado - MenuMaster",
+          html: `<p>Tu menú "<strong>${nombre}</strong>" se publicó correctamente y ya está disponible para tus clientes.</p>`,
+        });
+      }
       res.json({ ok: true, mensaje: "Actualizado" });
     }
   );
@@ -558,6 +613,89 @@ app.delete("/api/auth/account", verificarToken, async (req, res, next) => {
     res.json({ ok: true, mensaje: "Cuenta eliminada correctamente" });
   } catch (errDelete) {
     next(errDelete);
+  }
+});
+
+const MONEDAS_VALIDAS = ["MXN", "USD", "EUR", "COP", "ARS", "CLP", "PEN", "BRL"];
+const IDIOMAS_VALIDOS = ["es", "en", "fr", "it", "pt"];
+
+app.get("/api/configuracion", verificarToken, async (req, res, next) => {
+  try {
+    const columns = [
+      C.configuracionUsuario.moneda,
+      C.configuracionUsuario.idioma,
+      C.configuracionUsuario.autoguardado,
+      C.configuracionUsuario.notificacionesEmail,
+    ].join(", ");
+
+    const [rows] = await dbAsync.query(
+      `SELECT ${columns} FROM ${C.configuracionUsuario.table} WHERE ${C.configuracionUsuario.usuarioId} = ?`,
+      [req.usuario.id]
+    );
+
+    if (rows.length === 0) {
+      return res.json({
+        ok: true,
+        configuracion: { moneda: "MXN", idioma: "es", autoguardado: true, notificaciones_email: true },
+      });
+    }
+
+    const config = rows[0];
+    res.json({
+      ok: true,
+      configuracion: {
+        moneda: config[C.configuracionUsuario.moneda],
+        idioma: config[C.configuracionUsuario.idioma],
+        autoguardado: !!config[C.configuracionUsuario.autoguardado],
+        notificaciones_email: !!config[C.configuracionUsuario.notificacionesEmail],
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.put("/api/configuracion", verificarToken, async (req, res, next) => {
+  const { moneda, idioma, autoguardado, notificaciones_email } = req.body;
+
+  if (moneda !== undefined && !MONEDAS_VALIDAS.includes(moneda)) {
+    return res.status(400).json({ ok: false, mensaje: "Moneda no válida" });
+  }
+  if (idioma !== undefined && !IDIOMAS_VALIDOS.includes(idioma)) {
+    return res.status(400).json({ ok: false, mensaje: "Idioma no válido" });
+  }
+  if (autoguardado !== undefined && typeof autoguardado !== "boolean") {
+    return res.status(400).json({ ok: false, mensaje: "autoguardado debe ser booleano" });
+  }
+  if (notificaciones_email !== undefined && typeof notificaciones_email !== "boolean") {
+    return res.status(400).json({ ok: false, mensaje: "notificaciones_email debe ser booleano" });
+  }
+
+  try {
+    const monedaFinal = moneda ?? "MXN";
+    const idiomaFinal = idioma ?? "es";
+    const autoguardadoFinal = autoguardado ?? true;
+    const notifFinal = notificaciones_email ?? true;
+
+    await dbAsync.query(
+      `INSERT INTO ${C.configuracionUsuario.table}
+        (${C.configuracionUsuario.usuarioId}, ${C.configuracionUsuario.moneda}, ${C.configuracionUsuario.idioma}, ${C.configuracionUsuario.autoguardado}, ${C.configuracionUsuario.notificacionesEmail})
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+        ${C.configuracionUsuario.moneda} = VALUES(${C.configuracionUsuario.moneda}),
+        ${C.configuracionUsuario.idioma} = VALUES(${C.configuracionUsuario.idioma}),
+        ${C.configuracionUsuario.autoguardado} = VALUES(${C.configuracionUsuario.autoguardado}),
+        ${C.configuracionUsuario.notificacionesEmail} = VALUES(${C.configuracionUsuario.notificacionesEmail})`,
+      [req.usuario.id, monedaFinal, idiomaFinal, autoguardadoFinal, notifFinal]
+    );
+
+    res.json({
+      ok: true,
+      mensaje: "Preferencias guardadas",
+      configuracion: { moneda: monedaFinal, idioma: idiomaFinal, autoguardado: autoguardadoFinal, notificaciones_email: notifFinal },
+    });
+  } catch (err) {
+    next(err);
   }
 });
 

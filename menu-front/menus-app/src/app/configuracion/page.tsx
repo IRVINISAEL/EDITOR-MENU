@@ -50,9 +50,10 @@ export default function Configuracion() {
       setNombre(u.nombre_u || u.nombre || "");
       setEmail(u.email || "");
     }
-    const prefs = localStorage.getItem("preferencias");
-    if (prefs) {
-      const p = JSON.parse(prefs);
+
+    const prefsCache = localStorage.getItem("preferencias");
+    if (prefsCache) {
+      const p = JSON.parse(prefsCache);
       setTemaEditor(p.temaEditor || "oscuro");
       setIdiomaMenu(p.idiomaMenu || "es");
       setAutoGuardar(p.autoGuardar ?? true);
@@ -60,6 +61,36 @@ export default function Configuracion() {
       setNotifVistas(p.notifVistas ?? false);
       setMoneda(p.moneda || "MXN");
     }
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    fetch(`${API}/api/configuracion`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.ok || !data.configuracion) return;
+        const c = data.configuracion;
+        setMoneda(c.moneda || "MXN");
+        setIdiomaMenu(c.idioma || "es");
+        setAutoGuardar(c.autoguardado ?? true);
+        setNotifEmail(c.notificaciones_email ?? true);
+
+        localStorage.setItem(
+          "preferencias",
+          JSON.stringify({
+            temaEditor,
+            idiomaMenu: c.idioma || "es",
+            autoGuardar: c.autoguardado ?? true,
+            notifEmail: c.notificaciones_email ?? true,
+            notifVistas,
+            moneda: c.moneda || "MXN",
+          })
+        );
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const guardarCuenta = async () => {
@@ -122,10 +153,50 @@ export default function Configuracion() {
     }, 600);
   };
 
-  const guardarPreferencias = () => {
+  const [errorPrefs, setErrorPrefs] = useState("");
+
+  const guardarPreferencias = async () => {
     setGuardando(true);
-    localStorage.setItem("preferencias", JSON.stringify({ temaEditor, idiomaMenu, autoGuardar, notifEmail, notifVistas, moneda }));
-    setTimeout(() => { setGuardando(false); setGuardado(true); setTimeout(() => setGuardado(false), 2000); }, 600);
+    setErrorPrefs("");
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setErrorPrefs("Necesitas iniciar sesión de nuevo");
+      setGuardando(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/api/configuracion`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          moneda,
+          idioma: idiomaMenu,
+          autoguardado: autoGuardar,
+          notificaciones_email: notifEmail,
+        }),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        setErrorPrefs(data.mensaje || "No se pudieron guardar las preferencias");
+        setGuardando(false);
+        return;
+      }
+
+      localStorage.setItem("preferencias", JSON.stringify({ temaEditor, idiomaMenu, autoGuardar, notifEmail, notifVistas, moneda }));
+
+      setGuardando(false);
+      setGuardado(true);
+      setTimeout(() => setGuardado(false), 2000);
+    } catch {
+      setErrorPrefs("Error de conexión al servidor");
+      setGuardando(false);
+    }
   };
 
   const eliminarCuenta = async () => {
@@ -333,6 +404,8 @@ export default function Configuracion() {
                 ))}
               </div>
             </div>
+
+            {errorPrefs && <div style={{ color: "#f87171", fontSize: 12 }}>⚠️ {errorPrefs}</div>}
 
             <button onClick={guardarPreferencias} style={{ background: guardado ? "#16a34a" : "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none", borderRadius: 10, padding: "14px 32px", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               {guardando ? "Guardando..." : guardado ? "✓ Guardado" : "💾 Guardar preferencias"}
