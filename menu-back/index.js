@@ -464,6 +464,16 @@ app.put("/api/menus/:id/restaurar", verificarToken, verificarPropietarioMenu, (r
   );
 });
 
+app.get("/api/planes", (req, res, next) => {
+  db.query(
+    `SELECT ${C.planes.id}, ${C.planes.nombre}, ${C.planes.descripcion}, ${C.planes.precio}, ${C.planes.duracionDias}, ${C.planes.beneficios} FROM ${C.planes.table} ORDER BY ${C.planes.precio} ASC`,
+    (err, rows) => {
+      if (err) return next(err);
+      res.json({ ok: true, planes: rows });
+    }
+  );
+});
+
 app.post("/api/auth/register", async (req, res) => {
   const { nombre, email, password, negocio} = req.body;
   if (!nombre || !email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
@@ -482,6 +492,36 @@ app.post("/api/auth/register", async (req, res) => {
   } catch (e) {
     res.status(500).json({ ok: false, mensaje: "Error al procesar contraseña" });
   }
+});
+
+app.post("/api/planes/activar", verificarToken, (req, res, next) => {
+  const { planId } = req.body;
+  if (!planId) return res.status(400).json({ ok: false, mensaje: "planId es obligatorio" });
+
+  db.query(`SELECT * FROM ${C.planes.table} WHERE ${C.planes.id} = ?`, [planId], (err, planes) => {
+    if (err) return next(err);
+    if (planes.length === 0) return res.status(404).json({ ok: false, mensaje: "Plan no encontrado" });
+
+    const plan = planes[0];
+    const fechaInicio = new Date();
+    const fechaFin = new Date();
+    fechaFin.setDate(fechaFin.getDate() + plan[C.planes.duracionDias]);
+
+    // RN-02: activar un nuevo plan reemplaza al anterior (mismo UPDATE, un solo plan activo)
+    db.query(
+      `UPDATE ${C.usuarios.table} SET ${C.usuarios.planId} = ?, ${C.usuarios.fechaInicioPlan} = ?, ${C.usuarios.fechaFinPlan} = ? WHERE ${C.usuarios.id} = ?`,
+      [planId, fechaInicio, fechaFin, req.usuario.id],
+      (updateErr) => {
+        if (updateErr) return next(updateErr);
+        // RN-03: permisos actualizados de inmediato -> se reflejan en el próximo login/consulta de perfil
+        res.json({
+          ok: true,
+          mensaje: "Plan activado correctamente",
+          plan: { id: plan.id, nombre: plan[C.planes.nombre], fechaInicio, fechaFin },
+        });
+      }
+    );
+  });
 });
 
 app.put("/api/auth/password", verificarToken, async (req, res) => {
