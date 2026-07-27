@@ -39,6 +39,7 @@ export default function Planes() {
   const [planActivo, setPlanActivo] = useState<number | null>(null);
   const [cargando, setCargando] = useState(true);
   const [activando, setActivando] = useState<number | null>(null);
+  const [solicitado, setSolicitado] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`${API}/api/planes`)
@@ -57,20 +58,20 @@ export default function Planes() {
     }
     setActivando(planId);
     try {
-      const res = await fetch(`${API}/api/planes/activar`, {
+      const res = await fetch(`${API}/api/planes/solicitar`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ planId }),
       });
       const data = await res.json();
       if (data.ok) {
-        setPlanActivo(planId);
-        alert(`Plan ${nombre} activado correctamente ✅`);
+        setSolicitado(planId);
+        alert(`Solicitud enviada para el plan ${nombre}. Te avisaremos cuando esté aprobado ✅`);
       } else {
-        alert(data.mensaje || "No se pudo activar el plan");
+        alert(data.mensaje || "No se pudo enviar la solicitud");
       }
     } catch {
-      alert("Error de conexión al activar el plan");
+      alert("Error de conexión al solicitar el plan");
     } finally {
       setActivando(null);
     }
@@ -181,7 +182,7 @@ export default function Planes() {
                     </div>
                     <button
                       onClick={() => handleActivar(plan.id, plan.nombre)}
-                      disabled={esActivo || activando === plan.id}
+                      disabled={esActivo || solicitado === plan.id || activando === plan.id}
                       style={{
                         background: esActivo ? "#333" : "white",
                         border: "none", borderRadius: 10, padding: "12px",
@@ -192,7 +193,13 @@ export default function Planes() {
                         opacity: activando === plan.id ? 0.6 : 1,
                       }}
                     >
-                      {esActivo ? "✅ Plan Activo" : activando === plan.id ? "Activando..." : "Activar Plan"}
+                      {esActivo
+                        ? "✅ Plan Activo"
+                        : solicitado === plan.id
+                        ? "⏳ En revisión"
+                        : activando === plan.id
+                        ? "Enviando..."
+                        : "Solicitar Plan"}
                     </button>
                   </div>
                 </div>

@@ -68,6 +68,15 @@ module.exports = {
     estado: "estado",
     fecha: "fecha",
   },
+  solicitudesPlan: {
+    table: "solicitudes_plan",
+    id: "id",
+    usuarioId: "user_id",
+    planId: "plan_id",
+    estado: "estado",
+    fechaSolicitud: "fecha_solicitud",
+    fechaResolucion: "fecha_resolucion",
+  },
   negocios: {
     table: "negocios",
     id: "id",
