@@ -14,11 +14,16 @@ const navItems = [
 ];
 
 export default function MiNegocio() {
+  const API = process.env.NEXT_PUBLIC_API_URL;
   const [logo, setLogo] = useState<string>("");
+  const [subiendoLogo, setSubiendoLogo] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [nombre, setNombre] = useState("");
   const [tipo, setTipo] = useState("Restaurante");
-  const [direccion, setDireccion] = useState("");
+  const [calle, setCalle] = useState("");
+  const [colonia, setColonia] = useState("");
+  const [noExterior, setNoExterior] = useState("");
+  const [horario, setHorario] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
   const [sitioWeb, setSitioWeb] = useState("");
@@ -31,35 +36,77 @@ export default function MiNegocio() {
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
-    const data = localStorage.getItem("mi_negocio");
-    if (data) {
-      const d = JSON.parse(data);
-      setLogo(d.logo || "");
-      setNombre(d.nombre || "");
-      setTipo(d.tipo || "Restaurante");
-      setDireccion(d.direccion || "");
-      setTelefono(d.telefono || "");
-      setEmail(d.email || "");
-      setSitioWeb(d.sitioWeb || "");
-      setInstagram(d.instagram || "");
-      setFacebook(d.facebook || "");
-      setTiktok(d.tiktok || "");
-      setWhatsapp(d.whatsapp || "");
-      setDescripcion(d.descripcion || "");
-    }
+    const cargarNegocio = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API}/api/negocio`, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.ok && data.negocio) {
+          const n = data.negocio;
+          setLogo(n.logo || "");
+          setNombre(n.nombre || "");
+          setTipo(n.tipo || "Restaurante");
+          setDescripcion(n.descripcion || "");
+          setTelefono(n.telefono || "");
+          setEmail(n.email || "");
+          setSitioWeb(n.sitioWeb || "");
+          setHorario(n.horario || "");
+          setCalle(n.direccion?.calle || "");
+          setColonia(n.direccion?.colonia || "");
+          setNoExterior(n.direccion?.noExterior || "");
+          setInstagram(n.redes?.instagram || "");
+          setFacebook(n.redes?.facebook || "");
+          setTiktok(n.redes?.tiktok || "");
+          setWhatsapp(n.redes?.whatsapp || "");
+        }
+      } catch (err) {
+        console.error("Error cargando la información del negocio:", err);
+      }
+    };
+    cargarNegocio();
   }, []);
 
-  const handleLogo = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = ev => setLogo(ev.target?.result as string);
-    reader.readAsDataURL(file);
+  const handleLogo = async (file: File) => {
+    setSubiendoLogo(true);
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("imagen", file);
+      const res = await fetch(`${API}/api/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
+      const data = await res.json();
+      if (data.ok && data.url) setLogo(data.url);
+      else alert("❌ No se pudo subir el logo: " + (data.mensaje || "error desconocido"));
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error de conexión al subir el logo.");
+    } finally {
+      setSubiendoLogo(false);
+    }
   };
 
-  const guardar = () => {
+  const guardar = async () => {
+    if (!nombre.trim()) { alert("El nombre del negocio es obligatorio"); return; }
     setGuardando(true);
-    const data = { logo, nombre, tipo, direccion, telefono, email, sitioWeb, instagram, facebook, tiktok, whatsapp, descripcion };
-    localStorage.setItem("mi_negocio", JSON.stringify(data));
-    setTimeout(() => { setGuardando(false); setGuardado(true); setTimeout(() => setGuardado(false), 2000); }, 600);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/api/negocio`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          nombre, descripcion, tipo, telefono, email, sitioWeb, logo, horario,
+          direccion: { calle, colonia, noExterior },
+          redes: { facebook, instagram, whatsapp, tiktok },
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) { setGuardado(true); setTimeout(() => setGuardado(false), 2000); }
+      else alert("❌ No se pudo guardar: " + (data.mensaje || "error desconocido"));
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error de conexión al guardar la información del negocio.");
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {
@@ -169,9 +216,21 @@ export default function MiNegocio() {
               <label style={labelStyle}>EMAIL</label>
               <input value={email} onChange={e => setEmail(e.target.value)} placeholder="contacto@minegocio.com" style={inputStyle} />
             </div>
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>DIRECCIÓN</label>
-              <input value={direccion} onChange={e => setDireccion(e.target.value)} placeholder="Av. Principal 123, Ciudad, Estado" style={inputStyle} />
+            <div>
+              <label style={labelStyle}>CALLE</label>
+              <input value={calle} onChange={e => setCalle(e.target.value)} placeholder="Av. Principal" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>COLONIA</label>
+              <input value={colonia} onChange={e => setColonia(e.target.value)} placeholder="Centro" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>NO. EXTERIOR</label>
+              <input value={noExterior} onChange={e => setNoExterior(e.target.value)} placeholder="123" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>HORARIO DE ATENCIÓN</label>
+              <input value={horario} onChange={e => setHorario(e.target.value)} placeholder="Lun-Dom 9:00 - 22:00" style={inputStyle} />
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={labelStyle}>SITIO WEB</label>

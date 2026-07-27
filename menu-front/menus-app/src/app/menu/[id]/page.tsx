@@ -25,6 +25,17 @@ type MenuData = {
   subtitulo?: string;
 };
 
+type Negocio = {
+  nombre: string;
+  descripcion?: string;
+  telefono?: string;
+  sitioWeb?: string;
+  logo?: string;
+  horario?: string;
+  direccion?: { calle?: string; colonia?: string; noExterior?: string };
+  redes?: { facebook?: string; instagram?: string; whatsapp?: string; tiktok?: string };
+};
+
 const fondoDefault: Fondo = {
   nombre: "Clásico",
   bg: "linear-gradient(135deg, #fefefe, #f8f4ee)",
@@ -37,6 +48,7 @@ export default function MenuPublicoPage() {
   const id = params?.id as string;
 
   const [data, setData] = useState<MenuData | null>(null);
+  const [negocio, setNegocio] = useState<Negocio | null>(null);
   const [nombre, setNombre] = useState("");
   const [estado, setEstado] = useState<"loading" | "ok" | "no-disponible">("loading");
 
@@ -55,6 +67,7 @@ export default function MenuPublicoPage() {
           } catch {
             setData({ secciones: [] });
           }
+          setNegocio(json.negocio || null);
           setEstado("ok");
         } else {
           setEstado("no-disponible");
@@ -123,6 +136,32 @@ export default function MenuPublicoPage() {
             {data?.nombreMenu || nombre}
           </h1>
         </div>
+
+        {negocio && negocio.nombre && (
+          <div style={{ textAlign: "center", marginBottom: 28, paddingBottom: 20, borderBottom: `1px solid ${fondo.acento}33` }}>
+            {negocio.logo && (
+              <img src={negocio.logo} alt={negocio.nombre} style={{ width: 72, height: 72, borderRadius: 12, objectFit: "cover", marginBottom: 10 }} />
+            )}
+            <h2 style={{ color: fondo.texto, fontSize: 18, fontWeight: 700, margin: 0 }}>{negocio.nombre}</h2>
+            {negocio.descripcion && (
+              <p style={{ color: fondo.texto, opacity: 0.7, fontSize: 12, margin: "4px 0 0" }}>{negocio.descripcion}</p>
+            )}
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 10, marginTop: 10, fontSize: 12, color: fondo.texto, opacity: 0.75 }}>
+              {(negocio.direccion?.calle || negocio.direccion?.colonia) && (
+                <span>📍 {[negocio.direccion?.calle, negocio.direccion?.noExterior, negocio.direccion?.colonia].filter(Boolean).join(" ")}</span>
+              )}
+              {negocio.telefono && <span>📞 {negocio.telefono}</span>}
+              {negocio.horario && <span>🕒 {negocio.horario}</span>}
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 14, marginTop: 10, fontSize: 18 }}>
+              {negocio.redes?.instagram && <a href={negocio.redes.instagram} target="_blank" rel="noopener noreferrer">📸</a>}
+              {negocio.redes?.facebook && <a href={negocio.redes.facebook} target="_blank" rel="noopener noreferrer">📘</a>}
+              {negocio.redes?.tiktok && <a href={negocio.redes.tiktok} target="_blank" rel="noopener noreferrer">🎵</a>}
+              {negocio.redes?.whatsapp && <a href={`https://wa.me/${negocio.redes.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer">💬</a>}
+              {negocio.sitioWeb && <a href={negocio.sitioWeb} target="_blank" rel="noopener noreferrer" style={{ color: fondo.acento, textDecoration: "none", fontSize: 12, alignSelf: "center" }}>🌐 Sitio web</a>}
+            </div>
+          </div>
+        )}
 
         {secciones.length === 0 && (
           <p style={{ textAlign: "center", color: fondo.texto, opacity: 0.6 }}>
