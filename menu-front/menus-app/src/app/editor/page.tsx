@@ -3,6 +3,8 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import ModalUpgrade from "@/components/ModalUpgrade";
+import DescargasInfo from "@/components/DescargasInfo";
 
 const fuentes = [
   "Playfair Display", "Georgia", "Arial", "Montserrat", "Times New Roman",
@@ -86,6 +88,10 @@ export default function Editor() {
 
   const [monedaUsuario, setMonedaUsuario] = useState("MXN");
   const [autoguardadoActivo, setAutoguardadoActivo] = useState(true);
+
+  const [modalUpgradeAbierto, setModalUpgradeAbierto] = useState(false);
+  const [mensajeLimite, setMensajeLimite] = useState("");
+  const [descargasRefresh, setDescargasRefresh] = useState(0);
 
   useEffect(() => {
     const prefs = localStorage.getItem("preferencias");
@@ -242,9 +248,36 @@ export default function Editor() {
   const exportarPDF = async () => {
     if (!menuRef.current) return;
 
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/api/descargas`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ menu_id: menuId }),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        if (data.limiteAlcanzado) {
+          setMensajeLimite(data.mensaje || "");
+          setModalUpgradeAbierto(true);
+        } else {
+          alert("❌ No se pudo validar tu descarga: " + (data.mensaje || "error desconocido"));
+        }
+        return;
+      }
+      setDescargasRefresh((n) => n + 1);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error de conexión al validar tu descarga.");
+      return;
+    }
+
     // Guardamos el estado de edición actual para limpiar inputs antes del render
     setEditando(null);
-
     // Pequeña espera para asegurar el render limpio de estados
     setTimeout(async () => {
       const canvas = await html2canvas(menuRef.current!, {
@@ -424,7 +457,12 @@ export default function Editor() {
             </select>
           </div>
 
-          <div style={{ display: "flex", gap: 6, width: mobile ? "100%" : "auto" }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", width: mobile ? "100%" : "auto" }}>
+            {!mobile && (
+              <div style={{ marginRight: 6 }}>
+                <DescargasInfo refreshKey={descargasRefresh} />
+              </div>
+            )}
             <button onClick={exportarPDF} style={{
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
               color: "#aaa", padding: "7px 10px", cursor: "pointer", fontSize: 12,
@@ -812,6 +850,12 @@ export default function Editor() {
           </div>
         )}
       </aside>
+
+      <ModalUpgrade
+        open={modalUpgradeAbierto}
+        onClose={() => setModalUpgradeAbierto(false)}
+        mensaje={mensajeLimite}
+      />
     </div>
   );
 }

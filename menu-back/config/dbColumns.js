@@ -38,6 +38,13 @@ module.exports = {
     createdAt: "created_at",
     updatedAt: "updated_at",
   },
+  descargas: {
+    table: "descargas",
+    id: "id",
+    usuarioId: "user_id",
+    menuId: "menu_id",
+    fecha: "fecha_descarga",
+  },
   negocios: {
     table: "negocios",
     id: "id",

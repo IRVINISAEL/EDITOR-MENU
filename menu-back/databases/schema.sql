@@ -37,6 +37,38 @@ CREATE TABLE `categorias` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `configuracion_usuario`
+-- HU-94: preferencias de configuración por usuario (persistentes entre sesiones)
+--
+
+CREATE TABLE `configuracion_usuario` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `moneda` varchar(10) NOT NULL DEFAULT 'MXN',
+  `idioma` varchar(10) NOT NULL DEFAULT 'es',
+  `autoguardado` tinyint(1) NOT NULL DEFAULT 1,
+  `notificaciones_email` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `descargas`
+-- HU-99: historial de descargas para aplicar el límite por plan
+--
+
+CREATE TABLE `descargas` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `menu_id` int(11) DEFAULT NULL,
+  `fecha_descarga` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `direcciones`
 --
 
@@ -141,6 +173,20 @@ ALTER TABLE `categorias`
   ADD KEY `platillo_id` (`platillo_id`);
 
 --
+-- Indices de la tabla `configuracion_usuario`
+--
+ALTER TABLE `configuracion_usuario`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user_id` (`user_id`);
+
+--
+-- Indices de la tabla `descargas`
+--
+ALTER TABLE `descargas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
 -- Indices de la tabla `direcciones`
 --
 ALTER TABLE `direcciones`
@@ -192,6 +238,18 @@ ALTER TABLE `categorias`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `configuracion_usuario`
+--
+ALTER TABLE `configuracion_usuario`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `descargas`
+--
+ALTER TABLE `descargas`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `direcciones`
 --
 ALTER TABLE `direcciones`
@@ -236,6 +294,18 @@ ALTER TABLE `usuarios`
 --
 ALTER TABLE `categorias`
   ADD CONSTRAINT `categorias_ibfk_1` FOREIGN KEY (`platillo_id`) REFERENCES `platillos` (`id`) ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `configuracion_usuario`
+--
+ALTER TABLE `configuracion_usuario`
+  ADD CONSTRAINT `fk_config_usuario` FOREIGN KEY (`user_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `descargas`
+--
+ALTER TABLE `descargas`
+  ADD CONSTRAINT `descargas_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `direcciones`
