@@ -1,187 +1,145 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
-type Solicitud = {
+type Plan = {
   id: number;
-  estado: "pendiente" | "aprobado" | "rechazado";
-  fecha_solicitud: string;
-  usuario_nombre: string;
-  usuario_email: string;
-  plan_id: number;
-  plan_nombre: string;
-  plan_precio: number;
+  nombre: string;
+  descripcion: string;
+  precio: number;
 };
 
-export default function AdminSolicitudes() {
+export default function AdminActivarPlan() {
   const [adminKey, setAdminKey] = useState("");
-  const [desbloqueado, setDesbloqueado] = useState(false);
-  const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
+  const [email, setEmail] = useState("");
+  const [planId, setPlanId] = useState<number | "">("");
+  const [planes, setPlanes] = useState<Plan[]>([]);
+  const [mensaje, setMensaje] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
   const [cargando, setCargando] = useState(false);
-  const [procesando, setProcesando] = useState<number | null>(null);
-  const [error, setError] = useState("");
 
-  const cargarSolicitudes = useCallback(async (key: string) => {
+  useEffect(() => {
+    fetch(`${API}/api/planes`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok) setPlanes(data.planes);
+      });
+  }, []);
+
+  const handleActivar = async () => {
+    setMensaje(null);
+    if (!adminKey || !email || !planId) {
+      setMensaje({ tipo: "error", texto: "Completa la llave de admin, el correo y el plan." });
+      return;
+    }
     setCargando(true);
-    setError("");
     try {
-      const res = await fetch(`${API}/api/admin/solicitudes`, {
-        headers: { "x-admin-key": key },
+      const res = await fetch(`${API}/api/admin/activar-plan`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": adminKey,
+        },
+        body: JSON.stringify({ email, planId }),
       });
       const data = await res.json();
       if (data.ok) {
-        setSolicitudes(data.solicitudes);
-        setDesbloqueado(true);
+        setMensaje({ tipo: "ok", texto: data.mensaje });
+        setEmail("");
+        setPlanId("");
       } else {
-        setError(data.mensaje || "Llave incorrecta");
+        setMensaje({ tipo: "error", texto: data.mensaje || "No se pudo activar el plan." });
       }
     } catch {
-      setError("Error de conexión con el servidor");
+      setMensaje({ tipo: "error", texto: "Error de conexión con el servidor." });
     } finally {
       setCargando(false);
     }
-  }, []);
-
-  const resolver = async (id: number, accion: "aprobar" | "rechazar") => {
-    setProcesando(id);
-    try {
-      const res = await fetch(`${API}/api/admin/solicitudes/${id}/${accion}`, {
-        method: "POST",
-        headers: { "x-admin-key": adminKey },
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setSolicitudes((prev) =>
-          prev.map((s) => (s.id === id ? { ...s, estado: accion === "aprobar" ? "aprobado" : "rechazado" } : s))
-        );
-      } else {
-        alert(data.mensaje || "No se pudo procesar la solicitud");
-      }
-    } catch {
-      alert("Error de conexión");
-    } finally {
-      setProcesando(null);
-    }
   };
 
-  useEffect(() => {
-    if (desbloqueado) {
-      const interval = setInterval(() => cargarSolicitudes(adminKey), 15000);
-      return () => clearInterval(interval);
-    }
-  }, [desbloqueado, adminKey, cargarSolicitudes]);
-
-  if (!desbloqueado) {
-    return (
-      <div style={{
-        minHeight: "100vh", background: "#0f0f13", display: "flex",
-        alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif",
-        padding: 20,
-      }}>
-        <div style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 16, padding: 32, width: "100%", maxWidth: 380 }}>
-          <h1 style={{ color: "white", fontSize: 18, fontWeight: 700, marginTop: 0 }}>🔐 Panel de solicitudes</h1>
-          <input
-            type="password"
-            value={adminKey}
-            onChange={(e) => setAdminKey(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && cargarSolicitudes(adminKey)}
-            placeholder="ADMIN_SECRET_KEY"
-            style={inputStyle}
-          />
-          <button
-            onClick={() => cargarSolicitudes(adminKey)}
-            disabled={cargando}
-            style={{
-              width: "100%", marginTop: 16, padding: "12px",
-              background: "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none",
-              borderRadius: 10, color: "white", fontWeight: 700, cursor: "pointer",
-              opacity: cargando ? 0.6 : 1,
-            }}
-          >
-            {cargando ? "Verificando..." : "Entrar"}
-          </button>
-          {error && <div style={{ color: "#f87171", fontSize: 13, marginTop: 12 }}>{error}</div>}
-        </div>
-      </div>
-    );
-  }
-
-  const pendientes = solicitudes.filter((s) => s.estado === "pendiente");
-  const resueltas = solicitudes.filter((s) => s.estado !== "pendiente");
-
   return (
-    <div style={{ minHeight: "100vh", background: "#0f0f13", fontFamily: "'Segoe UI', sans-serif", padding: 32 }}>
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h1 style={{ color: "white", fontSize: 24, fontWeight: 700, margin: 0 }}>Solicitudes de plan</h1>
-          <button
-            onClick={() => cargarSolicitudes(adminKey)}
-            style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, color: "#aaa", padding: "8px 14px", fontSize: 13, cursor: "pointer" }}
-          >
-            ⟳ Actualizar
-          </button>
-        </div>
+    <div style={{
+      minHeight: "100vh", background: "#0f0f13", display: "flex",
+      alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif",
+      padding: 20,
+    }}>
+      <div style={{
+        background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 16,
+        padding: 32, width: "100%", maxWidth: 420,
+      }}>
+        <h1 style={{ color: "white", fontSize: 20, fontWeight: 700, marginTop: 0 }}>
+          🔐 Activar plan manualmente
+        </h1>
+        <p style={{ color: "#666", fontSize: 13, marginTop: -8, marginBottom: 24 }}>
+          Solo para uso interno. Confirma el pago fuera del sistema antes de activar.
+        </p>
 
-        <h2 style={{ color: "#a855f7", fontSize: 14, fontWeight: 700, textTransform: "uppercase" }}>
-          Pendientes ({pendientes.length})
-        </h2>
-        {pendientes.length === 0 && <p style={{ color: "#666", fontSize: 14 }}>No hay solicitudes pendientes 🎉</p>}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 32 }}>
-          {pendientes.map((s) => (
-            <div key={s.id} style={{
-              background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 12,
-              padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
-            }}>
-              <div>
-                <div style={{ color: "white", fontWeight: 600, fontSize: 14 }}>{s.usuario_nombre} — {s.usuario_email}</div>
-                <div style={{ color: "#888", fontSize: 13, marginTop: 2 }}>
-                  Plan {s.plan_nombre} (${s.plan_precio}) · {new Date(s.fecha_solicitud).toLocaleString()}
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => resolver(s.id, "aprobar")}
-                  disabled={procesando === s.id}
-                  style={{ background: "#16a34a", border: "none", borderRadius: 8, color: "white", padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: procesando === s.id ? 0.6 : 1 }}
-                >
-                  ✓ Aprobar
-                </button>
-                <button
-                  onClick={() => resolver(s.id, "rechazar")}
-                  disabled={procesando === s.id}
-                  style={{ background: "#dc2626", border: "none", borderRadius: 8, color: "white", padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: procesando === s.id ? 0.6 : 1 }}
-                >
-                  ✕ Rechazar
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <label style={{ color: "#aaa", fontSize: 12, display: "block", marginBottom: 6 }}>Llave de admin</label>
+        <input
+          type="password"
+          value={adminKey}
+          onChange={(e) => setAdminKey(e.target.value)}
+          placeholder="ADMIN_SECRET_KEY"
+          style={inputStyle}
+        />
 
-        <h2 style={{ color: "#666", fontSize: 14, fontWeight: 700, textTransform: "uppercase" }}>
-          Resueltas ({resueltas.length})
-        </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {resueltas.map((s) => (
-            <div key={s.id} style={{
-              background: "#16161d", border: "1px solid #2a2a35", borderRadius: 10,
-              padding: "10px 16px", display: "flex", justifyContent: "space-between", fontSize: 13,
-            }}>
-              <span style={{ color: "#aaa" }}>{s.usuario_nombre} — {s.plan_nombre}</span>
-              <span style={{ color: s.estado === "aprobado" ? "#4ade80" : "#f87171", fontWeight: 600 }}>
-                {s.estado === "aprobado" ? "✓ Aprobado" : "✕ Rechazado"}
-              </span>
-            </div>
+        <label style={{ color: "#aaa", fontSize: 12, display: "block", marginBottom: 6, marginTop: 16 }}>
+          Correo del usuario
+        </label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="usuario@ejemplo.com"
+          style={inputStyle}
+        />
+
+        <label style={{ color: "#aaa", fontSize: 12, display: "block", marginBottom: 6, marginTop: 16 }}>
+          Plan a activar
+        </label>
+        <select
+          value={planId}
+          onChange={(e) => setPlanId(e.target.value ? Number(e.target.value) : "")}
+          style={{ ...inputStyle, cursor: "pointer" }}
+        >
+          <option value="">Selecciona un plan</option>
+          {planes.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.nombre} — ${p.precio}
+            </option>
           ))}
-        </div>
+        </select>
+
+        <button
+          onClick={handleActivar}
+          disabled={cargando}
+          style={{
+            width: "100%", marginTop: 24, padding: "12px",
+            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+            border: "none", borderRadius: 10, color: "white",
+            fontWeight: 700, fontSize: 14, cursor: cargando ? "default" : "pointer",
+            opacity: cargando ? 0.6 : 1,
+          }}
+        >
+          {cargando ? "Activando..." : "Activar plan"}
+        </button>
+
+        {mensaje && (
+          <div style={{
+            marginTop: 16, padding: "10px 12px", borderRadius: 8, fontSize: 13,
+            background: mensaje.tipo === "ok" ? "#16351f" : "#3a1a1a",
+            color: mensaje.tipo === "ok" ? "#4ade80" : "#f87171",
+          }}>
+            {mensaje.texto}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", borderRadius: 8, marginTop: 16,
+  width: "100%", padding: "10px 12px", borderRadius: 8,
   background: "#16161d", border: "1px solid #2a2a35",
   color: "white", fontSize: 14, boxSizing: "border-box",
 };

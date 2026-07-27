@@ -533,6 +533,104 @@ const verificarAdmin = (req, res, next) => {
   next();
 };
 
+app.post("/api/planes/solicitar", verificarToken, (req, res, next) => {
+  const { planId } = req.body;
+  if (!planId) return res.status(400).json({ ok: false, mensaje: "planId es obligatorio" });
+
+  db.query(
+    `SELECT * FROM ${C.solicitudesPlan.table} WHERE ${C.solicitudesPlan.usuarioId} = ? AND ${C.solicitudesPlan.estado} = 'pendiente'`,
+    [req.usuario.id],
+    (err, pendientes) => {
+      if (err) return next(err);
+      if (pendientes.length > 0) {
+        return res.status(400).json({ ok: false, mensaje: "Ya tienes una solicitud pendiente de revisión" });
+      }
+
+      db.query(
+        `INSERT INTO ${C.solicitudesPlan.table} (${C.solicitudesPlan.usuarioId}, ${C.solicitudesPlan.planId}) VALUES (?, ?)`,
+        [req.usuario.id, planId],
+        (err2, result) => {
+          if (err2) return next(err2);
+          res.status(201).json({ ok: true, mensaje: "Solicitud enviada, en revisión", solicitudId: result.insertId });
+        }
+      );
+    }
+  );
+});
+
+app.get("/api/admin/solicitudes", verificarAdmin, (req, res, next) => {
+  db.query(
+    `SELECT s.${C.solicitudesPlan.id} AS id, s.${C.solicitudesPlan.estado} AS estado,
+            s.${C.solicitudesPlan.fechaSolicitud} AS fecha_solicitud,
+            u.${C.usuarios.nombre} AS usuario_nombre, u.${C.usuarios.email} AS usuario_email,
+            p.${C.planes.id} AS plan_id, p.${C.planes.nombre} AS plan_nombre, p.${C.planes.precio} AS plan_precio
+     FROM ${C.solicitudesPlan.table} s
+     JOIN ${C.usuarios.table} u ON u.${C.usuarios.id} = s.${C.solicitudesPlan.usuarioId}
+     JOIN ${C.planes.table} p ON p.${C.planes.id} = s.${C.solicitudesPlan.planId}
+     ORDER BY s.${C.solicitudesPlan.fechaSolicitud} DESC`,
+    (err, rows) => {
+      if (err) return next(err);
+      res.json({ ok: true, solicitudes: rows });
+    }
+  );
+});
+
+app.post("/api/admin/solicitudes/:id/aprobar", verificarAdmin, (req, res, next) => {
+  const { id } = req.params;
+  db.query(`SELECT * FROM ${C.solicitudesPlan.table} WHERE ${C.solicitudesPlan.id} = ?`, [id], (err, rows) => {
+    if (err) return next(err);
+    if (rows.length === 0) return res.status(404).json({ ok: false, mensaje: "Solicitud no encontrada" });
+    const solicitud = rows[0];
+    if (solicitud[C.solicitudesPlan.estado] !== "pendiente") {
+      return res.status(400).json({ ok: false, mensaje: "Esta solicitud ya fue resuelta" });
+    }
+
+    db.query(`SELECT * FROM ${C.planes.table} WHERE ${C.planes.id} = ?`, [solicitud[C.solicitudesPlan.planId]], (err2, planesRows) => {
+      if (err2) return next(err2);
+      const plan = planesRows[0];
+      const fechaInicio = new Date();
+      const fechaFin = new Date();
+      fechaFin.setDate(fechaFin.getDate() + plan[C.planes.duracionDias]);
+
+      db.query(
+        `UPDATE ${C.usuarios.table} SET ${C.usuarios.planId} = ?, ${C.usuarios.fechaInicioPlan} = ?, ${C.usuarios.fechaFinPlan} = ? WHERE ${C.usuarios.id} = ?`,
+        [plan[C.planes.id], fechaInicio, fechaFin, solicitud[C.solicitudesPlan.usuarioId]],
+        (err3) => {
+          if (err3) return next(err3);
+          db.query(
+            `UPDATE ${C.solicitudesPlan.table} SET ${C.solicitudesPlan.estado} = 'aprobado', ${C.solicitudesPlan.fechaResolucion} = NOW() WHERE ${C.solicitudesPlan.id} = ?`,
+            [id],
+            (err4) => {
+              if (err4) return next(err4);
+              db.query(
+                `INSERT INTO ${C.pagos.table} (${C.pagos.usuarioId}, ${C.pagos.planId}, ${C.pagos.monto}, ${C.pagos.proveedor}, ${C.pagos.estado}) VALUES (?, ?, ?, 'manual', 'completado')`,
+                [solicitud[C.solicitudesPlan.usuarioId], plan[C.planes.id], plan[C.planes.precio]],
+                (err5) => {
+                  if (err5) return next(err5);
+                  res.json({ ok: true, mensaje: "Solicitud aprobada y plan activado" });
+                }
+              );
+            }
+          );
+        }
+      );
+    });
+  });
+});
+
+app.post("/api/admin/solicitudes/:id/rechazar", verificarAdmin, (req, res, next) => {
+  const { id } = req.params;
+  db.query(
+    `UPDATE ${C.solicitudesPlan.table} SET ${C.solicitudesPlan.estado} = 'rechazado', ${C.solicitudesPlan.fechaResolucion} = NOW() WHERE ${C.solicitudesPlan.id} = ? AND ${C.solicitudesPlan.estado} = 'pendiente'`,
+    [id],
+    (err, result) => {
+      if (err) return next(err);
+      if (result.affectedRows === 0) return res.status(400).json({ ok: false, mensaje: "Solicitud no encontrada o ya resuelta" });
+      res.json({ ok: true, mensaje: "Solicitud rechazada" });
+    }
+  );
+});
+
 app.post("/api/admin/activar-plan", verificarAdmin, (req, res, next) => {
   const { email, planId } = req.body;
   if (!email || !planId) {
