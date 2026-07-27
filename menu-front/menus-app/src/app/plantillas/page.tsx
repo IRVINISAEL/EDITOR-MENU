@@ -157,7 +157,7 @@ const plantillas = [
     },
   },
   {
-    id: 13, nombre: "Steakhouse Premium", categoria: "Restaurante",
+    id: 13, nombre: "Steakhouse Premium", categoria: "Restaurante", premium: true,
     color: "#1c0a00", textColor: "#f5e6d0", emoji: "🥩", popular: true,
     config: {
       fuenteActiva: "Playfair Display", tamaño: 50, subtitulo: "PRIME STEAKHOUSE",
@@ -208,6 +208,71 @@ const plantillas = [
       ],
     },
   },
+{
+    id: 17, nombre: "Omakase Kaiseki", categoria: "Japonés", premium: true,
+    color: "#0a0a0a", textColor: "#d4af37", emoji: "🍣", popular: true,
+    config: {
+      fuenteActiva: "Cinzel", tamaño: 46, subtitulo: "OMAKASE EXPERIENCE",
+      fondoActivo: { nombre: "Onix Dorado", bg: "linear-gradient(135deg, #0a0a0a, #1c1c1c)", texto: "#f5f0e0", acento: "#d4af37" },
+      secciones: [
+        { id: 1, nombre: "SAKIZUKE", platillos: [{ nombre: "Uni de Hokkaido", precio: "$320", descripcion: "Erizo de mar, yema de codorniz, alga nori" }, { nombre: "Toro Tartare", precio: "$280", descripcion: "Atún graso, caviar osetra, wasabi fresco" }] },
+        { id: 2, nombre: "OMAKASE NIGIRI", platillos: [{ nombre: "Selección del Chef 10 pzs", precio: "$650", descripcion: "Pescado de temporada, importación diaria" }, { nombre: "Wagyu Nigiri", precio: "$220", descripcion: "A5 flameado, trufa negra" }] },
+        { id: 3, nombre: "SHIRUMONO", platillos: [{ nombre: "Dashi de Kombu Añejo", precio: "$95", descripcion: "Caldo dashi 3 años, tofu de seda" }] },
+      ],
+    },
+  },
+  {
+    id: 18, nombre: "Château Bistro", categoria: "Restaurante", premium: true,
+    color: "#2c1e12", textColor: "#e8d9b5", emoji: "🍷", popular: true,
+    config: {
+      fuenteActiva: "Cormorant Garamond", tamaño: 48, subtitulo: "MAISON GASTRONOMIQUE",
+      fondoActivo: { nombre: "Borgoña", bg: "linear-gradient(135deg, #1f0f0f, #3a1717)", texto: "#f0e4d0", acento: "#9e2a2b" },
+      secciones: [
+        { id: 1, nombre: "ENTRÉES", platillos: [{ nombre: "Foie Gras Poêlé", precio: "$310", descripcion: "Manzana caramelizada, reducción de Sauternes" }, { nombre: "Escargots de Bourgogne", precio: "$195", descripcion: "Mantequilla de ajo y perejil, 6 piezas" }] },
+        { id: 2, nombre: "PLATS SIGNATURE", platillos: [{ nombre: "Canard à l'Orange", precio: "$390", descripcion: "Pato de granja, salsa de naranja sanguina" }, { nombre: "Côte de Bœuf 500g", precio: "$620", descripcion: "Para compartir, salsa bordelesa" }] },
+        { id: 3, nombre: "FROMAGES & DESSERTS", platillos: [{ nombre: "Plateau de Fromages", precio: "$220", descripcion: "Selección francesa, mermelada de higo" }] },
+      ],
+    },
+  },
+  {
+    id: 19, nombre: "Rooftop Skyline", categoria: "Moderno", premium: true,
+    color: "#0f172a", textColor: "#f8fafc", emoji: "🌆", popular: true,
+    config: {
+      fuenteActiva: "Marcellus", tamaño: 46, subtitulo: "SKY LOUNGE & GRILL",
+      fondoActivo: { nombre: "Medianoche", bg: "linear-gradient(135deg, #0f172a, #1e1b4b)", texto: "#e0e7ff", acento: "#818cf8" },
+      secciones: [
+        { id: 1, nombre: "RAW BAR", platillos: [{ nombre: "Torre de Mariscos", precio: "$450", descripcion: "Ostras, camarón, langosta, ceviche" }, { nombre: "Tartare de Atún Aleta Azul", precio: "$260", descripcion: "Ponzu de yuzu, aire de sésamo" }] },
+        { id: 2, nombre: "SIGNATURE", platillos: [{ nombre: "Chuletón Ibérico", precio: "$540", descripcion: "Bellota 50 meses, sal Maldon" }, { nombre: "Langosta Termidor Skyline", precio: "$480", descripcion: "Gratinada, mantequilla de coñac" }] },
+        { id: 3, nombre: "MIXOLOGY", platillos: [{ nombre: "Cóctel de Autor", precio: "$180", descripcion: "Mezcal ahumado, humo en vivo" }] },
+      ],
+    },
+  },
+  {
+    id: 20, nombre: "Trattoria Riserva", categoria: "Italiano", premium: true,
+    color: "#3d0c11", textColor: "#f3e5d8", emoji: "🍷", popular: false,
+    config: {
+      fuenteActiva: "Playfair Display", tamaño: 48, subtitulo: "CUCINA D'AUTORE",
+      fondoActivo: { nombre: "Vino Riserva", bg: "linear-gradient(135deg, #2b0a0d, #4a1116)", texto: "#f5e6d3", acento: "#c9a648" },
+      secciones: [
+        { id: 1, nombre: "ANTIPASTI DELLA CASA", platillos: [{ nombre: "Carpaccio di Manzo", precio: "$210", descripcion: "Trufa negra, parmigiano 36 meses" }, { nombre: "Vitello Tonnato", precio: "$185", descripcion: "Receta piamontesa clásica" }] },
+        { id: 2, nombre: "PRIMI RISERVA", platillos: [{ nombre: "Risotto al Tartufo Bianco", precio: "$320", descripcion: "Arborio, trufa blanca d'Alba en mesa" }, { nombre: "Agnolotti del Plin", precio: "$245", descripcion: "Relleno de tres carnes, mantequilla y salvia" }] },
+        { id: 3, nombre: "SECONDI", platillos: [{ nombre: "Ossobuco alla Milanese", precio: "$290", descripcion: "Gremolata, risotto allo zafferano" }] },
+      ],
+    },
+  },
+  {
+    id: 21, nombre: "Jardín Botánico Vegano", categoria: "Vegano", premium: true,
+    color: "#0b2e13", textColor: "#eafbe7", emoji: "🌿", popular: false,
+    config: {
+      fuenteActiva: "Cormorant Garamond", tamaño: 46, subtitulo: "FINE PLANT-BASED DINING",
+      fondoActivo: { nombre: "Bosque", bg: "linear-gradient(135deg, #0b2e13, #143d1e)", texto: "#eafbe7", acento: "#4ade80" },
+      secciones: [
+        { id: 1, nombre: "DE LA HUERTA", platillos: [{ nombre: "Carpaccio de Remolacha", precio: "$135", descripcion: "Queso de anacardo, eneldo, cítricos" }, { nombre: "Tártar de Hongos Ostra", precio: "$150", descripcion: "Trufa, alcaparras, pan de masa madre" }] },
+        { id: 2, nombre: "SIGNATURE PLANT", platillos: [{ nombre: "Wellington de Setas Silvestres", precio: "$285", descripcion: "Hojaldre, paté de nuez, jus de vino tinto" }, { nombre: "Risotto de Espárragos Verdes", precio: "$210", descripcion: "Caldo de kombu, aceite de albahaca" }] },
+        { id: 3, nombre: "POSTRES", platillos: [{ nombre: "Tarta de Chocolate 70% Sin Lácteos", precio: "$110", descripcion: "Praliné de avellana, sal de mar" }] },
+      ],
+    },
+  },
 ];
 
 const navItems = [
@@ -221,7 +286,7 @@ const navItems = [
   { icon: "⚙️", label: "Configuración", href: "/configuracion" },
 ];
 
-type Plantilla = typeof plantillas[0];
+type Plantilla = typeof plantillas[number] & { premium?: boolean };
 
 export default function Plantillas() {
   const [activeNav] = useState("Plantillas");
@@ -235,6 +300,14 @@ export default function Plantillas() {
   });
   const [pagina, setPagina] = useState(1);
   const POR_PAGINA = 12;
+
+  const planUsuario = (() => {
+    try {
+      const u = JSON.parse(localStorage.getItem("usuario") || "{}");
+      return u.plan || "Basico";
+    } catch { return "Basico"; }
+  })();
+  const tienePlanPremium = planUsuario === "Premium" || planUsuario === "Empresarial";
 
   const toggleFavorito = (id: number) => {
     setFavoritos(prev => {
@@ -256,9 +329,14 @@ export default function Plantillas() {
   const plantillasPagina = plantillasFiltradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   const usarPlantilla = (p: Plantilla) => {
+    const planUsuario = localStorage.getItem("plan_usuario") || "free";
+    if (p.premium && planUsuario === "free") {
+      alert("Esta plantilla es exclusiva para planes Plus o Premium. Actualiza tu plan para usarla.");
+      return;
+    }
     localStorage.setItem("plantilla_cargada", JSON.stringify(p.config));
     window.location.href = "/editor";
-  };
+};
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
@@ -347,6 +425,11 @@ export default function Plantillas() {
               {p.popular && (
                 <div style={{ position: "absolute", top: 10, right: 10, zIndex: 2, background: "linear-gradient(135deg, #7c3aed, #a855f7)", borderRadius: 20, padding: "3px 10px", color: "white", fontSize: 10, fontWeight: 700 }}>⭐ Popular</div>
               )}
+              {p.premium && (
+                <div style={{ position: "absolute", top: p.popular ? 34 : 10, right: 10, zIndex: 2, background: !tienePlanPremium ? "rgba(0,0,0,0.65)" : "linear-gradient(135deg, #facc15, #ca8a04)", borderRadius: 20, padding: "3px 10px", color: !tienePlanPremium ? "#facc15" : "#1a1a1a", fontSize: 10, fontWeight: 700, border: !tienePlanPremium ? "1px solid #facc15" : "none" }}>
+                  {!tienePlanPremium ? "🔒 Premium" : "✨ Premium"}
+                </div>
+              )}
               <div style={{ background: p.color, borderRadius: 12, overflow: "hidden", border: "1px solid #2a2a35", cursor: "pointer", aspectRatio: "3/4", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, position: "relative" }}>
                 <button
                   onClick={e => { e.stopPropagation(); toggleFavorito(p.id); }}
@@ -364,8 +447,8 @@ export default function Plantillas() {
                 <div className="overlay" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, opacity: 0, transition: "opacity 0.2s", borderRadius: 12 }}>
                   <button
                     onClick={() => usarPlantilla(p)}
-                    style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none", borderRadius: 8, padding: "10px 20px", color: "white", fontWeight: 600, fontSize: 13, cursor: "pointer", width: 140 }}
-                  >✓ Usar plantilla</button>
+                    style={{ background: (p.premium && !tienePlanPremium) ? "#3a3a45" : "linear-gradient(135deg, #7c3aed, #a855f7)", border: (p.premium && !tienePlanPremium) ? "1px solid #facc15" : "none", borderRadius: 8, padding: "10px 20px", color: (p.premium && !tienePlanPremium) ? "#facc15" : "white", fontWeight: 600, fontSize: 13, cursor: "pointer", width: 140 }}
+                  >{(p.premium && !tienePlanPremium) ? "🔒 Actualizar plan" : "✓ Usar plantilla"}</button>
                   <button
                     onClick={() => setPreview(p)}
                     style={{ background: "transparent", border: "1px solid #ffffff44", borderRadius: 8, padding: "10px 20px", color: "white", fontSize: 13, cursor: "pointer", width: 140 }}
@@ -433,7 +516,7 @@ export default function Plantillas() {
 
             <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
               <button onClick={() => setPreview(null)} style={{ flex: 1, background: "transparent", border: `1px solid ${preview.config.fondoActivo.acento}`, borderRadius: 8, padding: "10px", color: preview.config.fondoActivo.acento, cursor: "pointer", fontSize: 12 }}>Cerrar</button>
-              <button onClick={() => usarPlantilla(preview)} style={{ flex: 1, background: "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none", borderRadius: 8, padding: "10px", color: "white", fontWeight: 600, cursor: "pointer", fontSize: 12 }}>✓ Usar esta</button>
+              <button onClick={() => usarPlantilla(preview)} style={{ flex: 1, background: (preview.premium && !tienePlanPremium) ? "#3a3a45" : "linear-gradient(135deg, #7c3aed, #a855f7)", border: (preview.premium && !tienePlanPremium) ? "1px solid #facc15" : "none", borderRadius: 8, padding: "10px", color: (preview.premium && !tienePlanPremium) ? "#facc15" : "white", fontWeight: 600, cursor: "pointer", fontSize: 12 }}>{(preview.premium && !tienePlanPremium) ? "🔒 Actualizar plan" : "✓ Usar esta"}</button>
             </div>
           </div>
         </div>
