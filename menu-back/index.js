@@ -524,6 +524,61 @@ app.post("/api/planes/activar", verificarToken, (req, res, next) => {
   });
 });
 
+// Middleware simple de admin: compara una llave secreta enviada por header
+const verificarAdmin = (req, res, next) => {
+  const key = req.headers["x-admin-key"];
+  if (!key || key !== process.env.ADMIN_SECRET_KEY) {
+    return res.status(401).json({ ok: false, mensaje: "No autorizado" });
+  }
+  next();
+};
+
+app.post("/api/admin/activar-plan", verificarAdmin, (req, res, next) => {
+  const { email, planId } = req.body;
+  if (!email || !planId) {
+    return res.status(400).json({ ok: false, mensaje: "email y planId son obligatorios" });
+  }
+
+  db.query(`SELECT * FROM ${C.usuarios.table} WHERE ${C.usuarios.email} = ?`, [email], (err, usuarios) => {
+    if (err) return next(err);
+    if (usuarios.length === 0) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
+    const usuario = usuarios[0];
+
+    db.query(`SELECT * FROM ${C.planes.table} WHERE ${C.planes.id} = ?`, [planId], (err2, planesRows) => {
+      if (err2) return next(err2);
+      if (planesRows.length === 0) return res.status(404).json({ ok: false, mensaje: "Plan no encontrado" });
+      const plan = planesRows[0];
+
+      const fechaInicio = new Date();
+      const fechaFin = new Date();
+      fechaFin.setDate(fechaFin.getDate() + plan[C.planes.duracionDias]);
+
+      db.query(
+        `UPDATE ${C.usuarios.table} SET ${C.usuarios.planId} = ?, ${C.usuarios.fechaInicioPlan} = ?, ${C.usuarios.fechaFinPlan} = ? WHERE ${C.usuarios.id} = ?`,
+        [planId, fechaInicio, fechaFin, usuario[C.usuarios.id]],
+        (err3) => {
+          if (err3) return next(err3);
+
+          // RN-05: registrar la transacción manual para historial de facturación
+          db.query(
+            `INSERT INTO ${C.pagos.table} (${C.pagos.usuarioId}, ${C.pagos.planId}, ${C.pagos.monto}, ${C.pagos.proveedor}, ${C.pagos.estado}) VALUES (?, ?, ?, 'manual', 'completado')`,
+            [usuario[C.usuarios.id], planId, plan[C.planes.precio]],
+            (err4) => {
+              if (err4) return next(err4);
+              res.json({
+                ok: true,
+                mensaje: `Plan ${plan[C.planes.nombre]} activado para ${email}`,
+                fechaInicio,
+                fechaFin,
+              });
+            }
+          );
+        }
+      );
+    });
+  });
+});
+
 app.put("/api/auth/password", verificarToken, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) {

@@ -58,6 +58,16 @@ module.exports = {
     beneficios: "beneficios",
     createdAt: "created_at",
   },
+  pagos: {
+    table: "pagos",
+    id: "id",
+    usuarioId: "user_id",
+    planId: "plan_id",
+    monto: "monto",
+    proveedor: "proveedor",
+    estado: "estado",
+    fecha: "fecha",
+  },
   negocios: {
     table: "negocios",
     id: "id",
