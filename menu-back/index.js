@@ -791,7 +791,13 @@ app.post("/api/auth/login", verificarBloqueoLogin, (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ ok: false, mensaje: "Campos obligatorios" });
   db.query(
-    `SELECT ${C.usuarios.id} AS id, ${C.usuarios.nombre} AS nombre, ${C.usuarios.email} AS email, ${C.usuarios.plan} AS plan, ${C.usuarios.password} AS password FROM ${C.usuarios.table} WHERE ${C.usuarios.email} = ?`,
+    `SELECT u.${C.usuarios.id} AS id, u.${C.usuarios.nombre} AS nombre, u.${C.usuarios.email} AS email,
+            u.${C.usuarios.password} AS password,
+            COALESCE(p.${C.planes.nombre}, 'Free') AS plan,
+            u.${C.usuarios.fechaFinPlan} AS fecha_fin_plan
+     FROM ${C.usuarios.table} u
+     LEFT JOIN ${C.planes.table} p ON p.${C.planes.id} = u.${C.usuarios.planId}
+     WHERE u.${C.usuarios.email} = ?`,
     [email],
     async (err, results) => {
       if (err) return next(err);
@@ -818,6 +824,24 @@ app.post("/api/auth/login", verificarBloqueoLogin, (req, res, next) => {
       } catch (e) {
         next(e);
       }
+    }
+  );
+});
+
+app.get("/api/auth/me", verificarToken, (req, res, next) => {
+  db.query(
+    `SELECT u.${C.usuarios.id} AS id, u.${C.usuarios.nombre} AS nombre, u.${C.usuarios.email} AS email,
+            COALESCE(p.${C.planes.nombre}, 'Free') AS plan,
+            u.${C.usuarios.fechaInicioPlan} AS fecha_inicio_plan,
+            u.${C.usuarios.fechaFinPlan} AS fecha_fin_plan
+     FROM ${C.usuarios.table} u
+     LEFT JOIN ${C.planes.table} p ON p.${C.planes.id} = u.${C.usuarios.planId}
+     WHERE u.${C.usuarios.id} = ?`,
+    [req.usuario.id],
+    (err, rows) => {
+      if (err) return next(err);
+      if (rows.length === 0) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
+      res.json({ ok: true, usuario: rows[0] });
     }
   );
 });
@@ -1087,24 +1111,28 @@ app.put("/api/negocio", verificarToken, async (req, res, next) => {
 });
 
 const LIMITES_POR_PLAN = {
-  Basico: 10,
-  Premium: 100,
-  Empresarial: null,
+  Free: 3,
+  "Básico": 10,
+  Plus: 50,
+  Premium: null,
 };
 
 function obtenerLimitePlan(plan) {
-  return Object.prototype.hasOwnProperty.call(LIMITES_POR_PLAN, plan) ? LIMITES_POR_PLAN[plan] : 10;
+  return Object.prototype.hasOwnProperty.call(LIMITES_POR_PLAN, plan) ? LIMITES_POR_PLAN[plan] : 3;
 }
 
 app.get("/api/descargas", verificarToken, async (req, res, next) => {
   try {
     const [[usuarioRow]] = await dbAsync.query(
-      `SELECT ${C.usuarios.plan} FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`,
+      `SELECT COALESCE(p.${C.planes.nombre}, 'Free') AS plan
+       FROM ${C.usuarios.table} u
+       LEFT JOIN ${C.planes.table} p ON p.${C.planes.id} = u.${C.usuarios.planId}
+       WHERE u.${C.usuarios.id} = ?`,
       [req.usuario.id]
     );
     if (!usuarioRow) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
 
-    const plan = usuarioRow[C.usuarios.plan];
+    const plan = usuarioRow.plan;
     const limite = obtenerLimitePlan(plan);
 
     const [[{ total }]] = await dbAsync.query(
@@ -1129,12 +1157,15 @@ app.post("/api/descargas", verificarToken, async (req, res, next) => {
 
   try {
     const [[usuarioRow]] = await dbAsync.query(
-      `SELECT ${C.usuarios.plan} FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`,
+      `SELECT COALESCE(p.${C.planes.nombre}, 'Free') AS plan
+       FROM ${C.usuarios.table} u
+       LEFT JOIN ${C.planes.table} p ON p.${C.planes.id} = u.${C.usuarios.planId}
+       WHERE u.${C.usuarios.id} = ?`,
       [req.usuario.id]
     );
     if (!usuarioRow) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
 
-    const plan = usuarioRow[C.usuarios.plan];
+    const plan = usuarioRow.plan;
     const limite = obtenerLimitePlan(plan);
 
     const [[{ total }]] = await dbAsync.query(
