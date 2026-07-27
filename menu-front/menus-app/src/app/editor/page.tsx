@@ -93,6 +93,9 @@ export default function Editor() {
   const [mensajeLimite, setMensajeLimite] = useState("");
   const [descargasRefresh, setDescargasRefresh] = useState(0);
 
+  // HU-92: oculta los controles de edición durante la exportación/impresión
+  const [exportando, setExportando] = useState(false);
+
   useEffect(() => {
     const prefs = localStorage.getItem("preferencias");
     if (prefs) {
@@ -276,30 +279,38 @@ export default function Editor() {
       return;
     }
 
-    // Guardamos el estado de edición actual para limpiar inputs antes del render
+    // HU-92 / CA-01 / RN-01: ocultamos los controles de edición (botones ✕, agregar, etc.)
+    // antes de capturar el menú para que el PDF quede limpio y profesional.
     setEditando(null);
+    setExportando(true);
+
     // Pequeña espera para asegurar el render limpio de estados
     setTimeout(async () => {
-      const canvas = await html2canvas(menuRef.current!, {
-        scale: 2, // Excelente calidad
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null, // Evita cuadros blancos de fondo
-        logging: false
-      });
+      try {
+        const canvas = await html2canvas(menuRef.current!, {
+          scale: 2, // Excelente calidad
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: null, // Evita cuadros blancos de fondo
+          logging: false
+        });
 
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: orientacion === "horizontal" ? "landscape" : "portrait",
-        unit: "mm",
-        format: "a4"
-      });
-      
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      
-      pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-      pdf.save(`${nombreMenu}.pdf`);
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({
+          orientation: orientacion === "horizontal" ? "landscape" : "portrait",
+          unit: "mm",
+          format: "a4"
+        });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+        pdf.save(`${nombreMenu}.pdf`);
+      } finally {
+        // RN-05: restauramos la vista de edición normal sin modificar el menú original
+        setExportando(false);
+      }
     }, 150);
   };
 
@@ -369,7 +380,7 @@ export default function Editor() {
     <div style={{ display: "flex", flexDirection: mobile ? "column" : "row", height: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13", overflow: "hidden" }}>
 
       {/* SIDEBAR IZQUIERDO */}
-      <aside style={{
+      <aside className="no-imprimir" style={{
         width: mobile ? "100%" : 56, background: "#16161d",
         borderRight: mobile ? "none" : "1px solid #2a2a35",
         borderBottom: mobile ? "1px solid #2a2a35" : "none",
@@ -395,7 +406,7 @@ export default function Editor() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         {/* BARRA SUPERIOR */}
-        <div style={{
+        <div className="no-imprimir" style={{
           minHeight: 52, background: "#16161d", borderBottom: "1px solid #2a2a35",
           display: "flex", flexDirection: mobile ? "column" : "row",
           alignItems: mobile ? "stretch" : "center", justifyContent: "space-between",
@@ -483,6 +494,7 @@ export default function Editor() {
 
         {/* GUÍA RÁPIDA */}
           <div
+            className="no-imprimir"
             style={{
               background: "#16161d",
               borderBottom: "1px solid #2a2a35",
@@ -642,7 +654,9 @@ export default function Editor() {
                       {seccion.nombre}
                     </h2>
                   )}
-                  <button onClick={() => eliminarSeccion(seccion.id)} style={{ background: "transparent", border: "none", color: "#ff4444", cursor: "pointer", fontSize: 11, padding: 0, opacity: 0.4 }}>✕</button>
+                  {!exportando && (
+                    <button onClick={() => eliminarSeccion(seccion.id)} className="no-imprimir" style={{ background: "transparent", border: "none", color: "#ff4444", cursor: "pointer", fontSize: 11, padding: 0, opacity: 0.4 }}>✕</button>
+                  )}
                 </div>
 
                 {seccion.platillos.map((platillo, idx) => (
@@ -654,13 +668,17 @@ export default function Editor() {
                         {platillo.imagen ? (
                           <div style={{ position: "relative", height: 100, overflow: "hidden", borderRadius: 6 }}>
                             <img src={platillo.imagen} alt={platillo.nombre} style={{ position: "absolute", left: platillo.imagenPos?.x ?? 0, top: platillo.imagenPos?.y ?? 0, width: "100%", height: "auto", borderRadius: 6 }} />
-                            <button onClick={(e) => { e.stopPropagation(); eliminarImagen(seccion.id, idx); }} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", color: "white", cursor: "pointer", width: 20, height: 20, fontSize: 10, zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                            {!exportando && (
+                              <button onClick={(e) => { e.stopPropagation(); eliminarImagen(seccion.id, idx); }} className="no-imprimir" style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", color: "white", cursor: "pointer", width: 20, height: 20, fontSize: 10, zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                            )}
                           </div>
                         ) : (
-                          <label style={{ cursor: "pointer", display: "block" }}>
-                            <div style={{ border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 6, padding: "8px", textAlign: "center", opacity: 0.5, color: fondoActivo.acento, fontSize: 10 }}>📷 Agregar imagen</div>
-                            <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files?.[0]; if (file) subirImagen(seccion.id, idx, file); }} />
-                          </label>
+                          !exportando && (
+                            <label className="no-imprimir" style={{ cursor: "pointer", display: "block" }}>
+                              <div style={{ border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 6, padding: "8px", textAlign: "center", opacity: 0.5, color: fondoActivo.acento, fontSize: 10 }}>📷 Agregar imagen</div>
+                              <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files?.[0]; if (file) subirImagen(seccion.id, idx, file); }} />
+                            </label>
+                          )
                         )}
                       </div>
                     )}
@@ -703,7 +721,9 @@ export default function Editor() {
                             {platillo.precio}
                           </span>
                         )}
-                        <button onClick={() => eliminarPlatillo(seccion.id, idx)} style={{ background: "transparent", border: "none", color: "#ff4444", cursor: "pointer", fontSize: 10, opacity: 0.4 }}>✕</button>
+                        {!exportando && (
+                          <button onClick={() => eliminarPlatillo(seccion.id, idx)} className="no-imprimir" style={{ background: "transparent", border: "none", color: "#ff4444", cursor: "pointer", fontSize: 10, opacity: 0.4 }}>✕</button>
+                        )}
                       </div>
                     </div>
 
@@ -730,17 +750,21 @@ export default function Editor() {
                     )}
                   </div>
                 ))}
-                <button onClick={() => agregarPlatillo(seccion.id)} style={{ background: "transparent", border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 4, color: fondoActivo.acento, cursor: "pointer", fontSize: 10, padding: "4px 12px", marginTop: 4, width: "100%", opacity: 0.7 }}>🍽️ Agregar nuevo platillo</button>
+                {!exportando && (
+                  <button onClick={() => agregarPlatillo(seccion.id)} className="no-imprimir" style={{ background: "transparent", border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 4, color: fondoActivo.acento, cursor: "pointer", fontSize: 10, padding: "4px 12px", marginTop: 4, width: "100%", opacity: 0.7 }}>🍽️ Agregar nuevo platillo</button>
+                )}
               </div>
             ))}
-            <button onClick={agregarSeccion} style={{ background: "transparent", border: `2px dashed ${fondoActivo.acento}33`, borderRadius: 8, color: fondoActivo.acento, cursor: "pointer", fontSize: 11, padding: "8px 16px", width: "100%", fontWeight: 600, marginTop: 8 }}>➕ Agregar una nueva sección</button>
+           {!exportando && (
+              <button onClick={agregarSeccion} className="no-imprimir" style={{ background: "transparent", border: `2px dashed ${fondoActivo.acento}33`, borderRadius: 8, color: fondoActivo.acento, cursor: "pointer", fontSize: 11, padding: "8px 16px", width: "100%", fontWeight: 600, marginTop: 8 }}>➕ Agregar una nueva sección</button>
+            )}
           </div>
           </div>
         </div>
       </div>
 
       {/* SIDEBAR DERECHO DE PROPIEDADES */}
-      <aside style={{
+      <aside className="no-imprimir" style={{
         width: mobile ? "100%" : 260,
         maxHeight: mobile ? 320 : "none",
         background: "#16161d",
