@@ -81,3 +81,11 @@ body {
     display: block !important;
   }
 }
+
+/* HU-92 / CA-01 / CA-04 / RN-01: al imprimir (Ctrl+P), ocultar cualquier
+   control de edición del editor de menús para obtener una vista limpia. */
+@media print {
+  .no-imprimir {
+    display: none !important;
+  }
+}

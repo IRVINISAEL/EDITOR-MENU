@@ -109,6 +109,24 @@ db.getConnection((err, connection) => {
       }
     }
   );
+
+  db.query(
+    `CREATE TABLE IF NOT EXISTS ${C.descargas.table} (
+      ${C.descargas.id} INT AUTO_INCREMENT PRIMARY KEY,
+      ${C.descargas.usuarioId} INT NOT NULL,
+      ${C.descargas.menuId} INT NULL,
+      ${C.descargas.fecha} TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY user_id (${C.descargas.usuarioId}),
+      CONSTRAINT fk_descargas_usuario FOREIGN KEY (${C.descargas.usuarioId}) REFERENCES ${C.usuarios.table}(${C.usuarios.id}) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    (errTablaDescargas) => {
+      if (errTablaDescargas) {
+        console.error("❌ Error creando tabla descargas:", errTablaDescargas);
+      } else {
+        console.log("✅ Tabla descargas lista");
+      }
+    }
+  );
 });
 
 // Middleware: verificar que el usuario sea propietario del menú
@@ -693,6 +711,92 @@ app.put("/api/configuracion", verificarToken, async (req, res, next) => {
       ok: true,
       mensaje: "Preferencias guardadas",
       configuracion: { moneda: monedaFinal, idioma: idiomaFinal, autoguardado: autoguardadoFinal, notificaciones_email: notifFinal },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const LIMITES_POR_PLAN = {
+  Basico: 10,
+  Premium: 100,
+  Empresarial: null,
+};
+
+function obtenerLimitePlan(plan) {
+  return Object.prototype.hasOwnProperty.call(LIMITES_POR_PLAN, plan) ? LIMITES_POR_PLAN[plan] : 10;
+}
+
+app.get("/api/descargas", verificarToken, async (req, res, next) => {
+  try {
+    const [[usuarioRow]] = await dbAsync.query(
+      `SELECT ${C.usuarios.plan} FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`,
+      [req.usuario.id]
+    );
+    if (!usuarioRow) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
+
+    const plan = usuarioRow[C.usuarios.plan];
+    const limite = obtenerLimitePlan(plan);
+
+    const [[{ total }]] = await dbAsync.query(
+      `SELECT COUNT(*) AS total FROM ${C.descargas.table} WHERE ${C.descargas.usuarioId} = ?`,
+      [req.usuario.id]
+    );
+
+    res.json({
+      ok: true,
+      plan,
+      descargasRealizadas: total,
+      limiteDescargas: limite,
+      descargasRestantes: limite === null ? null : Math.max(limite - total, 0),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post("/api/descargas", verificarToken, async (req, res, next) => {
+  const { menu_id } = req.body;
+
+  try {
+    const [[usuarioRow]] = await dbAsync.query(
+      `SELECT ${C.usuarios.plan} FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`,
+      [req.usuario.id]
+    );
+    if (!usuarioRow) return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado" });
+
+    const plan = usuarioRow[C.usuarios.plan];
+    const limite = obtenerLimitePlan(plan);
+
+    const [[{ total }]] = await dbAsync.query(
+      `SELECT COUNT(*) AS total FROM ${C.descargas.table} WHERE ${C.descargas.usuarioId} = ?`,
+      [req.usuario.id]
+    );
+
+    if (limite !== null && total >= limite) {
+      return res.status(403).json({
+        ok: false,
+        limiteAlcanzado: true,
+        mensaje: "Alcanzaste el límite de descargas de tu plan. Actualiza tu plan para seguir descargando.",
+        plan,
+        descargasRealizadas: total,
+        limiteDescargas: limite,
+        descargasRestantes: 0,
+      });
+    }
+
+    await dbAsync.query(
+      `INSERT INTO ${C.descargas.table} (${C.descargas.usuarioId}, ${C.descargas.menuId}) VALUES (?, ?)`,
+      [req.usuario.id, menu_id || null]
+    );
+
+    const nuevoTotal = total + 1;
+    res.status(201).json({
+      ok: true,
+      plan,
+      descargasRealizadas: nuevoTotal,
+      limiteDescargas: limite,
+      descargasRestantes: limite === null ? null : Math.max(limite - nuevoTotal, 0),
     });
   } catch (err) {
     next(err);
