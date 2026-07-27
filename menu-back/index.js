@@ -197,7 +197,7 @@ app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 // CA-01/CA-03: consulta pública de un menú, sin autenticación y sin datos del propietario
 app.get("/api/public/menus/:id", (req, res, next) => {
   db.query(
-    `SELECT ${C.menus.id}, ${C.menus.nombre}, ${C.menus.dataJson} FROM ${C.menus.table} WHERE ${C.menus.id} = ? AND ${C.menus.estado} = 'Publicado' AND ${C.menus.eliminadoAt} IS NULL`,
+    `SELECT ${C.menus.id}, ${C.menus.nombre}, ${C.menus.dataJson}, ${C.menus.usuarioId} FROM ${C.menus.table} WHERE ${C.menus.id} = ? AND ${C.menus.estado} = 'Publicado' AND ${C.menus.eliminadoAt} IS NULL`,
     [req.params.id],
     (err, results) => {
       if (err) return next(err);
@@ -213,7 +213,50 @@ app.get("/api/public/menus/:id", (req, res, next) => {
         }
       );
 
-      res.json({ ok: true, menu: results[0] });
+      const menu = results[0];
+      const usuarioId = menu[C.menus.usuarioId];
+      const menuPublico = { id: menu[C.menus.id], nombre: menu[C.menus.nombre], data_json: menu[C.menus.dataJson] };
+
+      // CA-03: agrega la info pública del negocio, sin exponer usuario_id ni datos internos
+      db.query(
+        `SELECT * FROM ${C.negocios.table} WHERE ${C.negocios.usuarioId} = ?`,
+        [usuarioId],
+        (errNegocio, negocioRows) => {
+          if (errNegocio || negocioRows.length === 0) {
+            return res.json({ ok: true, menu: menuPublico, negocio: null });
+          }
+          const n = negocioRows[0];
+          db.query(
+            `SELECT * FROM ${C.direcciones.table} WHERE ${C.direcciones.negocioId} = ?`,
+            [n[C.negocios.id]],
+            (errDir, direccionRows) => {
+              const d = (direccionRows && direccionRows[0]) || {};
+              db.query(
+                `SELECT * FROM ${C.redesSociales.table} WHERE ${C.redesSociales.negocioId} = ?`,
+                [n[C.negocios.id]],
+                (errRedes, redesRows) => {
+                  const r = (redesRows && redesRows[0]) || {};
+                  res.json({
+                    ok: true,
+                    menu: menuPublico,
+                    negocio: {
+                      nombre: n[C.negocios.nombre] || "",
+                      descripcion: n[C.negocios.descripcion] || "",
+                      telefono: n[C.negocios.telefono] || "",
+                      email: n[C.negocios.email] || "",
+                      sitioWeb: n[C.negocios.sitioWeb] || "",
+                      logo: n[C.negocios.logo] || "",
+                      horario: n[C.negocios.horario] || "",
+                      direccion: { calle: d[C.direcciones.calle] || "", colonia: d[C.direcciones.colonia] || "", noExterior: d[C.direcciones.noExterior] || "" },
+                      redes: { facebook: r[C.redesSociales.facebook] || "", instagram: r[C.redesSociales.instagram] || "", whatsapp: r[C.redesSociales.whatsapp] || "", tiktok: r[C.redesSociales.tiktok] || "" },
+                    },
+                  });
+                }
+              );
+            }
+          );
+        }
+      );
     }
   );
 });
@@ -712,6 +755,139 @@ app.put("/api/configuracion", verificarToken, async (req, res, next) => {
       mensaje: "Preferencias guardadas",
       configuracion: { moneda: monedaFinal, idioma: idiomaFinal, autoguardado: autoguardadoFinal, notificaciones_email: notifFinal },
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// HU-97: obtiene la información del negocio del usuario autenticado (CA-04)
+app.get("/api/negocio", verificarToken, async (req, res, next) => {
+  try {
+    const [negocioRows] = await dbAsync.query(
+      `SELECT * FROM ${C.negocios.table} WHERE ${C.negocios.usuarioId} = ?`,
+      [req.usuario.id]
+    );
+
+    if (negocioRows.length === 0) {
+      return res.json({
+        ok: true,
+        negocio: {
+          nombre: "", descripcion: "", tipo: "Restaurante", telefono: "", email: "",
+          sitioWeb: "", logo: "", horario: "",
+          direccion: { calle: "", colonia: "", noExterior: "" },
+          redes: { facebook: "", instagram: "", whatsapp: "", tiktok: "" },
+        },
+      });
+    }
+
+    const n = negocioRows[0];
+    const [direccionRows] = await dbAsync.query(
+      `SELECT * FROM ${C.direcciones.table} WHERE ${C.direcciones.negocioId} = ?`,
+      [n[C.negocios.id]]
+    );
+    const [redesRows] = await dbAsync.query(
+      `SELECT * FROM ${C.redesSociales.table} WHERE ${C.redesSociales.negocioId} = ?`,
+      [n[C.negocios.id]]
+    );
+    const d = direccionRows[0] || {};
+    const r = redesRows[0] || {};
+
+    res.json({
+      ok: true,
+      negocio: {
+        nombre: n[C.negocios.nombre] || "",
+        descripcion: n[C.negocios.descripcion] || "",
+        tipo: n[C.negocios.tipo] || "Restaurante",
+        telefono: n[C.negocios.telefono] || "",
+        email: n[C.negocios.email] || "",
+        sitioWeb: n[C.negocios.sitioWeb] || "",
+        logo: n[C.negocios.logo] || "",
+        horario: n[C.negocios.horario] || "",
+        direccion: {
+          calle: d[C.direcciones.calle] || "",
+          colonia: d[C.direcciones.colonia] || "",
+          noExterior: d[C.direcciones.noExterior] || "",
+        },
+        redes: {
+          facebook: r[C.redesSociales.facebook] || "",
+          instagram: r[C.redesSociales.instagram] || "",
+          whatsapp: r[C.redesSociales.whatsapp] || "",
+          tiktok: r[C.redesSociales.tiktok] || "",
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// HU-97: crea o actualiza la información del negocio (CA-01/CA-02, RN-01, RN-02, RN-05)
+const REDES_REGEX = /^[a-zA-Z0-9_.@+\- /:]{0,150}$/; // RN-04: formato básico permitido
+
+app.put("/api/negocio", verificarToken, async (req, res, next) => {
+  const { nombre, descripcion, tipo, telefono, email, sitioWeb, logo, horario, direccion, redes } = req.body;
+
+  if (!nombre || !nombre.trim()) {
+    return res.status(400).json({ ok: false, mensaje: "El nombre del negocio es obligatorio" });
+  }
+
+  const camposRedes = redes || {};
+  for (const key of ["facebook", "instagram", "whatsapp", "tiktok"]) {
+    const valor = camposRedes[key];
+    if (valor && !REDES_REGEX.test(valor)) {
+      return res.status(400).json({ ok: false, mensaje: `El campo ${key} tiene un formato inválido` });
+    }
+  }
+
+  try {
+    await dbAsync.query(
+      `INSERT INTO ${C.negocios.table}
+        (${C.negocios.usuarioId}, ${C.negocios.nombre}, ${C.negocios.descripcion}, ${C.negocios.tipo}, ${C.negocios.telefono}, ${C.negocios.email}, ${C.negocios.sitioWeb}, ${C.negocios.logo}, ${C.negocios.horario})
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+        ${C.negocios.nombre} = VALUES(${C.negocios.nombre}),
+        ${C.negocios.descripcion} = VALUES(${C.negocios.descripcion}),
+        ${C.negocios.tipo} = VALUES(${C.negocios.tipo}),
+        ${C.negocios.telefono} = VALUES(${C.negocios.telefono}),
+        ${C.negocios.email} = VALUES(${C.negocios.email}),
+        ${C.negocios.sitioWeb} = VALUES(${C.negocios.sitioWeb}),
+        ${C.negocios.logo} = VALUES(${C.negocios.logo}),
+        ${C.negocios.horario} = VALUES(${C.negocios.horario})`,
+      [req.usuario.id, nombre.trim(), descripcion || "", tipo || "Restaurante", telefono || "", email || "", sitioWeb || "", logo || "", horario || ""]
+    );
+
+    const [negocioRows] = await dbAsync.query(
+      `SELECT ${C.negocios.id} FROM ${C.negocios.table} WHERE ${C.negocios.usuarioId} = ?`,
+      [req.usuario.id]
+    );
+    const negocioId = negocioRows[0][C.negocios.id];
+
+    const dir = direccion || {};
+    await dbAsync.query(
+      `INSERT INTO ${C.direcciones.table}
+        (${C.direcciones.negocioId}, ${C.direcciones.calle}, ${C.direcciones.colonia}, ${C.direcciones.noExterior})
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+        ${C.direcciones.calle} = VALUES(${C.direcciones.calle}),
+        ${C.direcciones.colonia} = VALUES(${C.direcciones.colonia}),
+        ${C.direcciones.noExterior} = VALUES(${C.direcciones.noExterior})`,
+      [negocioId, dir.calle || "", dir.colonia || "", dir.noExterior || null]
+    );
+
+    const red = redes || {};
+    await dbAsync.query(
+      `INSERT INTO ${C.redesSociales.table}
+        (${C.redesSociales.negocioId}, ${C.redesSociales.facebook}, ${C.redesSociales.instagram}, ${C.redesSociales.whatsapp}, ${C.redesSociales.tiktok})
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+        ${C.redesSociales.facebook} = VALUES(${C.redesSociales.facebook}),
+        ${C.redesSociales.instagram} = VALUES(${C.redesSociales.instagram}),
+        ${C.redesSociales.whatsapp} = VALUES(${C.redesSociales.whatsapp}),
+        ${C.redesSociales.tiktok} = VALUES(${C.redesSociales.tiktok})`,
+      [negocioId, red.facebook || "", red.instagram || "", red.whatsapp || "", red.tiktok || ""]
+    );
+
+    res.json({ ok: true, mensaje: "Información del negocio actualizada" });
   } catch (err) {
     next(err);
   }
