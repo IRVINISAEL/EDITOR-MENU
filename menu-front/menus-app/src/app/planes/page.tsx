@@ -1,5 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },
@@ -13,59 +15,66 @@ const navItems = [
   { icon: "⚙️", label: "Configuración", href: "/configuracion" },
 ];
 
-const planes = [
-  {
-    id: "basico",
-    nombre: "BÁSICO",
-    precio: 99,
-    descripcion: "Ideal para emprendedores que inician.",
-    emoji: "🌱",
-    popular: false,
-    features: ["1 Menú", "5 Plantillas", "Exportar a PDF", "Soporte por email"],
-  },
-  {
-    id: "profesional",
-    nombre: "PROFESIONAL",
-    precio: 399,
-    descripcion: "Para restaurantes y cafeterías en crecimiento.",
-    emoji: "⚡",
-    popular: true,
-    features: ["Menús ilimitados", "Plantillas Premium", "Exportar PDF / PNG", "Código QR", "Soporte prioritario"],
-  },
-  {
-    id: "empresarial",
-    nombre: "EMPRESARIAL",
-    precio: 799,
-    descripcion: "Para marcas con múltiples sucursales.",
-    emoji: "🏢",
-    popular: false,
-    features: ["Todo en Profesional", "Usuarios ilimitados", "Marca Blanca", "Colaboración", "Soporte 24/7"],
-  },
-  {
-    id: "ilimitado",
-    nombre: "ILIMITADO",
-    precio: 1499,
-    descripcion: "Para marcas que quieren lo mejor.",
-    emoji: "💎",
-    popular: false,
-    features: ["Todo en Empresarial", "API Personalizada", "Control de Permisos", "Soporte Dedicado"],
-  },
-];
+type Plan = {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  beneficios: string[];
+};
 
-// ⚠️ Cambia este número por el tuyo (52 = México)
-const WHATSAPP_NUMBER = "522381172308";
-const WHATSAPP_NUMBER_2 = "5212383198822";
+// Emoji e indicador "popular" solo visuales, no vienen del backend.
+const PLAN_EMOJI: Record<string, string> = {
+  Free: "🌱",
+  "Básico": "⚡",
+  Plus: "🚀",
+  Premium: "💎",
+};
+const PLAN_POPULAR = "Plus"; // nombre del plan que se resalta como más popular
 
 export default function Planes() {
   const [activeNav] = useState("Facturación");
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const handleWhatsApp = (planNombre: string, planPrecio: number) => {
-  const mensaje = `¡Hola! 👋 Estoy interesado en el plan *${planNombre}* ($${planPrecio}/mes) de Menu Master. Me gustaría más información y activar mi plan.`;
-  const url1 = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(mensaje)}`;
-  const url2 = `https://wa.me/${WHATSAPP_NUMBER_2}?text=${encodeURIComponent(mensaje)}`;
-  window.open(url1, "_blank");
-  setTimeout(() => window.open(url2, "_blank"), 500);
-};
+  const [planes, setPlanes] = useState<Plan[]>([]);
+  const [planActivo, setPlanActivo] = useState<number | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [activando, setActivando] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch(`${API}/api/planes`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok) setPlanes(data.planes);
+      })
+      .finally(() => setCargando(false));
+  }, []);
+
+  const handleActivar = async (planId: number, nombre: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+    setActivando(planId);
+    try {
+      const res = await fetch(`${API}/api/planes/activar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ planId }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setPlanActivo(planId);
+        alert(`Plan ${nombre} activado correctamente ✅`);
+      } else {
+        alert(data.mensaje || "No se pudo activar el plan");
+      }
+    } catch {
+      alert("Error de conexión al activar el plan");
+    } finally {
+      setActivando(null);
+    }
+  };
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
@@ -73,7 +82,7 @@ export default function Planes() {
       {menuAbierto && <div className="sidebar-overlay" onClick={() => setMenuAbierto(false)} />}
 
       {/* SIDEBAR */}
-     <aside className={`app-sidebar ${menuAbierto ? "abierto" : ""}`} style={{
+      <aside className={`app-sidebar ${menuAbierto ? "abierto" : ""}`} style={{
         width: 220, background: "#16161d", display: "flex", flexDirection: "column",
         padding: "24px 0", borderRight: "1px solid #2a2a35",
         position: "fixed", height: "100vh", zIndex: 10,
@@ -127,57 +136,70 @@ export default function Planes() {
         </div>
 
         {/* Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, maxWidth: 1100, margin: "0 auto" }}>
-          {planes.map((plan) => (
-            <div key={plan.id} style={{ position: "relative" }}>
-              {plan.popular && (
-                <div style={{
-                  position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
-                  background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-                  borderRadius: 20, padding: "4px 16px",
-                  color: "white", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", zIndex: 2,
-                }}>⭐ MÁS POPULAR</div>
-              )}
-              <div style={{
-                background: plan.popular ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "#1e1e28",
-                border: plan.popular ? "none" : "1px solid #2a2a35",
-                borderRadius: 16, padding: 24,
-                display: "flex", flexDirection: "column", gap: 20,
-                height: "100%", boxSizing: "border-box",
-              }}>
-                <div>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>{plan.emoji}</div>
-                  <div style={{ color: "white", fontWeight: 700, fontSize: 16 }}>{plan.nombre}</div>
-                  <div style={{ color: plan.popular ? "rgba(255,255,255,0.7)" : "#666", fontSize: 12, marginTop: 4 }}>{plan.descripcion}</div>
-                </div>
-                <div>
-                  <span style={{ color: "white", fontSize: 32, fontWeight: 700 }}>${plan.precio}</span>
-                  <span style={{ color: plan.popular ? "rgba(255,255,255,0.7)" : "#666", fontSize: 13 }}>/mes</span>
-                </div>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-                  {plan.features.map((f) => (
-                    <div key={f} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ color: plan.popular ? "white" : "#a855f7", fontSize: 14 }}>✓</span>
-                      <span style={{ color: plan.popular ? "rgba(255,255,255,0.9)" : "#aaa", fontSize: 13 }}>{f}</span>
+        {cargando ? (
+          <p style={{ color: "#888", textAlign: "center" }}>Cargando planes...</p>
+        ) : planes.length === 0 ? (
+          <p style={{ color: "#888", textAlign: "center" }}>No hay planes disponibles por ahora.</p>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, maxWidth: 1100, margin: "0 auto" }}>
+            {planes.map((plan) => {
+              const esPopular = plan.nombre === PLAN_POPULAR;
+              const esActivo = planActivo === plan.id;
+              return (
+                <div key={plan.id} style={{ position: "relative" }}>
+                  {esPopular && (
+                    <div style={{
+                      position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
+                      background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+                      borderRadius: 20, padding: "4px 16px",
+                      color: "white", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", zIndex: 2,
+                    }}>⭐ MÁS POPULAR</div>
+                  )}
+                  <div style={{
+                    background: esPopular ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "#1e1e28",
+                    border: esPopular ? "none" : "1px solid #2a2a35",
+                    borderRadius: 16, padding: 24,
+                    display: "flex", flexDirection: "column", gap: 20,
+                    height: "100%", boxSizing: "border-box",
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 32, marginBottom: 8 }}>{PLAN_EMOJI[plan.nombre] || "📦"}</div>
+                      <div style={{ color: "white", fontWeight: 700, fontSize: 16 }}>{plan.nombre.toUpperCase()}</div>
+                      <div style={{ color: esPopular ? "rgba(255,255,255,0.7)" : "#666", fontSize: 12, marginTop: 4 }}>{plan.descripcion}</div>
                     </div>
-                  ))}
+                    <div>
+                      <span style={{ color: "white", fontSize: 32, fontWeight: 700 }}>${plan.precio}</span>
+                      <span style={{ color: esPopular ? "rgba(255,255,255,0.7)" : "#666", fontSize: 13 }}>/mes</span>
+                    </div>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+                      {plan.beneficios.map((f) => (
+                        <div key={f} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ color: esPopular ? "white" : "#a855f7", fontSize: 14 }}>✓</span>
+                          <span style={{ color: esPopular ? "rgba(255,255,255,0.9)" : "#aaa", fontSize: 13 }}>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => handleActivar(plan.id, plan.nombre)}
+                      disabled={esActivo || activando === plan.id}
+                      style={{
+                        background: esActivo ? "#333" : "white",
+                        border: "none", borderRadius: 10, padding: "12px",
+                        color: esActivo ? "#888" : "#7c3aed",
+                        fontWeight: 700, fontSize: 13,
+                        cursor: esActivo ? "default" : "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                        opacity: activando === plan.id ? 0.6 : 1,
+                      }}
+                    >
+                      {esActivo ? "✅ Plan Activo" : activando === plan.id ? "Activando..." : "Activar Plan"}
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleWhatsApp(plan.nombre, plan.precio)}
-                  style={{
-                    background: plan.popular ? "white" : "linear-gradient(135deg, #25d366, #128c7e)",
-                    border: "none", borderRadius: 10, padding: "12px",
-                    color: plan.popular ? "#7c3aed" : "white",
-                    fontWeight: 700, fontSize: 13, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  }}
-                >
-                  <span style={{ fontSize: 16 }}>💬</span> Elegir Plan
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         <div style={{
           textAlign: "center", marginTop: 40,
@@ -187,7 +209,7 @@ export default function Planes() {
           <div style={{ fontSize: 24, marginBottom: 8 }}>🔒</div>
           <div style={{ color: "white", fontSize: 14, fontWeight: 600 }}>Tus datos están 100% seguros</div>
           <div style={{ color: "#666", fontSize: 12, marginTop: 6 }}>
-            Al dar clic en "Elegir Plan" se abrirá WhatsApp para que un asesor te ayude a activar tu plan.
+            Al dar clic en "Activar Plan" tu suscripción se actualiza de inmediato en tu cuenta.
           </div>
         </div>
 
