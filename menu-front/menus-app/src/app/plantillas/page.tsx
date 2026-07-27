@@ -1,7 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 const categorias = ["Todas", "Restaurante", "Cafetería", "Postres", "Italiano", "Moderno", "Mexicano", "Japonés", "Vegano", "Favoritos"];
+
 
 const plantillas = [
   {
@@ -301,13 +304,29 @@ export default function Plantillas() {
   const [pagina, setPagina] = useState(1);
   const POR_PAGINA = 12;
 
-  const planUsuario = (() => {
-    try {
-      const u = JSON.parse(localStorage.getItem("usuario") || "{}");
-      return u.plan || "Basico";
-    } catch { return "Basico"; }
-  })();
-  const tienePlanPremium = planUsuario === "Premium" || planUsuario === "Empresarial";
+  // Plan real del usuario, consultado directo al backend (no localStorage viejo,
+  // que podía quedar desactualizado si el admin activaba el plan sin que el
+  // usuario volviera a iniciar sesión).
+  const [planUsuario, setPlanUsuario] = useState<string>("Free");
+  const [cargandoPlan, setCargandoPlan] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setCargandoPlan(false);
+      return;
+    }
+    fetch(`${API}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok) setPlanUsuario(data.usuario.plan);
+      })
+      .finally(() => setCargandoPlan(false));
+  }, []);
+
+  const tienePlanPremium = planUsuario === "Plus" || planUsuario === "Premium";
 
   const toggleFavorito = (id: number) => {
     setFavoritos(prev => {
@@ -329,8 +348,7 @@ export default function Plantillas() {
   const plantillasPagina = plantillasFiltradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   const usarPlantilla = (p: Plantilla) => {
-    const planUsuario = localStorage.getItem("plan_usuario") || "free";
-    if (p.premium && planUsuario === "free") {
+    if (p.premium && !tienePlanPremium) {
       alert("Esta plantilla es exclusiva para planes Plus o Premium. Actualiza tu plan para usarla.");
       return;
     }
