@@ -9,7 +9,7 @@ const categorias = ["Todas", "Restaurante", "Cafetería", "Postres", "Italiano",
 const plantillas = [
   {
     id: 1, nombre: "Clásico Elegante", categoria: "Restaurante",
-    color: "#f5f0e8", textColor: "#2c1810", emoji: "🍽️", popular: false,
+    color: "#f5f0e8", textColor: "#2c1810", emoji: "🍽️", popular: true,
     config: {
       fuenteActiva: "Playfair Display", tamaño: 48, subtitulo: "RESTAURANTE",
       fondoActivo: { nombre: "Clásico", bg: "linear-gradient(135deg, #fefefe, #f8f4ee)", texto: "#2c1810", acento: "#8b4513" },
@@ -35,7 +35,7 @@ const plantillas = [
   },
   {
     id: 3, nombre: "Cafetería Vintage", categoria: "Cafetería",
-    color: "#3d2b1f", textColor: "#f5deb3", emoji: "☕", popular: false,
+    color: "#3d2b1f", textColor: "#f5deb3", emoji: "☕", popular: true,
     config: {
       fuenteActiva: "Lora", tamaño: 42, subtitulo: "CAFÉ & REPOSTERÍA",
       fondoActivo: { nombre: "Sepia", bg: "linear-gradient(135deg, #fdf6e3, #f5e6c8)", texto: "#3b2a1a", acento: "#a0522d" },
