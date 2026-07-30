@@ -276,6 +276,303 @@ const plantillas = [
       ],
     },
   },
+  {
+    id: 22, nombre: "Taquería Urbana", categoria: "Mexicano",
+    color: "#fff1e6", textColor: "#7c2d12", emoji: "🌮", popular: false,
+    config: {
+      fuenteActiva: "Oswald", tamaño: 46, subtitulo: "TAQUERÍA DE BARRIO",
+      fondoActivo: { nombre: "Terracota", bg: "linear-gradient(135deg, #fff7ed, #fed7aa)", texto: "#7c2d12", acento: "#ea580c" },
+      secciones: [
+        { id: 1, nombre: "TACOS AL CARBÓN", platillos: [{ nombre: "Taco de Arrachera", precio: "$32", descripcion: "Con guacamole y cebollitas" }, { nombre: "Taco de Chorizo", precio: "$22", descripcion: "Con papa y salsa verde" }] },
+        { id: 2, nombre: "PARA COMPARTIR", platillos: [{ nombre: "Molcajete Mixto", precio: "$210", descripcion: "Carnes, nopal y queso panela" }, { nombre: "Guacamole en Molcajete", precio: "$95", descripcion: "Preparado en mesa" }] },
+        { id: 3, nombre: "BEBIDAS", platillos: [{ nombre: "Agua de Horchata", precio: "$35", descripcion: "Canela y vainilla" }] },
+      ],
+    },
+  },
+  {
+    id: 23, nombre: "Chocolatería Artesanal", categoria: "Postres",
+    color: "#3e2723", textColor: "#f5e6d3", emoji: "🍫", popular: false,
+    config: {
+      fuenteActiva: "Dancing Script", tamaño: 50, subtitulo: "CHOCOLATE ARTESANAL",
+      fondoActivo: { nombre: "Cacao", bg: "linear-gradient(135deg, #3e2723, #4e342e)", texto: "#f5e6d3", acento: "#c9a648" },
+      secciones: [
+        { id: 1, nombre: "BOMBONES", platillos: [{ nombre: "Trufas 70% Cacao", precio: "$65", descripcion: "Caja de 6 piezas" }, { nombre: "Bombón de Avellana", precio: "$45", descripcion: "Praliné casero" }] },
+        { id: 2, nombre: "BEBIDAS", platillos: [{ nombre: "Chocolate Caliente Belga", precio: "$60", descripcion: "Con malvaviscos artesanales" }] },
+      ],
+    },
+  },
+  {
+    id: 24, nombre: "Ramen Bar Tokyo", categoria: "Japonés",
+    color: "#1a1a1a", textColor: "#f5e6c8", emoji: "🍜", popular: true,
+    config: {
+      fuenteActiva: "Josefin Sans", tamaño: 44, subtitulo: "RAMEN & IZAKAYA",
+      fondoActivo: { nombre: "Carbón", bg: "linear-gradient(135deg, #18181b, #27272a)", texto: "#fafafa", acento: "#f97316" },
+      secciones: [
+        { id: 1, nombre: "RAMEN", platillos: [{ nombre: "Shoyu Ramen", precio: "$135", descripcion: "Caldo de soya, chashu, huevo marinado" }, { nombre: "Miso Ramen", precio: "$140", descripcion: "Caldo de miso, maíz, mantequilla" }] },
+        { id: 2, nombre: "IZAKAYA", platillos: [{ nombre: "Karaage", precio: "$95", descripcion: "Pollo frito estilo japonés" }, { nombre: "Edamame", precio: "$55", descripcion: "Con sal de mar" }] },
+      ],
+    },
+  },
+  {
+    id: 25, nombre: "Costa Café", categoria: "Cafetería",
+    color: "#e0f2f1", textColor: "#00695c", emoji: "🌊", popular: false,
+    config: {
+      fuenteActiva: "Raleway", tamaño: 42, subtitulo: "COASTAL COFFEE HOUSE",
+      fondoActivo: { nombre: "Aqua", bg: "linear-gradient(135deg, #e0f7fa, #b2ebf2)", texto: "#00363a", acento: "#00acc1" },
+      secciones: [
+        { id: 1, nombre: "BEBIDAS FRÍAS", platillos: [{ nombre: "Cold Brew Coco", precio: "$65", descripcion: "Con leche de coco" }, { nombre: "Frappé de Caramelo", precio: "$70", descripcion: "Con crema batida" }] },
+        { id: 2, nombre: "SNACKS", platillos: [{ nombre: "Bagel de Salmón", precio: "$85", descripcion: "Queso crema y eneldo" }] },
+      ],
+    },
+  },
+  {
+    id: 26, nombre: "Bodega Enoteca", categoria: "Italiano", premium: true,
+    color: "#2b0a0d", textColor: "#f3e5d8", emoji: "🍇", popular: false,
+    config: {
+      fuenteActiva: "Cormorant Garamond", tamaño: 48, subtitulo: "ENOTECA & CUCINA",
+      fondoActivo: { nombre: "Vino Tinto", bg: "linear-gradient(135deg, #2b0a0d, #4a1116)", texto: "#f5e6d3", acento: "#c9a648" },
+      secciones: [
+        { id: 1, nombre: "ANTIPASTI", platillos: [{ nombre: "Burrata al Tartufo", precio: "$220", descripcion: "Trufa negra, miel de castañas" }, { nombre: "Carpaccio di Branzino", precio: "$195", descripcion: "Cítricos, aceite de oliva virgen" }] },
+        { id: 2, nombre: "SECONDI", platillos: [{ nombre: "Osso Buco Riserva", precio: "$310", descripcion: "Gremolata, risotto al azafrán" }, { nombre: "Branzino in Crosta di Sale", precio: "$280", descripcion: "Entero, hierbas mediterráneas" }] },
+        { id: 3, nombre: "CANTINA", platillos: [{ nombre: "Barolo DOCG (copa)", precio: "$260", descripcion: "Añada seleccionada" }] },
+      ],
+    },
+  },
+  {
+    id: 27, nombre: "Sakura Kaiseki Garden", categoria: "Japonés", premium: true,
+    color: "#0f0f0f", textColor: "#f2c2c2", emoji: "🌸", popular: true,
+    config: {
+      fuenteActiva: "Cinzel", tamaño: 46, subtitulo: "KAISEKI EXPERIENCE",
+      fondoActivo: { nombre: "Sakura Noche", bg: "linear-gradient(135deg, #0f0f0f, #1c1418)", texto: "#f5e6e6", acento: "#f472b6" },
+      secciones: [
+        { id: 1, nombre: "ZENSAI", platillos: [{ nombre: "Tofu de Sésamo Negro", precio: "$150", descripcion: "Salsa dashi, yuzu" }, { nombre: "Ostión al Ponzu", precio: "$210", descripcion: "Con caviar y shiso" }] },
+        { id: 2, nombre: "TAKIAWASE", platillos: [{ nombre: "Bacalao Negro Miso", precio: "$390", descripcion: "Marinado 72 horas, saikyo miso" }, { nombre: "Wagyu A5 Teppan", precio: "$680", descripcion: "Sal Sakura, wasabi fresco" }] },
+        { id: 3, nombre: "MIZUMONO", platillos: [{ nombre: "Mochi de Sakura", precio: "$95", descripcion: "Relleno de anko y cerezo" }] },
+      ],
+    },
+  },
+  {
+    id: 28, nombre: "Alta Cocina Andina", categoria: "Restaurante", premium: true,
+    color: "#3d2914", textColor: "#f5e6d0", emoji: "🌄", popular: true,
+    config: {
+      fuenteActiva: "Marcellus", tamaño: 46, subtitulo: "COCINA DE AUTOR ANDINA",
+      fondoActivo: { nombre: "Tierra", bg: "linear-gradient(135deg, #2b1d12, #4a3220)", texto: "#f5e6d0", acento: "#d4a017" },
+      secciones: [
+        { id: 1, nombre: "ENTRADAS", platillos: [{ nombre: "Causa de Camarón", precio: "$185", descripcion: "Papa amarilla, ají amarillo, camarón" }, { nombre: "Tiradito Nikkei", precio: "$210", descripcion: "Pescado del día, leche de tigre trufada" }] },
+        { id: 2, nombre: "PRINCIPALES", platillos: [{ nombre: "Lomo Saltado Wagyu", precio: "$420", descripcion: "Papas nativas, salsa criolla" }, { nombre: "Cordero al Ají Panca", precio: "$350", descripcion: "48 horas de cocción lenta" }] },
+        { id: 3, nombre: "POSTRES", platillos: [{ nombre: "Suspiro Limeño Deconstruido", precio: "$110", descripcion: "Merengue, oporto reducido" }] },
+      ],
+    },
+  },
+  {
+    id: 29, nombre: "Green Michelin Table", categoria: "Vegano", premium: true,
+    color: "#0d1f12", textColor: "#eafbe7", emoji: "🍃", popular: false,
+    config: {
+      fuenteActiva: "EB Garamond", tamaño: 46, subtitulo: "PLANT-BASED FINE DINING",
+      fondoActivo: { nombre: "Esmeralda", bg: "linear-gradient(135deg, #0d1f12, #163a1f)", texto: "#eafbe7", acento: "#22c55e" },
+      secciones: [
+        { id: 1, nombre: "PRÓLOGO", platillos: [{ nombre: "Consomé de Hongos Silvestres", precio: "$140", descripcion: "Clarificado, aceite de trufa" }, { nombre: "Tartar de Betabel Ahumado", precio: "$155", descripcion: "Yema de anacardo curada" }] },
+        { id: 2, nombre: "PLATO PRINCIPAL", platillos: [{ nombre: "Coliflor Entera Rostizada", precio: "$260", descripcion: "12 horas, romero y ajo negro" }, { nombre: "Risotto de Trufa Blanca Vegano", precio: "$295", descripcion: "Caldo de kombu, queso de anacardo" }] },
+        { id: 3, nombre: "EPÍLOGO", platillos: [{ nombre: "Esfera de Chocolate y Maracuyá", precio: "$120", descripcion: "Sin lácteos, sin gluten" }] },
+      ],
+    },
+  },
+  {
+    id: 30, nombre: "Bistro de Barrio", categoria: "Restaurante",
+    color: "#f3ede3", textColor: "#3b2a1a", emoji: "🍷", popular: false,
+    config: {
+      fuenteActiva: "Lora", tamaño: 44, subtitulo: "COCINA DE BARRIO",
+      fondoActivo: { nombre: "Crema", bg: "linear-gradient(135deg, #fdfbf7, #f0e9dd)", texto: "#3b2a1a", acento: "#8b4513" },
+      secciones: [
+        { id: 1, nombre: "ENTRADAS", platillos: [{ nombre: "Sopa de Cebolla", precio: "$85", descripcion: "Gratinada con queso gruyère" }, { nombre: "Ensalada de la Casa", precio: "$70", descripcion: "Vinagreta de mostaza" }] },
+        { id: 2, nombre: "FUERTES", platillos: [{ nombre: "Pollo Rostizado", precio: "$165", descripcion: "Con puré de papa" }, { nombre: "Pasta al Pesto", precio: "$140", descripcion: "Albahaca fresca y piñones" }] },
+      ],
+    },
+  },
+  {
+    id: 31, nombre: "Waffle House Dulce", categoria: "Postres",
+    color: "#fff0f5", textColor: "#9d174d", emoji: "🧇", popular: true,
+    config: {
+      fuenteActiva: "Poppins", tamaño: 46, subtitulo: "WAFFLES & DULCES",
+      fondoActivo: { nombre: "Rosa Pastel", bg: "linear-gradient(135deg, #fff1f5, #ffe0eb)", texto: "#831843", acento: "#f472b6" },
+      secciones: [
+        { id: 1, nombre: "WAFFLES", platillos: [{ nombre: "Waffle Clásico", precio: "$85", descripcion: "Con maple y mantequilla" }, { nombre: "Waffle de Nutella", precio: "$95", descripcion: "Con fresas frescas" }] },
+        { id: 2, nombre: "HELADOS", platillos: [{ nombre: "Sundae Brownie", precio: "$90", descripcion: "Con helado de vainilla" }] },
+      ],
+    },
+  },
+  {
+    id: 32, nombre: "Trattoria della Piazza", categoria: "Italiano",
+    color: "#fef3e2", textColor: "#7c2d12", emoji: "🍋", popular: false,
+    config: {
+      fuenteActiva: "EB Garamond", tamaño: 46, subtitulo: "CUCINA DI FAMIGLIA",
+      fondoActivo: { nombre: "Limón", bg: "linear-gradient(135deg, #fefce8, #fef9c3)", texto: "#713f12", acento: "#ca8a04" },
+      secciones: [
+        { id: 1, nombre: "ANTIPASTI", platillos: [{ nombre: "Caprese Classica", precio: "$130", descripcion: "Mozzarella di bufala, tomate, albahaca" }] },
+        { id: 2, nombre: "PASTA", platillos: [{ nombre: "Spaghetti alle Vongole", precio: "$185", descripcion: "Almejas frescas, vino blanco" }, { nombre: "Lasagna della Nonna", precio: "$165", descripcion: "Receta familiar, 3 quesos" }] },
+      ],
+    },
+  },
+  {
+    id: 33, nombre: "Loft Industrial", categoria: "Moderno",
+    color: "#26292c", textColor: "#f5f5f5", emoji: "🏭", popular: false,
+    config: {
+      fuenteActiva: "Montserrat", tamaño: 44, subtitulo: "URBAN KITCHEN",
+      fondoActivo: { nombre: "Grafito", bg: "linear-gradient(135deg, #26292c, #3a3f44)", texto: "#f5f5f5", acento: "#f97316" },
+      secciones: [
+        { id: 1, nombre: "SMALL PLATES", platillos: [{ nombre: "Hummus de Betabel", precio: "$95", descripcion: "Con pan pita tostado" }, { nombre: "Croquetas de Jamón", precio: "$110", descripcion: "Bechamel cremosa" }] },
+        { id: 2, nombre: "BOWLS", platillos: [{ nombre: "Poke de Atún", precio: "$155", descripcion: "Arroz, edamame, aguacate" }] },
+      ],
+    },
+  },
+  {
+    id: 34, nombre: "Fonda Casera", categoria: "Mexicano",
+    color: "#fef3c7", textColor: "#78350f", emoji: "🫓", popular: true,
+    config: {
+      fuenteActiva: "Merriweather", tamaño: 46, subtitulo: "COMIDA CASERA",
+      fondoActivo: { nombre: "Ámbar", bg: "linear-gradient(135deg, #fffbeb, #fef3c7)", texto: "#78350f", acento: "#d97706" },
+      secciones: [
+        { id: 1, nombre: "GUISADOS", platillos: [{ nombre: "Chiles Rellenos", precio: "$120", descripcion: "Con salsa de jitomate" }, { nombre: "Milanesa a la Mexicana", precio: "$135", descripcion: "Con arroz y frijoles" }] },
+        { id: 2, nombre: "COMIDA CORRIDA", platillos: [{ nombre: "Menú del Día", precio: "$95", descripcion: "Sopa, guisado y agua fresca" }] },
+      ],
+    },
+  },
+  {
+    id: 35, nombre: "Onigiri Bar", categoria: "Japonés",
+    color: "#fafaf9", textColor: "#1c1917", emoji: "🍙", popular: false,
+    config: {
+      fuenteActiva: "Josefin Sans", tamaño: 44, subtitulo: "ONIGIRI & TÉ",
+      fondoActivo: { nombre: "Arroz", bg: "linear-gradient(135deg, #fafaf9, #f0efec)", texto: "#1c1917", acento: "#dc2626" },
+      secciones: [
+        { id: 1, nombre: "ONIGIRI", platillos: [{ nombre: "Onigiri de Salmón", precio: "$45", descripcion: "Envuelto en nori" }, { nombre: "Onigiri de Umeboshi", precio: "$40", descripcion: "Ciruela encurtida" }] },
+        { id: 2, nombre: "TÉS", platillos: [{ nombre: "Té Matcha Ceremonial", precio: "$65", descripcion: "Batido a mano" }] },
+      ],
+    },
+  },
+  {
+    id: 36, nombre: "Huerto Verde Bistro", categoria: "Vegano",
+    color: "#ecfdf5", textColor: "#065f46", emoji: "🥬", popular: false,
+    config: {
+      fuenteActiva: "Raleway", tamaño: 42, subtitulo: "COCINA DE HUERTO",
+      fondoActivo: { nombre: "Menta", bg: "linear-gradient(135deg, #ecfdf5, #d1fae5)", texto: "#065f46", acento: "#10b981" },
+      secciones: [
+        { id: 1, nombre: "ENSALADAS", platillos: [{ nombre: "Ensalada de Kale", precio: "$110", descripcion: "Aderezo de tahini y limón" }] },
+        { id: 2, nombre: "PLATOS", platillos: [{ nombre: "Hamburguesa de Garbanzo", precio: "$130", descripcion: "Con papas al horno" }, { nombre: "Pad Thai Vegano", precio: "$135", descripcion: "Tofu, cacahuate, tamarindo" }] },
+      ],
+    },
+  },
+  {
+    id: 37, nombre: "Espresso Lab", categoria: "Cafetería",
+    color: "#f5f5f4", textColor: "#292524", emoji: "🔬", popular: true,
+    config: {
+      fuenteActiva: "Montserrat", tamaño: 42, subtitulo: "SPECIALTY COFFEE LAB",
+      fondoActivo: { nombre: "Concreto", bg: "linear-gradient(135deg, #f5f5f4, #e7e5e4)", texto: "#292524", acento: "#57534e" },
+      secciones: [
+        { id: 1, nombre: "MÉTODOS", platillos: [{ nombre: "V60 Origen Único", precio: "$65", descripcion: "Notas frutales" }, { nombre: "Chemex", precio: "$70", descripcion: "Perfil limpio y brillante" }] },
+        { id: 2, nombre: "REPOSTERÍA", platillos: [{ nombre: "Banana Bread", precio: "$55", descripcion: "Con nuez y canela" }] },
+      ],
+    },
+  },
+  {
+    id: 38, nombre: "Le Comptoir Doré", categoria: "Restaurante", premium: true,
+    color: "#1c1410", textColor: "#f0e4d0", emoji: "🥂", popular: true,
+    config: {
+      fuenteActiva: "Cormorant Garamond", tamaño: 48, subtitulo: "MAISON DE PRESTIGE",
+      fondoActivo: { nombre: "Oro Nocturno", bg: "linear-gradient(135deg, #1c1410, #2e2016)", texto: "#f0e4d0", acento: "#d4af37" },
+      secciones: [
+        { id: 1, nombre: "ENTRÉES", platillos: [{ nombre: "Terrine de Foie Gras", precio: "$295", descripcion: "Chutney de higo, brioche tostado" }, { nombre: "Velouté de Trufa", precio: "$180", descripcion: "Crema de castañas, aceite de trufa" }] },
+        { id: 2, nombre: "SIGNATURE", platillos: [{ nombre: "Homard Thermidor", precio: "$520", descripcion: "Langosta entera, gratinada" }, { nombre: "Filet de Bœuf Rossini", precio: "$480", descripcion: "Foie gras, salsa perigueux" }] },
+        { id: 3, nombre: "CAVE À VIN", platillos: [{ nombre: "Champagne Reserve (copa)", precio: "$220", descripcion: "Maison prestigiosa" }] },
+      ],
+    },
+  },
+  {
+    id: 39, nombre: "Pâtisserie Étoile", categoria: "Postres", premium: true,
+    color: "#fdf2f8", textColor: "#831843", emoji: "🌟", popular: true,
+    config: {
+      fuenteActiva: "Cinzel", tamaño: 48, subtitulo: "HAUTE PÂTISSERIE",
+      fondoActivo: { nombre: "Rosa Champán", bg: "linear-gradient(135deg, #fdf2f8, #fce7f3)", texto: "#831843", acento: "#c9a648" },
+      secciones: [
+        { id: 1, nombre: "ENTREMETS", platillos: [{ nombre: "Ópera de Chocolate Valrhona", precio: "$135", descripcion: "7 capas, ganache de café" }, { nombre: "Saint-Honoré de Frambuesa", precio: "$145", descripcion: "Crema chiboust, hojaldre" }] },
+        { id: 2, nombre: "MACARONS DE AUTOR", platillos: [{ nombre: "Selección de Macarons (6)", precio: "$120", descripcion: "Sabores de temporada" }] },
+      ],
+    },
+  },
+  {
+    id: 40, nombre: "Riserva del Chianti", categoria: "Italiano", premium: true,
+    color: "#3d0c11", textColor: "#f5e6d3", emoji: "🍾", popular: false,
+    config: {
+      fuenteActiva: "Playfair Display", tamaño: 48, subtitulo: "CANTINA & CUCINA D'AUTORE",
+      fondoActivo: { nombre: "Chianti", bg: "linear-gradient(135deg, #3d0c11, #5a1a1f)", texto: "#f5e6d3", acento: "#d4af37" },
+      secciones: [
+        { id: 1, nombre: "ANTIPASTI RISERVA", platillos: [{ nombre: "Tagliere di Salumi Riserva", precio: "$260", descripcion: "Prosciutto 36 meses, culatello" }] },
+        { id: 2, nombre: "PRIMI D'AUTORE", platillos: [{ nombre: "Tagliolini al Tartufo Nero", precio: "$310", descripcion: "Trufa negra rallada en mesa" }, { nombre: "Risotto Barolo", precio: "$275", descripcion: "Reducción de vino Barolo" }] },
+      ],
+    },
+  },
+  {
+    id: 41, nombre: "Neon Noir Lounge", categoria: "Moderno", premium: true,
+    color: "#0a0a12", textColor: "#e0d4ff", emoji: "🌃", popular: true,
+    config: {
+      fuenteActiva: "Marcellus", tamaño: 46, subtitulo: "COCKTAIL & DINING LOUNGE",
+      fondoActivo: { nombre: "Neón Violeta", bg: "linear-gradient(135deg, #0a0a12, #1a1030)", texto: "#e0d4ff", acento: "#c084fc" },
+      secciones: [
+        { id: 1, nombre: "RAW & COLD", platillos: [{ nombre: "Tartare de Atún Yuzu", precio: "$220", descripcion: "Aire de sésamo negro" }] },
+        { id: 2, nombre: "SIGNATURE", platillos: [{ nombre: "Costillar Glaseado en Miso", precio: "$310", descripcion: "48 horas, salsa de sake" }, { nombre: "Cóctel de Autor Neón", precio: "$195", descripcion: "Humo de romero en vivo" }] },
+      ],
+    },
+  },
+  {
+    id: 42, nombre: "Hacienda del Agave", categoria: "Mexicano", premium: true,
+    color: "#2c1608", textColor: "#f5e0c0", emoji: "🥃", popular: true,
+    config: {
+      fuenteActiva: "Cormorant Garamond", tamaño: 48, subtitulo: "COCINA DE HACIENDA",
+      fondoActivo: { nombre: "Agave", bg: "linear-gradient(135deg, #2c1608, #45230d)", texto: "#f5e0c0", acento: "#c9a017" },
+      secciones: [
+        { id: 1, nombre: "ENTRADAS", platillos: [{ nombre: "Escamoles al Mantequilla", precio: "$210", descripcion: "Hoja santa, tortillas de maíz azul" }] },
+        { id: 2, nombre: "PLATOS DE AUTOR", platillos: [{ nombre: "Mole Madre 8 Años", precio: "$260", descripcion: "Pato de rancho, 30 ingredientes" }, { nombre: "Cabrito al Pastor", precio: "$290", descripcion: "Cocción lenta en horno de tierra" }] },
+        { id: 3, nombre: "DESTILADOS", platillos: [{ nombre: "Tequila Añejo (copa)", precio: "$185", descripcion: "Reserva especial de la casa" }] },
+      ],
+    },
+  },
+  {
+    id: 43, nombre: "Edo Omakase Privé", categoria: "Japonés", premium: true,
+    color: "#050505", textColor: "#e8d5b0", emoji: "🎋", popular: true,
+    config: {
+      fuenteActiva: "Cinzel", tamaño: 48, subtitulo: "PRIVATE OMAKASE COUNTER",
+      fondoActivo: { nombre: "Onix", bg: "linear-gradient(135deg, #050505, #141414)", texto: "#f5f0e0", acento: "#d4af37" },
+      secciones: [
+        { id: 1, nombre: "OTSUKURI", platillos: [{ nombre: "Sashimi de Temporada", precio: "$350", descripcion: "Importación diaria de Toyosu" }] },
+        { id: 2, nombre: "EDOMAE NIGIRI", platillos: [{ nombre: "Omakase 15 Piezas", precio: "$780", descripcion: "Selección exclusiva del chef" }] },
+        { id: 3, nombre: "WAGYU COURSE", platillos: [{ nombre: "A5 Miyazaki Teppan", precio: "$450", descripcion: "Flameado en mesa" }] },
+      ],
+    },
+  },
+  {
+    id: 44, nombre: "Cafetería Gran Reserva", categoria: "Cafetería", premium: true,
+    color: "#2a1c14", textColor: "#f0dfc4", emoji: "☕", popular: false,
+    config: {
+      fuenteActiva: "Lora", tamaño: 44, subtitulo: "CAFÉ DE ALTURA GRAN RESERVA",
+      fondoActivo: { nombre: "Café Tostado", bg: "linear-gradient(135deg, #2a1c14, #3f2a1d)", texto: "#f0dfc4", acento: "#c9a017" },
+      secciones: [
+        { id: 1, nombre: "CAFÉS DE ORIGEN", platillos: [{ nombre: "Geisha Panamá", precio: "$140", descripcion: "Notas florales, tueste ligero" }] },
+        { id: 2, nombre: "MARIDAJES", platillos: [{ nombre: "Tabla de Quesos y Café", precio: "$195", descripcion: "Selección artesanal" }] },
+      ],
+    },
+  },
+  {
+    id: 45, nombre: "Botánica Verde Privé", categoria: "Vegano", premium: true,
+    color: "#071a0e", textColor: "#d9f7e0", emoji: "🪴", popular: false,
+    config: {
+      fuenteActiva: "Marcellus", tamaño: 46, subtitulo: "PRIVATE PLANT-BASED TASTING",
+      fondoActivo: { nombre: "Selva Nocturna", bg: "linear-gradient(135deg, #071a0e, #0f2e18)", texto: "#d9f7e0", acento: "#4ade80" },
+      secciones: [
+        { id: 1, nombre: "DEGUSTACIÓN", platillos: [{ nombre: "Tártar de Trufa y Alcachofa", precio: "$175", descripcion: "Aceite de trufa blanca" }] },
+        { id: 2, nombre: "PLATO CENTRAL", platillos: [{ nombre: "Terrina de Setas Silvestres", precio: "$240", descripcion: "Jus de vino tinto reducido" }] },
+        { id: 3, nombre: "CIERRE", platillos: [{ nombre: "Ganache de Cacao 85% Crudo", precio: "$115", descripcion: "Sin refinar, sal de mar" }] },
+      ],
+    },
+  },
 ];
 
 const navItems = [
