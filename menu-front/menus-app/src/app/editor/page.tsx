@@ -226,6 +226,38 @@ export default function Editor() {
     setGuardado(false);
   };
 
+  // Permite arrastrar la imagen dentro de su marco para elegir qué parte se ve
+  // (imagenPos.x / imagenPos.y son porcentajes 0-100, usados como object-position)
+  const iniciarArrastreImagen = (
+    e: React.MouseEvent<HTMLDivElement>,
+    seccionId: number,
+    idx: number,
+    posActual?: { x: number; y: number }
+  ) => {
+    e.preventDefault();
+    const contenedor = e.currentTarget;
+    const rect = contenedor.getBoundingClientRect();
+    const inicioX = e.clientX;
+    const inicioY = e.clientY;
+    const posInicial = { x: posActual?.x ?? 50, y: posActual?.y ?? 50 };
+
+    const mover = (ev: MouseEvent) => {
+      const deltaXPct = ((ev.clientX - inicioX) / rect.width) * 100;
+      const deltaYPct = ((ev.clientY - inicioY) / rect.height) * 100;
+      // arrastrar hacia la derecha desplaza el encuadre hacia la izquierda de la imagen
+      const nuevoX = Math.min(100, Math.max(0, posInicial.x - deltaXPct));
+      const nuevoY = Math.min(100, Math.max(0, posInicial.y - deltaYPct));
+      editarPlatillo(seccionId, idx, "imagenPos", { x: nuevoX, y: nuevoY });
+    };
+    const soltar = () => {
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+      setGuardado(false);
+    };
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
+  };
+
   const agregarPlatillo = (seccionId: number) => {
     const precioDefault = `${SIMBOLO_MONEDA[monedaUsuario] || "$"}0`;
     setSecciones(prev => prev.map(s =>
@@ -817,10 +849,26 @@ export default function Editor() {
                     {mostrarImagenes && (
                       <div style={{ marginBottom: 6 }}>
                         {platillo.imagen ? (
-                          <div style={{ position: "relative", height: 100, overflow: "hidden", borderRadius: 6 }}>
-                            <img src={platillo.imagen} alt={platillo.nombre} style={{ position: "absolute", left: platillo.imagenPos?.x ?? 0, top: platillo.imagenPos?.y ?? 0, width: "100%", height: "auto", borderRadius: 6 }} />
+                          <div
+                            onMouseDown={!exportando ? (e) => iniciarArrastreImagen(e, seccion.id, idx, platillo.imagenPos) : undefined}
+                            style={{ position: "relative", height: 130, overflow: "hidden", borderRadius: 6, background: "#00000022", cursor: exportando ? "default" : "grab" }}
+                          >
+                            <img
+                              src={platillo.imagen}
+                              alt={platillo.nombre}
+                              draggable={false}
+                              style={{
+                                width: "100%", height: "100%", borderRadius: 6,
+                                objectFit: "cover",
+                                objectPosition: `${platillo.imagenPos?.x ?? 50}% ${platillo.imagenPos?.y ?? 50}%`,
+                                userSelect: "none", pointerEvents: "none",
+                              }}
+                            />
                             {!exportando && (
-                              <button onClick={(e) => { e.stopPropagation(); eliminarImagen(seccion.id, idx); }} className="no-imprimir" style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", color: "white", cursor: "pointer", width: 20, height: 20, fontSize: 10, zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                              <>
+                                <button onClick={(e) => { e.stopPropagation(); eliminarImagen(seccion.id, idx); }} className="no-imprimir" style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", color: "white", cursor: "pointer", width: 20, height: 20, fontSize: 10, zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                                <div className="no-imprimir" style={{ position: "absolute", bottom: 4, left: 4, background: "rgba(0,0,0,0.55)", color: "white", fontSize: 9, padding: "2px 6px", borderRadius: 4, pointerEvents: "none" }}>↕ Arrastra para acomodar</div>
+                              </>
                             )}
                           </div>
                         ) : (
