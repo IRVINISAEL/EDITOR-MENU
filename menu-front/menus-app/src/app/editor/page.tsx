@@ -77,6 +77,10 @@ export default function Editor() {
   const [mostrarDescripciones, setMostrarDescripciones] = useState(true);
   const [mostrarImagenes, setMostrarImagenes] = useState(true);
   const [orientacion, setOrientacion] = useState<"vertical" | "horizontal">("vertical");
+  // HU-PORTADA: activa/desactiva la hoja de portada (hoja 1) antes de la hoja del menú (hoja 2)
+  const [mostrarPortada, setMostrarPortada] = useState(false);
+  const [paginaVista, setPaginaVista] = useState<"portada" | "menu">("menu");
+  const [textoPortada, setTextoPortada] = useState("Bienvenidos");
   const [colorTitulo, setColorTitulo] = useState("");
   const [colorSubtitulo, setColorSubtitulo] = useState("");
   const [fuenteTitulo, setFuenteTitulo] = useState("");
@@ -134,6 +138,8 @@ export default function Editor() {
         if (config.tamaño) setTamaño(config.tamaño);
         if (config.subtitulo) setSubtitulo(config.subtitulo);
         if (config.secciones) setSecciones(config.secciones);
+        if (config.mostrarPortada !== undefined) setMostrarPortada(config.mostrarPortada);
+        if (config.textoPortada) setTextoPortada(config.textoPortada);
         localStorage.removeItem("plantilla_cargada");
       } catch {}
     }
@@ -284,34 +290,56 @@ export default function Editor() {
     setEditando(null);
     setExportando(true);
 
-    // Pequeña espera para asegurar el render limpio de estados
-    setTimeout(async () => {
-      try {
-        const canvas = await html2canvas(menuRef.current!, {
-          scale: 2, // Excelente calidad
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: null, // Evita cuadros blancos de fondo
-          logging: false
-        });
+    // Guardamos en qué hoja estaba el usuario para regresarlo ahí al terminar
+    const paginaOriginal = paginaVista;
 
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF({
-          orientation: orientacion === "horizontal" ? "landscape" : "portrait",
-          unit: "mm",
-          format: "a4"
-        });
+    const capturarHoja = () =>
+      new Promise<string>((resolve) => {
+        // Pequeña espera para asegurar el render limpio de estados
+        setTimeout(async () => {
+          const canvas = await html2canvas(menuRef.current!, {
+            scale: 2, // Excelente calidad
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: null, // Evita cuadros blancos de fondo
+            logging: false
+          });
+          resolve(canvas.toDataURL("image/png"));
+        }, 150);
+      });
 
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
+    try {
+      const pdf = new jsPDF({
+        orientation: orientacion === "horizontal" ? "landscape" : "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
 
-        pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-        pdf.save(`${nombreMenu}.pdf`);
-      } finally {
-        // RN-05: restauramos la vista de edición normal sin modificar el menú original
-        setExportando(false);
+      if (mostrarPortada) {
+        // HOJA 1: Portada
+        setPaginaVista("portada");
+        const imgPortada = await capturarHoja();
+        pdf.addImage(imgPortada, "PNG", 0, 0, pageWidth, pageHeight);
+
+        // HOJA 2: Menú
+        setPaginaVista("menu");
+        const imgMenu = await capturarHoja();
+        pdf.addPage();
+        pdf.addImage(imgMenu, "PNG", 0, 0, pageWidth, pageHeight);
+      } else {
+        // Comportamiento original: una sola hoja con el menú
+        const imgMenu = await capturarHoja();
+        pdf.addImage(imgMenu, "PNG", 0, 0, pageWidth, pageHeight);
       }
-    }, 150);
+
+      pdf.save(`${nombreMenu}.pdf`);
+    } finally {
+      // RN-05: restauramos la vista de edición normal sin modificar el menú original
+      setPaginaVista(paginaOriginal);
+      setExportando(false);
+    }
   };
 
   const handleGuardar = async (estado: "Borrador" | "Publicado", silencioso = false) => {
@@ -342,6 +370,8 @@ export default function Editor() {
             fondoActivo,
             tamaño,
             subtitulo,
+            mostrarPortada,
+            textoPortada,
           }),
           user_id: usuario.id || 1,
         }),
@@ -466,6 +496,12 @@ export default function Editor() {
               <option value="vertical">Vertical</option>
               <option value="horizontal">Horizontal</option>
             </select>
+            <button onClick={() => { setMostrarPortada(!mostrarPortada); setPaginaVista("menu"); setGuardado(false); }} style={{
+              background: mostrarPortada ? "#7c3aed33" : "#1e1e28",
+              border: "1px solid #2a2a35", borderRadius: 6,
+              color: mostrarPortada ? "#a855f7" : "#aaa",
+              padding: "4px 8px", cursor: "pointer", fontSize: 11,
+            }} title="Activar hoja de portada">📖 Portada</button>
           </div>
 
           <div style={{ display: "flex", gap: 6, alignItems: "center", width: mobile ? "100%" : "auto" }}>
@@ -540,6 +576,25 @@ export default function Editor() {
             )}
           </div>
 
+        {/* SELECTOR DE HOJAS: Portada / Menú */}
+        {mostrarPortada && (
+          <div className="no-imprimir" style={{
+            display: "flex", gap: 8, padding: "10px 20px",
+            background: "#16161d", borderBottom: "1px solid #2a2a35",
+          }}>
+            <button onClick={() => setPaginaVista("portada")} style={{
+              background: paginaVista === "portada" ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#1e1e28",
+              border: "1px solid #2a2a35", borderRadius: 6, color: "white",
+              padding: "6px 14px", cursor: "pointer", fontSize: 12, fontWeight: 600,
+            }}>1️⃣ Portada</button>
+            <button onClick={() => setPaginaVista("menu")} style={{
+              background: paginaVista === "menu" ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#1e1e28",
+              border: "1px solid #2a2a35", borderRadius: 6, color: "white",
+              padding: "6px 14px", cursor: "pointer", fontSize: 12, fontWeight: 600,
+            }}>2️⃣ Menú</button>
+          </div>
+        )}
+
         {/* CANVAS DE TRABAJO */}
         <div style={{
           flex: 1, overflow: "auto", background: "#0a0a0e",
@@ -551,7 +606,11 @@ export default function Editor() {
             minHeight: altoBasePx,
             transform: `scale(${escala})`,
             transformOrigin: "top left",
-            display: orientacion === "horizontal" ? "grid" : "block",
+            display: paginaVista === "portada" ? "flex" : (orientacion === "horizontal" ? "grid" : "block"),
+            flexDirection: paginaVista === "portada" ? "column" : undefined,
+            alignItems: paginaVista === "portada" ? "center" : undefined,
+            justifyContent: paginaVista === "portada" ? "center" : undefined,
+            textAlign: paginaVista === "portada" ? "center" : undefined,
             gridTemplateColumns: orientacion === "horizontal" ? "repeat(2, 1fr)" : undefined,
             gap: orientacion === "horizontal" ? 24 : undefined,
             background: fondoActivo.bg,
@@ -560,6 +619,54 @@ export default function Editor() {
             boxSizing: "border-box",
             fontFamily: fuenteActiva,
           }}>
+
+          {/* HOJA 1: PORTADA (solo si mostrarPortada está activo y estamos viendo esta hoja) */}
+          {mostrarPortada && paginaVista === "portada" && (
+            <>
+              <div style={{ fontSize: 14, letterSpacing: 6, color: fondoActivo.acento, marginBottom: 24, opacity: 0.7 }}>✦ ✦ ✦</div>
+              <h1 style={{
+                fontSize: tamaño / 1.4, color: colorTitulo || fondoActivo.texto,
+                fontWeight: 700, fontFamily: fuenteTitulo || fuenteActiva,
+                letterSpacing: 4, margin: 0, textTransform: "uppercase",
+              }}>
+                {nombreMenu || "MENÚ RESTAURANTE"}
+              </h1>
+              <p style={{
+                fontSize: tamaño / 4, color: colorSubtitulo || fondoActivo.acento,
+                fontWeight: 400, fontFamily: fuenteTitulo || fuenteActiva,
+                letterSpacing: 8, margin: "16px 0 0 0", textTransform: "uppercase",
+              }}>
+                {subtitulo || "RESTAURANTE"}
+              </p>
+              {editando?.tipo === "textoPortada" ? (
+                <input
+                  value={textoPortada}
+                  autoFocus
+                  onChange={e => { setTextoPortada(e.target.value); setGuardado(false); }}
+                  onBlur={() => setEditando(null)}
+                  style={{
+                    background: "transparent", border: "none",
+                    borderBottom: `1px solid ${fondoActivo.acento}`,
+                    outline: "none", fontSize: 16, color: fondoActivo.texto,
+                    fontFamily: fuenteActiva, textAlign: "center", marginTop: 32,
+                  }}
+                />
+              ) : (
+                <p
+                  onClick={() => setEditando({ tipo: "textoPortada" })}
+                  style={{ fontSize: 16, color: fondoActivo.texto, opacity: 0.7, fontFamily: fuenteActiva, marginTop: 32, cursor: "text" }}
+                >
+                  {textoPortada || "Haz clic para escribir un texto de bienvenida..."}
+                </p>
+              )}
+              <div style={{ fontSize: 14, letterSpacing: 6, color: fondoActivo.acento, marginTop: 24, opacity: 0.7 }}>✦ ✦ ✦</div>
+            </>
+          )}
+
+          {/* HOJA 2: MENÚ (comportamiento original, intacto) */}
+          {(!mostrarPortada || paginaVista === "menu") && (
+          <>
+            {/* HEADER - TÍTULO Y SUBTÍTULO */}
             
             {/* HEADER - TÍTULO Y SUBTÍTULO */}
             <div style={{ textAlign: "center", marginBottom: 28, paddingBottom: 20, borderBottom: `2px solid ${fondoActivo.acento}` }}>
@@ -758,6 +865,8 @@ export default function Editor() {
            {!exportando && (
               <button onClick={agregarSeccion} className="no-imprimir" style={{ background: "transparent", border: `2px dashed ${fondoActivo.acento}33`, borderRadius: 8, color: fondoActivo.acento, cursor: "pointer", fontSize: 11, padding: "8px 16px", width: "100%", fontWeight: 600, marginTop: 8 }}>➕ Agregar una nueva sección</button>
             )}
+          </>
+          )}
           </div>
           </div>
         </div>
