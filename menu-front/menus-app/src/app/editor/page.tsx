@@ -624,20 +624,64 @@ export default function Editor() {
           {mostrarPortada && paginaVista === "portada" && (
             <>
               <div style={{ fontSize: 14, letterSpacing: 6, color: fondoActivo.acento, marginBottom: 24, opacity: 0.7 }}>✦ ✦ ✦</div>
-              <h1 style={{
-                fontSize: tamaño / 1.4, color: colorTitulo || fondoActivo.texto,
-                fontWeight: 700, fontFamily: fuenteTitulo || fuenteActiva,
-                letterSpacing: 4, margin: 0, textTransform: "uppercase",
-              }}>
-                {nombreMenu || "MENÚ RESTAURANTE"}
-              </h1>
-              <p style={{
-                fontSize: tamaño / 4, color: colorSubtitulo || fondoActivo.acento,
-                fontWeight: 400, fontFamily: fuenteTitulo || fuenteActiva,
-                letterSpacing: 8, margin: "16px 0 0 0", textTransform: "uppercase",
-              }}>
-                {subtitulo || "RESTAURANTE"}
-              </p>
+
+              {editando?.tipo === "titulo" ? (
+                <input
+                  value={nombreMenu}
+                  autoFocus
+                  onChange={e => { setNombreMenu(e.target.value); setGuardado(false); }}
+                  onBlur={() => setEditando(null)}
+                  style={{
+                    background: "transparent", border: "none",
+                    borderBottom: `2px solid ${fondoActivo.acento}`,
+                    outline: "none", fontSize: tamaño / 1.4,
+                    color: colorTitulo || fondoActivo.texto,
+                    fontWeight: 700, fontFamily: fuenteTitulo || fuenteActiva,
+                    letterSpacing: 4, textAlign: "center", textTransform: "uppercase",
+                    width: "80%",
+                  }}
+                />
+              ) : (
+                <h1
+                  onClick={() => setEditando({ tipo: "titulo" })}
+                  style={{
+                    fontSize: tamaño / 1.4, color: colorTitulo || fondoActivo.texto,
+                    fontWeight: 700, fontFamily: fuenteTitulo || fuenteActiva,
+                    letterSpacing: 4, margin: 0, textTransform: "uppercase", cursor: "text",
+                  }}
+                >
+                  {nombreMenu || "MENÚ RESTAURANTE"}
+                </h1>
+              )}
+
+              {editando?.tipo === "subtitulo" ? (
+                <input
+                  value={subtitulo}
+                  autoFocus
+                  onChange={e => { setSubtitulo(e.target.value); setGuardado(false); }}
+                  onBlur={() => setEditando(null)}
+                  style={{
+                    background: "transparent", border: "none",
+                    borderBottom: `1px solid ${fondoActivo.acento}`,
+                    outline: "none", fontSize: tamaño / 4,
+                    color: colorSubtitulo || fondoActivo.acento,
+                    fontWeight: 400, fontFamily: fuenteTitulo || fuenteActiva,
+                    letterSpacing: 8, textAlign: "center", textTransform: "uppercase",
+                    marginTop: 16, width: "70%",
+                  }}
+                />
+              ) : (
+                <p
+                  onClick={() => setEditando({ tipo: "subtitulo" })}
+                  style={{
+                    fontSize: tamaño / 4, color: colorSubtitulo || fondoActivo.acento,
+                    fontWeight: 400, fontFamily: fuenteTitulo || fuenteActiva,
+                    letterSpacing: 8, margin: "16px 0 0 0", textTransform: "uppercase", cursor: "text",
+                  }}
+                >
+                  {subtitulo || "RESTAURANTE"}
+                </p>
+              )}
               {editando?.tipo === "textoPortada" ? (
                 <input
                   value={textoPortada}
