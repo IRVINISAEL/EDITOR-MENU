@@ -81,6 +81,8 @@ export default function Editor() {
   const [mostrarPortada, setMostrarPortada] = useState(false);
   const [paginaVista, setPaginaVista] = useState<"portada" | "menu">("menu");
   const [textoPortada, setTextoPortada] = useState("Bienvenidos");
+  const [logoPortada, setLogoPortada] = useState("");
+  const [contactoPortada, setContactoPortada] = useState("");
   const [colorTitulo, setColorTitulo] = useState("");
   const [colorSubtitulo, setColorSubtitulo] = useState("");
   const [fuenteTitulo, setFuenteTitulo] = useState("");
@@ -140,6 +142,8 @@ export default function Editor() {
         if (config.secciones) setSecciones(config.secciones);
         if (config.mostrarPortada !== undefined) setMostrarPortada(config.mostrarPortada);
         if (config.textoPortada) setTextoPortada(config.textoPortada);
+        if (config.logoPortada) setLogoPortada(config.logoPortada);
+        if (config.contactoPortada) setContactoPortada(config.contactoPortada);
         localStorage.removeItem("plantilla_cargada");
       } catch {}
     }
@@ -223,6 +227,37 @@ export default function Editor() {
 
   const eliminarImagen = (seccionId: number, idx: number) => {
     editarPlatillo(seccionId, idx, "imagen", "");
+    setGuardado(false);
+  };
+
+  const subirLogoPortada = async (file: File) => {
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("imagen", file);
+      if (menuId) formData.append("menu_id", String(menuId));
+
+      const res = await fetch(`${API}/api/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.ok && data.url) {
+        setLogoPortada(data.url);
+        setGuardado(false);
+      } else {
+        alert("❌ No se pudo subir el logo: " + (data.mensaje || "error desconocido"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error de conexión al subir el logo.");
+    }
+  };
+
+  const eliminarLogoPortada = () => {
+    setLogoPortada("");
     setGuardado(false);
   };
 
@@ -404,6 +439,8 @@ export default function Editor() {
             subtitulo,
             mostrarPortada,
             textoPortada,
+            logoPortada,
+            contactoPortada,
           }),
           user_id: usuario.id || 1,
         }),
@@ -655,6 +692,44 @@ export default function Editor() {
           {/* HOJA 1: PORTADA (solo si mostrarPortada está activo y estamos viendo esta hoja) */}
           {mostrarPortada && paginaVista === "portada" && (
             <>
+              {/* LOGO DE LA PORTADA */}
+              <div style={{ marginBottom: 20 }}>
+                {logoPortada ? (
+                  <div style={{ position: "relative", display: "inline-block" }}>
+                    <img
+                      src={logoPortada}
+                      alt="Logo"
+                      style={{ maxWidth: 140, maxHeight: 140, objectFit: "contain" }}
+                    />
+                    {!exportando && (
+                      <button
+                        onClick={eliminarLogoPortada}
+                        className="no-imprimir"
+                        style={{
+                          position: "absolute", top: -8, right: -8,
+                          background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%",
+                          color: "white", cursor: "pointer", width: 22, height: 22, fontSize: 11,
+                        }}
+                      >✕</button>
+                    )}
+                  </div>
+                ) : (
+                  !exportando && (
+                    <label className="no-imprimir" style={{ cursor: "pointer", display: "inline-block" }}>
+                      <div style={{
+                        border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 8,
+                        padding: "16px 24px", textAlign: "center", opacity: 0.6,
+                        color: fondoActivo.acento, fontSize: 12,
+                      }}>🖼️ Subir logo</div>
+                      <input
+                        type="file" accept="image/*" style={{ display: "none" }}
+                        onChange={e => { const file = e.target.files?.[0]; if (file) subirLogoPortada(file); }}
+                      />
+                    </label>
+                  )
+                )}
+              </div>
+
               <div style={{ fontSize: 14, letterSpacing: 6, color: fondoActivo.acento, marginBottom: 24, opacity: 0.7 }}>✦ ✦ ✦</div>
 
               {editando?.tipo === "titulo" ? (
@@ -735,6 +810,30 @@ export default function Editor() {
                   {textoPortada || "Haz clic para escribir un texto de bienvenida..."}
                 </p>
               )}
+
+              {editando?.tipo === "contactoPortada" ? (
+                <input
+                  value={contactoPortada}
+                  autoFocus
+                  onChange={e => { setContactoPortada(e.target.value); setGuardado(false); }}
+                  onBlur={() => setEditando(null)}
+                  style={{
+                    background: "transparent", border: "none",
+                    borderBottom: `1px solid ${fondoActivo.acento}`,
+                    outline: "none", fontSize: 13, color: fondoActivo.texto,
+                    fontFamily: fuenteActiva, textAlign: "center", marginTop: 14,
+                    opacity: 0.8, width: "70%",
+                  }}
+                />
+              ) : (
+                <p
+                  onClick={() => setEditando({ tipo: "contactoPortada" })}
+                  style={{ fontSize: 13, color: fondoActivo.texto, opacity: 0.6, fontFamily: fuenteActiva, marginTop: 14, cursor: "text" }}
+                >
+                  {contactoPortada || "Haz clic para agregar teléfono, redes sociales, etc..."}
+                </p>
+              )}
+
               <div style={{ fontSize: 14, letterSpacing: 6, color: fondoActivo.acento, marginTop: 24, opacity: 0.7 }}>✦ ✦ ✦</div>
             </>
           )}

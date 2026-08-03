@@ -160,12 +160,26 @@ export default function Dashboard() {
             </p>
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18,  minWidth: mobile ? 120 : "auto",
-                whiteSpace: "nowrap",}}>🔔</button>
+            <button style={{
+                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
+                padding: "8px 12px", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                minWidth: mobile ? 120 : "auto", whiteSpace: "nowrap",
+              }}>
+              <img src="/notifi.png" alt="Notificaciones" style={{ width: 18, height: 18, objectFit: "contain" }} />
+            </button>
+
             <a href="/analiticas">
-              <button style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "8px 12px", color: "#888", cursor: "pointer", fontSize: 18, minWidth: mobile ? 120 : "auto",
-                whiteSpace: "nowrap", }}>📊</button>
+              <button style={{
+                  background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
+                  padding: "8px 12px", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  minWidth: mobile ? 120 : "auto", whiteSpace: "nowrap",
+                }}>
+                <img src="/estadi.jpg" alt="Estadísticas" style={{ width: 18, height: 18, objectFit: "contain", borderRadius: 4 }} />
+              </button>
             </a>
+
             <div style={{
               width: 36, height: 36, borderRadius: "50%",
               background: "linear-gradient(135deg, #7c3aed, #a855f7)",
@@ -198,7 +212,7 @@ export default function Dashboard() {
                   fontWeight: 600,
                 }}
               >
-                ➕ Crear nuevo menú
+                 Crear nuevo menú
               </button>
             </a>
 
@@ -213,7 +227,7 @@ export default function Dashboard() {
                   cursor: "pointer",
                 }}
               >
-                📂 Ver mis menús
+                 Ver mis menús
               </button>
             </a>
 
@@ -228,7 +242,7 @@ export default function Dashboard() {
                   cursor: "pointer",
                 }}
               >
-                🎨 Usar plantilla
+                 Usar plantilla
               </button>
             </a>
           </div>
