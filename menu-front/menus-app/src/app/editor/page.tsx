@@ -82,7 +82,10 @@ export default function Editor() {
   const [paginaVista, setPaginaVista] = useState<"portada" | "menu">("menu");
   const [textoPortada, setTextoPortada] = useState("Bienvenidos");
   const [logoPortada, setLogoPortada] = useState("");
-  const [contactoPortada, setContactoPortada] = useState("");
+  const [whatsappPortada, setWhatsappPortada] = useState("");
+  const [facebookPortada, setFacebookPortada] = useState("");
+  const [instagramPortada, setInstagramPortada] = useState("");
+  const [direccionPortada, setDireccionPortada] = useState("");
   const [colorTitulo, setColorTitulo] = useState("");
   const [colorSubtitulo, setColorSubtitulo] = useState("");
   const [fuenteTitulo, setFuenteTitulo] = useState("");
@@ -143,7 +146,10 @@ export default function Editor() {
         if (config.mostrarPortada !== undefined) setMostrarPortada(config.mostrarPortada);
         if (config.textoPortada) setTextoPortada(config.textoPortada);
         if (config.logoPortada) setLogoPortada(config.logoPortada);
-        if (config.contactoPortada) setContactoPortada(config.contactoPortada);
+        if (config.whatsappPortada) setWhatsappPortada(config.whatsappPortada);
+        if (config.facebookPortada) setFacebookPortada(config.facebookPortada);
+        if (config.instagramPortada) setInstagramPortada(config.instagramPortada);
+        if (config.direccionPortada) setDireccionPortada(config.direccionPortada);
         localStorage.removeItem("plantilla_cargada");
       } catch {}
     }
@@ -440,7 +446,10 @@ export default function Editor() {
             mostrarPortada,
             textoPortada,
             logoPortada,
-            contactoPortada,
+            whatsappPortada,
+            facebookPortada,
+            instagramPortada,
+            direccionPortada,
           }),
           user_id: usuario.id || 1,
         }),
@@ -699,7 +708,10 @@ export default function Editor() {
                     <img
                       src={logoPortada}
                       alt="Logo"
-                      style={{ maxWidth: 140, maxHeight: 140, objectFit: "contain" }}
+                      style={{
+                        width: 120, height: 120, borderRadius: "50%",
+                        objectFit: "cover", border: `2px solid ${fondoActivo.acento}`,
+                      }}
                     />
                     {!exportando && (
                       <button
@@ -811,28 +823,113 @@ export default function Editor() {
                 </p>
               )}
 
-              {editando?.tipo === "contactoPortada" ? (
-                <input
-                  value={contactoPortada}
-                  autoFocus
-                  onChange={e => { setContactoPortada(e.target.value); setGuardado(false); }}
-                  onBlur={() => setEditando(null)}
-                  style={{
-                    background: "transparent", border: "none",
-                    borderBottom: `1px solid ${fondoActivo.acento}`,
-                    outline: "none", fontSize: 13, color: fondoActivo.texto,
-                    fontFamily: fuenteActiva, textAlign: "center", marginTop: 14,
-                    opacity: 0.8, width: "70%",
-                  }}
-                />
-              ) : (
-                <p
-                  onClick={() => setEditando({ tipo: "contactoPortada" })}
-                  style={{ fontSize: 13, color: fondoActivo.texto, opacity: 0.6, fontFamily: fuenteActiva, marginTop: 14, cursor: "text" }}
-                >
-                  {contactoPortada || "Haz clic para agregar teléfono, redes sociales, etc..."}
-                </p>
-              )}
+              {/* DATOS DE CONTACTO CON ÍCONOS */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 18, alignItems: "center" }}>
+
+                {/* WhatsApp */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>💬</span>
+                  {editando?.tipo === "whatsappPortada" ? (
+                    <input
+                      value={whatsappPortada}
+                      autoFocus
+                      onChange={e => { setWhatsappPortada(e.target.value); setGuardado(false); }}
+                      onBlur={() => setEditando(null)}
+                      style={{
+                        background: "transparent", border: "none",
+                        borderBottom: `1px solid ${fondoActivo.acento}`,
+                        outline: "none", fontSize: 13, color: fondoActivo.texto,
+                        fontFamily: fuenteActiva, opacity: 0.85, width: 160,
+                      }}
+                    />
+                  ) : (
+                    <span
+                      onClick={() => setEditando({ tipo: "whatsappPortada" })}
+                      style={{ fontSize: 13, color: fondoActivo.texto, opacity: 0.7, fontFamily: fuenteActiva, cursor: "text" }}
+                    >
+                      {whatsappPortada || "Haz clic para agregar tu WhatsApp..."}
+                    </span>
+                  )}
+                </div>
+
+                {/* Facebook */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>📘</span>
+                  {editando?.tipo === "facebookPortada" ? (
+                    <input
+                      value={facebookPortada}
+                      autoFocus
+                      onChange={e => { setFacebookPortada(e.target.value); setGuardado(false); }}
+                      onBlur={() => setEditando(null)}
+                      style={{
+                        background: "transparent", border: "none",
+                        borderBottom: `1px solid ${fondoActivo.acento}`,
+                        outline: "none", fontSize: 13, color: fondoActivo.texto,
+                        fontFamily: fuenteActiva, opacity: 0.85, width: 160,
+                      }}
+                    />
+                  ) : (
+                    <span
+                      onClick={() => setEditando({ tipo: "facebookPortada" })}
+                      style={{ fontSize: 13, color: fondoActivo.texto, opacity: 0.7, fontFamily: fuenteActiva, cursor: "text" }}
+                    >
+                      {facebookPortada || "Haz clic para agregar tu Facebook..."}
+                    </span>
+                  )}
+                </div>
+
+                {/* Instagram */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>📸</span>
+                  {editando?.tipo === "instagramPortada" ? (
+                    <input
+                      value={instagramPortada}
+                      autoFocus
+                      onChange={e => { setInstagramPortada(e.target.value); setGuardado(false); }}
+                      onBlur={() => setEditando(null)}
+                      style={{
+                        background: "transparent", border: "none",
+                        borderBottom: `1px solid ${fondoActivo.acento}`,
+                        outline: "none", fontSize: 13, color: fondoActivo.texto,
+                        fontFamily: fuenteActiva, opacity: 0.85, width: 160,
+                      }}
+                    />
+                  ) : (
+                    <span
+                      onClick={() => setEditando({ tipo: "instagramPortada" })}
+                      style={{ fontSize: 13, color: fondoActivo.texto, opacity: 0.7, fontFamily: fuenteActiva, cursor: "text" }}
+                    >
+                      {instagramPortada || "Haz clic para agregar tu Instagram..."}
+                    </span>
+                  )}
+                </div>
+
+                {/* Dirección */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>📍</span>
+                  {editando?.tipo === "direccionPortada" ? (
+                    <input
+                      value={direccionPortada}
+                      autoFocus
+                      onChange={e => { setDireccionPortada(e.target.value); setGuardado(false); }}
+                      onBlur={() => setEditando(null)}
+                      style={{
+                        background: "transparent", border: "none",
+                        borderBottom: `1px solid ${fondoActivo.acento}`,
+                        outline: "none", fontSize: 13, color: fondoActivo.texto,
+                        fontFamily: fuenteActiva, opacity: 0.85, width: 200,
+                      }}
+                    />
+                  ) : (
+                    <span
+                      onClick={() => setEditando({ tipo: "direccionPortada" })}
+                      style={{ fontSize: 13, color: fondoActivo.texto, opacity: 0.7, fontFamily: fuenteActiva, cursor: "text" }}
+                    >
+                      {direccionPortada || "Haz clic para agregar tu dirección..."}
+                    </span>
+                  )}
+                </div>
+              </div>
 
               <div style={{ fontSize: 14, letterSpacing: 6, color: fondoActivo.acento, marginTop: 24, opacity: 0.7 }}>✦ ✦ ✦</div>
             </>
