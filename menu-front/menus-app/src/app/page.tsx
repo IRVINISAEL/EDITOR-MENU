@@ -18,6 +18,21 @@ const plantillasPopulares = [
   { id: 9, nombre: "Sushi & Japonés",     color: "#0d0d0d", textColor: "#e8d5b0", emoji: "🍱" },
 ];
 
+const IconoCampana = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
+);
+
+const IconoEstadisticas = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+  </svg>
+);
+
 export default function Dashboard() {
   const [activeNav] = useState("Dashboard");
   const [usuario, setUsuario] = useState<{ nombre: string; plan: string } | null>(null);
@@ -162,21 +177,29 @@ export default function Dashboard() {
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <button style={{
                 background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-                padding: "8px 12px", cursor: "pointer",
+                padding: "8px 12px", cursor: "pointer", color: "#888",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                minWidth: mobile ? 120 : "auto", whiteSpace: "nowrap",
-              }}>
-              <img src="/notifi.png" alt="Notificaciones" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                minWidth: mobile ? 44 : "auto", whiteSpace: "nowrap",
+                transition: "color 0.2s, border-color 0.2s",
+              }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#a855f7"; (e.currentTarget as HTMLElement).style.borderColor = "#7c3aed44"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#888"; (e.currentTarget as HTMLElement).style.borderColor = "#2a2a35"; }}
+              >
+              <IconoCampana />
             </button>
 
             <a href="/analiticas">
               <button style={{
                   background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-                  padding: "8px 12px", cursor: "pointer",
+                  padding: "8px 12px", cursor: "pointer", color: "#888",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  minWidth: mobile ? 120 : "auto", whiteSpace: "nowrap",
-                }}>
-                <img src="/estadi.jpg" alt="Estadísticas" style={{ width: 18, height: 18, objectFit: "contain", borderRadius: 4 }} />
+                  minWidth: mobile ? 44 : "auto", whiteSpace: "nowrap",
+                  transition: "color 0.2s, border-color 0.2s",
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#a855f7"; (e.currentTarget as HTMLElement).style.borderColor = "#7c3aed44"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#888"; (e.currentTarget as HTMLElement).style.borderColor = "#2a2a35"; }}
+                >
+                <IconoEstadisticas />
               </button>
             </a>
 
