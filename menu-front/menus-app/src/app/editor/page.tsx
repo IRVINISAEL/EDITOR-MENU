@@ -62,6 +62,44 @@ const seccionesIniciales: Seccion[] = [
   ]},
 ];
 
+const IconoWhatsapp = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+    <rect width="24" height="24" rx="6" fill="#25D366" />
+    <path fill="#fff" d="M12 6.4c-3.09 0-5.6 2.51-5.6 5.6 0 1 .26 1.94.72 2.76L6.4 17.6l2.9-.71a5.57 5.57 0 0 0 2.7.69c3.09 0 5.6-2.51 5.6-5.6S15.09 6.4 12 6.4zm0 10.13c-.83 0-1.63-.21-2.34-.61l-.17-.1-1.72.42.42-1.68-.11-.17a4.5 4.5 0 0 1-.68-2.39 4.6 4.6 0 1 1 4.6 4.53zm2.5-3.44c-.14-.07-.8-.4-.93-.44-.12-.05-.21-.07-.3.07-.09.14-.34.44-.42.53-.08.09-.15.1-.29.03-.14-.07-.58-.21-1.1-.68-.4-.36-.68-.8-.76-.94-.08-.14-.01-.21.06-.28.06-.06.14-.15.21-.23.07-.08.09-.14.14-.23.05-.09.02-.17-.01-.24-.03-.07-.3-.72-.41-.99-.11-.26-.22-.22-.3-.23h-.26c-.09 0-.24.03-.36.17-.12.14-.47.46-.47 1.12s.48 1.3.55 1.39c.07.09.94 1.44 2.28 2.02.32.14.57.22.76.28.32.1.61.09.84.05.26-.04.8-.33.91-.64.11-.31.11-.58.08-.64-.03-.06-.12-.1-.26-.17z" />
+  </svg>
+);
+
+const IconoFacebook = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+    <rect width="24" height="24" rx="6" fill="#1877F2" />
+    <path fill="#fff" d="M14.5 8.5h1.5V6.2c-.26-.03-1.15-.11-2.19-.11-2.17 0-3.65 1.32-3.65 3.75v2h-2.4v2.58h2.4V19h2.6v-6.58h2.3l.36-2.58h-2.66V9.7c0-.75.2-1.2 1.24-1.2z" />
+  </svg>
+);
+
+const IconoInstagram = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+    <defs>
+      <linearGradient id="igGrad" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0%" stopColor="#FFDC80" />
+        <stop offset="30%" stopColor="#F77737" />
+        <stop offset="60%" stopColor="#E1306C" />
+        <stop offset="100%" stopColor="#833AB4" />
+      </linearGradient>
+    </defs>
+    <rect width="24" height="24" rx="6" fill="url(#igGrad)" />
+    <rect x="6" y="6" width="12" height="12" rx="3.5" fill="none" stroke="#fff" strokeWidth="1.4" />
+    <circle cx="12" cy="12" r="3" fill="none" stroke="#fff" strokeWidth="1.4" />
+    <circle cx="15.8" cy="8.2" r="0.9" fill="#fff" />
+  </svg>
+);
+
+const IconoUbicacion = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+    <rect width="24" height="24" rx="6" fill="#EA4335" />
+    <path fill="#fff" d="M12 5.5c-2.35 0-4.25 1.9-4.25 4.25 0 3.19 4.25 8.75 4.25 8.75s4.25-5.56 4.25-8.75c0-2.35-1.9-4.25-4.25-4.25zm0 5.75a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
+  </svg>
+);
+
 export default function Editor() {
   const [menuId, setMenuId] = useState<string | number | null>(null);
   const [nombreMenu, setNombreMenu] = useState("Menú Restaurante");
@@ -606,52 +644,68 @@ export default function Editor() {
           </div>
         </div>
 
-        {/* GUÍA RÁPIDA */}
+        {/* GUÍA RÁPIDA (deslizable, colapsada por defecto) */}
           <div
             className="no-imprimir"
             style={{
               background: "#16161d",
               borderBottom: "1px solid #2a2a35",
-              padding: mobile ? "10px 16px" : "12px 20px",
+              padding: mobile ? "10px 16px" : "10px 20px",
             }}
           >
             <div
-              onClick={() => mobile && setGuiaAbierta(!guiaAbierta)}
+              onClick={() => setGuiaAbierta(!guiaAbierta)}
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 gap: 20,
-                flexWrap: "wrap",
-                cursor: mobile ? "pointer" : "default",
+                cursor: "pointer",
+                userSelect: "none",
               }}
             >
               <span style={{ color: "#fff", fontWeight: 600, fontSize: mobile ? 13 : 14 }}>
                 🚀 Guía rápida para crear tu menú
               </span>
-              {mobile && (
-                <span style={{ color: "#888", fontSize: 12 }}>{guiaAbierta ? "▲ Ocultar" : "▼ Ver pasos"}</span>
-              )}
-            </div>
-
-            {(!mobile || guiaAbierta) && (
-              <div
+              <span
                 style={{
-                  display: "flex",
-                  flexDirection: mobile ? "column" : "row",
-                  gap: mobile ? 8 : 18,
-                  flexWrap: "wrap",
-                  color: "#aaa",
+                  color: "#888",
                   fontSize: 13,
-                  marginTop: mobile ? 10 : 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 22,
+                  height: 22,
+                  borderRadius: 6,
+                  background: "#1e1e28",
+                  transition: "transform 0.25s ease",
+                  transform: guiaAbierta ? "rotate(180deg)" : "rotate(0deg)",
                 }}
               >
-                <span>① Escribe el nombre del menú</span>
-                <span>② Edita secciones y platillos</span>
-                <span>③ Personaliza colores y fuente</span>
-                <span>④ Guarda o exporta tu menú</span>
-              </div>
-            )}
+                ▼
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: mobile ? "column" : "row",
+                gap: mobile ? 8 : 18,
+                flexWrap: "wrap",
+                color: "#aaa",
+                fontSize: 13,
+                overflow: "hidden",
+                maxHeight: guiaAbierta ? 120 : 0,
+                opacity: guiaAbierta ? 1 : 0,
+                marginTop: guiaAbierta ? 12 : 0,
+                transition: "max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease",
+              }}
+            >
+              <span>① Escribe el nombre del menú</span>
+              <span>② Edita secciones y platillos</span>
+              <span>③ Personaliza colores y fuente</span>
+              <span>④ Guarda o exporta tu menú</span>
+            </div>
           </div>
 
         {/* SELECTOR DE HOJAS: Portada / Menú */}
@@ -828,7 +882,7 @@ export default function Editor() {
 
                 {/* WhatsApp */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 15 }}>💬</span>
+                  <IconoWhatsapp />
                   {editando?.tipo === "whatsappPortada" ? (
                     <input
                       value={whatsappPortada}
@@ -854,7 +908,7 @@ export default function Editor() {
 
                 {/* Facebook */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 15 }}>📘</span>
+                  <IconoFacebook />
                   {editando?.tipo === "facebookPortada" ? (
                     <input
                       value={facebookPortada}
@@ -880,7 +934,7 @@ export default function Editor() {
 
                 {/* Instagram */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 15 }}>📸</span>
+                  <IconoInstagram />
                   {editando?.tipo === "instagramPortada" ? (
                     <input
                       value={instagramPortada}
@@ -906,7 +960,7 @@ export default function Editor() {
 
                 {/* Dirección */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 15 }}>📍</span>
+                  <IconoUbicacion />
                   {editando?.tipo === "direccionPortada" ? (
                     <input
                       value={direccionPortada}
