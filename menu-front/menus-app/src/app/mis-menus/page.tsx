@@ -1,5 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
+import {
+  IconEdit,
+  IconBuilding,
+  IconCard,
+  IconImage,
+  IconTrash,
+  IconSettings,
+  IconLogout,
+  IconEye,
+  IconX,
+  IconRefresh,
+} from "@/components/Icons";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -7,12 +19,12 @@ const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },
   { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
-  { icon: "✏️", label: "Mis Diseños", href: "#" },
-  { icon: "🖼️", label: "Medios", href: "#" },
-  { icon: "🗑️", label: "Papelera", href: "/papelera" },
-  { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
-  { icon: "💳", label: "Facturación", href: "/planes" },
-  { icon: "⚙️", label: "Configuración", href: "/configuracion" },
+  { icon: <IconEdit />, label: "Mis Diseños", href: "#" },
+  { icon: <IconImage />, label: "Medios", href: "#" },
+  { icon: <IconTrash />, label: "Papelera", href: "/papelera" },
+  { icon: <IconBuilding />, label: "Mi Negocio", href: "/mi-negocio" },
+  { icon: <IconCard />, label: "Facturación", href: "/planes" },
+  { icon: <IconSettings />, label: "Configuración", href: "/configuracion" },
 ];
 
 type Menu = {
@@ -187,7 +199,7 @@ export default function MisMenus() {
             }}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}
           >
-            <span>🚪</span> Cerrar sesión
+            <span><IconLogout /></span> Cerrar sesión
           </div>
         </div>
       </aside>
@@ -232,14 +244,14 @@ export default function MisMenus() {
             }}
           >
           <input
-            type="text" placeholder="🔍 Buscar menú..."
+            type="text" placeholder=" Buscar menú..."
             value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
             style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 16px", color: "white", fontSize: 13, outline: "none", width: mobile ? "100%" : 240 }}
           />
           {["Todos", "Publicado", "Borrador"].map((f) => (
             <button key={f} onClick={() => setFiltro(f)} style={{ background: filtro === f ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "#1e1e28", border: filtro === f ? "none" : "1px solid #2a2a35", borderRadius: 8, padding: "10px 16px", color: filtro === f ? "white" : "#888", cursor: "pointer", fontSize: 13, fontWeight: filtro === f ? 600 : 400 }}>{f}</button>
           ))}
-          <button onClick={cargarMenus} style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 12px", color: "#aaa", cursor: "pointer", fontSize: 13 }} title="Recargar">🔄</button>
+          <button onClick={cargarMenus} style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 12px", color: "#aaa", cursor: "pointer", fontSize: 13 }} title="Recargar"><IconRefresh /></button>
         </div>
 
         <div
@@ -279,16 +291,16 @@ export default function MisMenus() {
               <span style={{ color: "#666", fontSize: 13 }}>{tiempoRelativo(menu.updated_at)}</span>
 
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => setMenuViendo(menu)} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, padding: "6px 10px", color: "#aaa", cursor: "pointer", fontSize: 14 }} title="Ver">👁️</button>
-                <button onClick={() => editarMenu(menu)} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, padding: "6px 10px", color: "#a855f7", cursor: "pointer", fontSize: 14 }} title="Editar">✏️</button>
-                <button onClick={() => setConfirmEliminar(menu.id)} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, padding: "6px 10px", color: "#f87171", cursor: "pointer", fontSize: 14 }} title="Eliminar">🗑️</button>
+                <button onClick={() => setMenuViendo(menu)} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, padding: "6px 10px", color: "#aaa", cursor: "pointer", fontSize: 14 }} title="Ver"><IconEye /></button>
+                <button onClick={() => editarMenu(menu)} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, padding: "6px 10px", color: "#a855f7", cursor: "pointer", fontSize: 14 }} title="Editar"><IconEdit /></button>
+                <button onClick={() => setConfirmEliminar(menu.id)} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, padding: "6px 10px", color: "#f87171", cursor: "pointer", fontSize: 14 }} title="Eliminar"><IconTrash /></button>
               </div>
             </div>
           ))}
         </div>
 
         <div style={{ textAlign: "center", marginTop: 20 }}>
-          <button onClick={cargarMenus} style={{ background: "transparent", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 24px", color: "#888", cursor: "pointer", fontSize: 13 }}>🔄 Actualizar</button>
+          <button onClick={cargarMenus} style={{ background: "transparent", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 24px", color: "#888", cursor: "pointer", fontSize: 13 }}><IconRefresh /> Actualizar</button>
         </div>
       </main>
 
@@ -296,7 +308,7 @@ export default function MisMenus() {
       {menuViendo && (
         <div onClick={() => setMenuViendo(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 16, padding: 28, width: 420, position: "relative" }}>
-            <button onClick={() => setMenuViendo(null)} style={{ position: "absolute", top: 12, right: 12, background: "#16161d", border: "1px solid #2a2a35", borderRadius: "50%", width: 28, height: 28, color: "#aaa", cursor: "pointer", fontSize: 14 }}>✕</button>
+            <button onClick={() => setMenuViendo(null)} style={{ position: "absolute", top: 12, right: 12, background: "#16161d", border: "1px solid #2a2a35", borderRadius: "50%", width: 28, height: 28, color: "#aaa", cursor: "pointer", fontSize: 14 }}><IconX /></button>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
               <div style={{ fontSize: 40 }}>{getEmoji(menuViendo.id)}</div>
               <div>
@@ -326,7 +338,7 @@ export default function MisMenus() {
       {confirmEliminar !== null && (
         <div onClick={() => setConfirmEliminar(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 16, padding: 28, width: 360, textAlign: "center" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🗑️</div>
+            <div style={{ fontSize: 40, marginBottom: 12 }}><IconTrash /></div>
             <div style={{ color: "white", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>¿Eliminar este menú?</div>
             <div style={{ color: "#666", fontSize: 13, marginBottom: 24 }}>Se borrará permanentemente de la base de datos.</div>
             <div style={{ display: "flex", gap: 8 }}>

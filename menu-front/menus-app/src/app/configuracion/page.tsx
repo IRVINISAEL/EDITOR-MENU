@@ -1,16 +1,27 @@
 "use client";
 import { useState, useEffect } from "react";
+import {
+  IconEdit,
+  IconBuilding,
+  IconCard,
+  IconImage,
+  IconTrash,
+  IconSettings,
+  IconLogout,
+  IconAlert,
+  IconUser,
+} from "@/components/Icons";
 
 const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },
   { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
-  { icon: "✏️", label: "Mis Diseños", href: "#" },
-  { icon: "🖼️", label: "Medios", href: "#" },
-  { icon: "🗑️", label: "Papelera", href: "/papelera" },
-  { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
-  { icon: "💳", label: "Facturación", href: "/planes" },
-  { icon: "⚙️", label: "Configuración", href: "/configuracion" },
+  { icon: <IconEdit />, label: "Mis Diseños", href: "#" },
+  { icon: <IconImage />, label: "Medios", href: "#" },
+  { icon: <IconTrash />, label: "Papelera", href: "/papelera" },
+  { icon: <IconBuilding />, label: "Mi Negocio", href: "/mi-negocio" },
+  { icon: <IconCard />, label: "Facturación", href: "/planes" },
+  { icon: <IconSettings />, label: "Configuración", href: "/configuracion" },
 ];
 
 export default function Configuracion() {
@@ -281,7 +292,7 @@ export default function Configuracion() {
               window.location.href = "/login";
             }}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}>
-            <span>🚪</span> Cerrar sesión
+            <span><IconLogout /></span> Cerrar sesión
           </div>
       </aside>
 
@@ -296,7 +307,7 @@ export default function Configuracion() {
         <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "#1e1e28", borderRadius: 10, padding: 4, width: "fit-content" }}>
           {(["cuenta", "preferencias"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{ background: tab === t ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "transparent", border: "none", borderRadius: 8, padding: "8px 20px", color: tab === t ? "white" : "#666", fontSize: 13, fontWeight: tab === t ? 600 : 400, cursor: "pointer", textTransform: "capitalize" }}>
-              {t === "cuenta" ? "👤 Cuenta" : "⚙️ Preferencias"}
+              {t === "cuenta" ? (<><IconUser /> Cuenta</>) : (<><IconSettings /> Preferencias</>)}
             </button>
           ))}
         </div>
@@ -336,18 +347,18 @@ export default function Configuracion() {
                     <input value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} type="password" placeholder="••••••••" style={inputStyle} />
                   </div>
                 </div>
-                {errorPass && <div style={{ color: "#f87171", fontSize: 12 }}>⚠️ {errorPass}</div>}
+                {errorPass && <div style={{ color: "#f87171", fontSize: 12 }}><IconAlert /> {errorPass}</div>}
               </div>
             </div>
 
             <div style={{ background: "#dc262622", border: "1px solid #dc262644", borderRadius: 12, padding: 20 }}>
               <div style={{ color: "#f87171", fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Zona de peligro</div>
               <div style={{ color: "#888", fontSize: 13, marginBottom: 12 }}>Eliminar tu cuenta borrará todos tus menús permanentemente.</div>
-             <button onClick={() => setModalEliminar(true)} style={{ background: "transparent", border: "1px solid #dc2626", borderRadius: 8, padding: "8px 16px", color: "#f87171", fontSize: 13, cursor: "pointer" }}>🗑️ Eliminar mi cuenta</button>
+             <button onClick={() => setModalEliminar(true)} style={{ background: "transparent", border: "1px solid #dc2626", borderRadius: 8, padding: "8px 16px", color: "#f87171", fontSize: 13, cursor: "pointer" }}><IconTrash /> Eliminar mi cuenta</button>
             </div>
 
             <button onClick={guardarCuenta} style={{ background: guardado ? "#16a34a" : "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none", borderRadius: 10, padding: "14px 32px", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-              {guardando ? "Guardando..." : guardado ? "✓ Guardado" : "💾 Guardar cambios"}
+              {guardando ? "Guardando..." : guardado ? "✓ Guardado" : " Guardar cambios"}
             </button>
           </div>
         )}
@@ -405,10 +416,10 @@ export default function Configuracion() {
               </div>
             </div>
 
-            {errorPrefs && <div style={{ color: "#f87171", fontSize: 12 }}>⚠️ {errorPrefs}</div>}
+            {errorPrefs && <div style={{ color: "#f87171", fontSize: 12 }}><IconAlert /> {errorPrefs}</div>}
 
             <button onClick={guardarPreferencias} style={{ background: guardado ? "#16a34a" : "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none", borderRadius: 10, padding: "14px 32px", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-              {guardando ? "Guardando..." : guardado ? "✓ Guardado" : "💾 Guardar preferencias"}
+              {guardando ? "Guardando..." : guardado ? "✓ Guardado" : " Guardar preferencias"}
             </button>
           </div>
         )}
@@ -426,7 +437,7 @@ export default function Configuracion() {
             padding: 28, width: 400, maxWidth: "90vw",
           }}>
             <div style={{ color: "#f87171", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
-              ⚠️ Eliminar cuenta permanentemente
+              <IconAlert /> Eliminar cuenta permanentemente
             </div>
             <p style={{ color: "#aaa", fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>
               Esta acción no se puede deshacer. Se eliminarán tu cuenta, todos tus menús y no podrás
@@ -443,7 +454,7 @@ export default function Configuracion() {
             />
 
             {errorEliminar && (
-              <div style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>⚠️ {errorEliminar}</div>
+              <div style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}><IconAlert /> {errorEliminar}</div>
             )}
 
             <div style={{ display: "flex", gap: 12, marginTop: 20 }}>

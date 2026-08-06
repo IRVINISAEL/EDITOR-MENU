@@ -1,16 +1,29 @@
 "use client";
 import { useEffect, useState } from "react";
+import {
+  IconEdit,
+  IconBuilding,
+  IconCard,
+  IconImage,
+  IconTrash,
+  IconSettings,
+  IconLogout,
+  IconEye,
+  IconClipboard,
+  IconClock,
+  IconChart ,
+} from "@/components/Icons";
 
 const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },
   { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
-  { icon: "✏️", label: "Mis Diseños", href: "#" },
-  { icon: "🖼️", label: "Medios", href: "#" },
-  { icon: "🗑️", label: "Papelera", href: "/papelera" },
-  { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
-  { icon: "💳", label: "Facturación", href: "/planes" },
-  { icon: "⚙️", label: "Configuración", href: "/configuracion" },
+  { icon: <IconEdit />, label: "Mis Diseños", href: "#" },
+  { icon: <IconImage />, label: "Medios", href: "#" },
+  { icon: <IconTrash />, label: "Papelera", href: "/papelera" },
+  { icon: <IconBuilding />, label: "Mi Negocio", href: "/mi-negocio" },
+  { icon: <IconCard />, label: "Facturación", href: "/planes" },
+  { icon: <IconSettings />, label: "Configuración", href: "/configuracion" },
 ];
 
 type TendenciaPunto = { fecha: string; vistas: number };
@@ -69,10 +82,10 @@ export default function Analiticas() {
       : 0;
 
   const statsCards = [
-    { label: "Vistas totales", value: datos?.vistasTotales ?? 0, icon: "👁️" },
-    { label: "Vistas hoy", value: datos?.vistasHoy ?? 0, icon: "📅" },
-    { label: "Promedio diario", value: promedioDiario, icon: "📊" },
-    { label: "Menús publicados", value: datos?.menusPublicados ?? 0, icon: "📋" },
+    { label: "Vistas totales", value: datos?.vistasTotales ?? 0, icon: <IconEye /> },
+    { label: "Vistas hoy", value: datos?.vistasHoy ?? 0, icon: <IconClock /> },
+    { label: "Promedio diario", value: promedioDiario, icon: <IconChart />},
+    { label: "Menús publicados", value: datos?.menusPublicados ?? 0, icon: <IconClipboard /> },
   ];
 
   return (
@@ -119,7 +132,7 @@ export default function Analiticas() {
               window.location.href = "/login";
             }}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}>
-            <span>🚪</span> Cerrar sesión
+            <span><IconLogout /></span> Cerrar sesión
           </div>
       </aside>
 
