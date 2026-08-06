@@ -93,16 +93,17 @@ export default function Dashboard() {
         const usuario = JSON.parse(data);
         setUsuario(usuario);
 
-        const userId = usuario.id || usuario.email || "anon";
-        const popupKey = `popup-premium-${userId}`;
-        const popupVisto = localStorage.getItem(popupKey);
         const plan = (usuario.plan || "").toString().trim().toLowerCase();
+        const acabaDeIniciarSesion = sessionStorage.getItem("acaba-de-iniciar-sesion");
 
-        console.log("DEBUG popup ->", { plan, popupVisto, userId });
+        console.log("DEBUG popup ->", { plan, acabaDeIniciarSesion });
 
-        if (!popupVisto && plan === "free") {
+        if (acabaDeIniciarSesion && plan === "free") {
           setMostrarPremium(true);
         }
+
+        // Consumimos la bandera para que no vuelva a activarse en un refresh
+        sessionStorage.removeItem("acaba-de-iniciar-sesion");
       }
 
     // Cargar menús reales del backend
@@ -115,8 +116,6 @@ export default function Dashboard() {
   }, []);
 
   const cerrarPopupPremium = () => {
-    const userId = usuario?.id || usuario?.email || "anon";
-    localStorage.setItem(`popup-premium-${userId}`, "true");
     setMostrarPremium(false);
   };
 
