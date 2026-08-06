@@ -176,7 +176,6 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      {/* MAIN */}
       {mostrarPremium && (
           <>
             <div
@@ -281,6 +280,8 @@ export default function Dashboard() {
             </div>
           </>
         )}
+        
+      {/* MAIN */}
       <main className="app-main" style={{ marginLeft: 220, flex: 1, padding: mobile ? 16 : 32 }}>
 
         {/* Header */}
