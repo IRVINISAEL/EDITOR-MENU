@@ -44,6 +44,29 @@ const IconoEstadisticas = () => (
   </svg>
 );
 
+const IconCorona = () => (
+  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 8l4.5 4.5L12 4l5.5 8.5L22 8l-2.5 12h-15L2 8z" />
+    <circle cx="12" cy="4" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="2" cy="8" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="22" cy="8" r="1.4" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+const IconCheckCircle = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9.5" />
+    <path d="M8 12.5l2.5 2.5L16 9.5" />
+  </svg>
+);
+
+const IconCerrarX = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
 export default function Dashboard() {
   const [activeNav] = useState("Dashboard");
   const [usuario, setUsuario] = useState<{ id?: string; email?: string; nombre: string; plan: string } | null>(null);
@@ -184,13 +207,52 @@ export default function Dashboard() {
 
       {mostrarPremium && (
           <>
+            <style>{`
+              @keyframes overlayIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+              }
+              @keyframes modalIn {
+                from { opacity: 0; transform: translate(-50%, -46%) scale(.96); }
+                to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+              }
+              @keyframes crownGlow {
+                0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,.45); }
+                50% { box-shadow: 0 0 0 10px rgba(168,85,247,0); }
+              }
+              .premium-benefit-row {
+                transition: transform .15s ease, background .15s ease;
+              }
+              .premium-benefit-row:hover {
+                transform: translateX(2px);
+                background: #1e1e28;
+              }
+              .premium-cta-btn {
+                transition: transform .15s ease, box-shadow .15s ease;
+              }
+              .premium-cta-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 24px -6px rgba(124,58,237,.55);
+              }
+              .premium-close-x {
+                transition: background .15s ease, color .15s ease, transform .15s ease;
+              }
+              .premium-close-x:hover {
+                background: #2a2a35;
+                color: #fff;
+                transform: rotate(90deg);
+              }
+            `}</style>
+
             <div
+              onClick={cerrarPopupPremium}
               style={{
                 position: "fixed",
                 inset: 0,
-                background: "rgba(0,0,0,.75)",
-                backdropFilter: "blur(6px)",
+                background: "rgba(8,7,12,.8)",
+                backdropFilter: "blur(8px)",
                 zIndex: 999,
+                animation: "overlayIn .25s ease",
               }}
             />
 
@@ -200,87 +262,179 @@ export default function Dashboard() {
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%,-50%)",
-                width: 520,
+                width: 480,
                 maxWidth: "92%",
-                background: "#17171f",
-                border: "1px solid #2a2a35",
-                borderRadius: 18,
-                padding: 30,
+                background: "linear-gradient(180deg, #1a1a24, #15151d)",
+                border: "1px solid #2a2a3a",
+                borderRadius: 20,
+                padding: 0,
                 zIndex: 1000,
+                overflow: "hidden",
+                boxShadow: "0 30px 80px -20px rgba(0,0,0,.7), 0 0 0 1px rgba(168,85,247,.08)",
+                animation: "modalIn .32s cubic-bezier(.2,.8,.2,1)",
               }}
             >
-              <div
+              {/* Botón cerrar */}
+              <button
+                className="premium-close-x"
+                onClick={cerrarPopupPremium}
+                aria-label="Cerrar"
                 style={{
-                  color: "white",
-                  fontWeight: 700,
-                  fontSize: 24,
-                  marginBottom: 12,
-                }}
-              >
-                🚀 Activa Premium
-              </div>
-
-              <p
-                style={{
-                  color: "#999",
-                  lineHeight: 1.7,
-                  marginBottom: 20,
-                }}
-              >
-                Disfruta de una experiencia completa con Menu Master.
-              </p>
-
-              <div style={{ color: "#ddd", lineHeight: 2 }}>
-                ✅ Descargas ilimitadas<br />
-                ✅ Menús ilimitados<br />
-                ✅ Plantillas Premium<br />
-                ✅ Publicaciones sin restricciones<br />
-                ✅ Más herramientas profesionales<br />
-                ✅ Reduce costos operativos
-              </div>
-
-              <div
-                style={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  border: "1px solid #2a2a35",
+                  background: "#1a1a22",
+                  color: "#888",
                   display: "flex",
-                  gap: 12,
-                  marginTop: 30,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  zIndex: 2,
                 }}
               >
-                <a
-                  href="/planes"
+                <IconCerrarX />
+              </button>
+
+              {/* Header con degradado */}
+              <div
+                style={{
+                  padding: "34px 30px 22px",
+                  background: "radial-gradient(120% 100% at 50% 0%, rgba(168,85,247,.16), transparent 60%)",
+                  borderBottom: "1px solid #24242e",
+                  textAlign: "center",
+                }}
+              >
+                <div
                   style={{
-                    flex: 1,
-                    textDecoration: "none",
+                    width: 58,
+                    height: 58,
+                    margin: "0 auto 16px",
+                    borderRadius: 16,
+                    background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    animation: "crownGlow 2.4s ease-in-out infinite",
                   }}
                 >
+                  <IconCorona />
+                </div>
+
+                <div
+                  style={{
+                    color: "white",
+                    fontWeight: 800,
+                    fontSize: 22,
+                    letterSpacing: "-0.3px",
+                    marginBottom: 6,
+                  }}
+                >
+                  Desbloquea Menu Master Premium
+                </div>
+
+                <p
+                  style={{
+                    color: "#9a9aa8",
+                    fontSize: 13.5,
+                    lineHeight: 1.6,
+                    margin: "0 auto",
+                    maxWidth: 340,
+                  }}
+                >
+                  Todo lo que necesitas para llevar tu negocio al siguiente nivel, sin límites.
+                </p>
+              </div>
+
+              {/* Beneficios */}
+              <div style={{ padding: "18px 16px" }}>
+                {[
+                  "Descargas ilimitadas",
+                  "Menús ilimitados",
+                  "Plantillas Premium exclusivas",
+                  "Publicaciones sin restricciones",
+                  "Herramientas profesionales avanzadas",
+                  "Reduce tus costos operativos",
+                ].map((beneficio) => (
+                  <div
+                    key={beneficio}
+                    className="premium-benefit-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "9px 12px",
+                      borderRadius: 10,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 26,
+                        height: 26,
+                        flexShrink: 0,
+                        borderRadius: "50%",
+                        background: "rgba(168,85,247,.12)",
+                        color: "#a855f7",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <IconCheckCircle />
+                    </span>
+                    <span style={{ color: "#d8d8de", fontSize: 13.5, fontWeight: 500 }}>
+                      {beneficio}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <div style={{ padding: "8px 24px 26px" }}>
+                <a href="/planes" style={{ textDecoration: "none", display: "block" }}>
                   <button
+                    className="premium-cta-btn"
                     style={{
                       width: "100%",
-                      padding: 14,
+                      padding: "15px",
                       border: "none",
                       borderRadius: 12,
                       background: "linear-gradient(135deg,#7c3aed,#a855f7)",
                       color: "white",
                       fontWeight: 700,
+                      fontSize: 14.5,
                       cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
                     }}
                   >
-                    Activar Premium
+                    Activar Premium ahora
+                    <IconArrowRight />
                   </button>
                 </a>
 
                 <button
                   onClick={cerrarPopupPremium}
                   style={{
-                    padding: "14px 18px",
-                    borderRadius: 12,
-                    border: "1px solid #2a2a35",
-                    background: "#20202a",
-                    color: "#aaa",
+                    width: "100%",
+                    marginTop: 10,
+                    padding: 10,
+                    border: "none",
+                    background: "transparent",
+                    color: "#666",
+                    fontSize: 12.5,
                     cursor: "pointer",
                   }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#999")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#666")}
                 >
-                  Más tarde
+                  Tal vez más tarde
                 </button>
               </div>
             </div>
