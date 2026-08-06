@@ -17,7 +17,7 @@ const API = process.env.NEXT_PUBLIC_API_URL;
 const DIAS_RETENCION = 30;
 
 const navItems = [
-  { icon: "⊞", label: "Dashboard", href: "/" },
+  { icon: "⊞", label: "Inicio", href: "/" },
   { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
   { icon: <IconEdit />, label: "Mis Diseños", href: "#" },
