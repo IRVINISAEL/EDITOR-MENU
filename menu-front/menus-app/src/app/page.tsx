@@ -160,7 +160,7 @@ export default function Dashboard() {
             gap: mobile ? 16 : 0, marginBottom: 32 }}>
           <div>
             <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>
-              ¡Bienvenido, {usuario?.nombre || "Usuario"}! 👋
+              ¡Bienvenido, {usuario?.nombre || "Usuario"}! 
             </h1>
             <p
               style={{
