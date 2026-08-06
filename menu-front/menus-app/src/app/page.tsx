@@ -185,101 +185,178 @@ export default function Dashboard() {
               forma rápida.
             </p>
           </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <button style={{
-                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-                padding: "8px 12px", cursor: "pointer", color: "#888",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                minWidth: mobile ? 44 : "auto", whiteSpace: "nowrap",
-                transition: "color 0.2s, border-color 0.2s",
-              }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#a855f7"; (e.currentTarget as HTMLElement).style.borderColor = "#7c3aed44"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#888"; (e.currentTarget as HTMLElement).style.borderColor = "#2a2a35"; }}
-              >
-              <IconoCampana />
-            </button>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
 
-            <a href="/analiticas">
-              <button style={{
-                  background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-                  padding: "8px 12px", cursor: "pointer", color: "#888",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  minWidth: mobile ? 44 : "auto", whiteSpace: "nowrap",
-                  transition: "color 0.2s, border-color 0.2s",
+              {/* Notificaciones */}
+              <button
+                title="Notificaciones"
+                style={{
+                  width: 42,
+                  height: 42,
+                  background: "#1e1e28",
+                  border: "1px solid #2a2a35",
+                  borderRadius: 10,
+                  color: "#888",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all .2s",
                 }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#a855f7"; (e.currentTarget as HTMLElement).style.borderColor = "#7c3aed44"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "#888"; (e.currentTarget as HTMLElement).style.borderColor = "#2a2a35"; }}
-                >
-                <IconoEstadisticas />
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#a855f7";
+                  e.currentTarget.style.borderColor = "#7c3aed";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#888";
+                  e.currentTarget.style.borderColor = "#2a2a35";
+                }}
+              >
+                <IconoCampana />
               </button>
-            </a>
 
-            <div style={{
-              width: 36, height: 36, borderRadius: "50%",
-              background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer",
-            }}>
-              {usuario?.nombre?.charAt(0).toUpperCase() || "U"}
+              {/* Analíticas */}
+              <a href="/analiticas">
+                <button
+                  title="Analíticas"
+                  style={{
+                    width: 42,
+                    height: 42,
+                    background: "#1e1e28",
+                    border: "1px solid #2a2a35",
+                    borderRadius: 10,
+                    color: "#888",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    transition: "all .2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#a855f7";
+                    e.currentTarget.style.borderColor = "#7c3aed";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "#888";
+                    e.currentTarget.style.borderColor = "#2a2a35";
+                  }}
+                >
+                  <IconoEstadisticas />
+                </button>
+              </a>
+
+              {/* Crear menú */}
+              <a href="/editor">
+                <button
+                  title="Crear menú"
+                  style={{
+                    width: 42,
+                    height: 42,
+                    background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+                    border: "none",
+                    borderRadius: 10,
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    transition: "transform .2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  <IconEdit />
+                </button>
+              </a>
+
+              {/* Mis Menús */}
+              <a href="/mis-menus">
+                <button
+                  title="Mis menús"
+                  style={{
+                    width: 42,
+                    height: 42,
+                    background: "#1e1e28",
+                    border: "1px solid #2a2a35",
+                    borderRadius: 10,
+                    color: "#888",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    transition: "all .2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#a855f7";
+                    e.currentTarget.style.borderColor = "#7c3aed";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "#888";
+                    e.currentTarget.style.borderColor = "#2a2a35";
+                  }}
+                >
+                  <IconBuilding />
+                </button>
+              </a>
+
+              {/* Plantillas */}
+              <a href="/plantillas">
+                <button
+                  title="Plantillas"
+                  style={{
+                    width: 42,
+                    height: 42,
+                    background: "#1e1e28",
+                    border: "1px solid #2a2a35",
+                    borderRadius: 10,
+                    color: "#888",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    transition: "all .2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#a855f7";
+                    e.currentTarget.style.borderColor = "#7c3aed";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "#888";
+                    e.currentTarget.style.borderColor = "#2a2a35";
+                  }}
+                >
+                  <IconCard />
+                </button>
+              </a>
+
+              {/* Perfil */}
+              <div
+                title="Perfil"
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  marginLeft: 4,
+                  cursor: "pointer",
+                }}
+              >
+                {usuario?.nombre?.charAt(0).toUpperCase() || "U"}
+              </div>
+
             </div>
-          </div>
         </div>
         
-        {/* ACCESOS RÁPIDOS */}
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 12,
-              marginBottom: 24,
-            }}
-          >
-            <a href="/editor" style={{ textDecoration: "none" }}>
-              <button
-                style={{
-                  background: "linear-gradient(135deg,#7c3aed,#a855f7)",
-                  border: "none",
-                  color: "white",
-                  padding: "12px 18px",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                 Crear nuevo menú
-              </button>
-            </a>
-
-            <a href="/mis-menus" style={{ textDecoration: "none" }}>
-              <button
-                style={{
-                  background: "#1e1e28",
-                  border: "1px solid #2a2a35",
-                  color: "white",
-                  padding: "12px 18px",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                }}
-              >
-                 Ver mis menús
-              </button>
-            </a>
-
-            <a href="/plantillas" style={{ textDecoration: "none" }}>
-              <button
-                style={{
-                  background: "#1e1e28",
-                  border: "1px solid #2a2a35",
-                  color: "white",
-                  padding: "12px 18px",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                }}
-              >
-                 Usar plantilla
-              </button>
-            </a>
-          </div>
 
         {/* Stats Cards */}
         <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
