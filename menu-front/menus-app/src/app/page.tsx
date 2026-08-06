@@ -51,6 +51,7 @@ export default function Dashboard() {
 
   const [mobile, setMobile] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [mostrarPremium, setMostrarPremium] = useState(false);
 
   useEffect(() => {
     const resize = () => setMobile(window.innerWidth <= 768);
@@ -63,8 +64,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     // Cargar usuario del localStorage
-    const data = localStorage.getItem("usuario");
-    if (data) setUsuario(JSON.parse(data));
+      const data = localStorage.getItem("usuario");
+
+      if (data) {
+        const usuario = JSON.parse(data);
+        setUsuario(usuario);
+
+        const popupVisto = localStorage.getItem("popup-premium");
+
+        if (!popupVisto && usuario.plan === "Basico") {
+          setMostrarPremium(true);
+        }
+      }
 
     // Cargar menús reales del backend
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menus`)
@@ -74,6 +85,11 @@ export default function Dashboard() {
       })
       .catch(err => console.error(err));
   }, []);
+
+  const cerrarPopupPremium = () => {
+  localStorage.setItem("popup-premium", "true");
+  setMostrarPremium(false);
+};
 
   const handleCerrarSesion = () => {
     localStorage.removeItem("usuario");
@@ -161,6 +177,110 @@ export default function Dashboard() {
       </aside>
 
       {/* MAIN */}
+      {mostrarPremium && (
+          <>
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,.75)",
+                backdropFilter: "blur(6px)",
+                zIndex: 999,
+              }}
+            />
+
+            <div
+              style={{
+                position: "fixed",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%,-50%)",
+                width: 520,
+                maxWidth: "92%",
+                background: "#17171f",
+                border: "1px solid #2a2a35",
+                borderRadius: 18,
+                padding: 30,
+                zIndex: 1000,
+              }}
+            >
+              <div
+                style={{
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: 24,
+                  marginBottom: 12,
+                }}
+              >
+                🚀 Activa Premium
+              </div>
+
+              <p
+                style={{
+                  color: "#999",
+                  lineHeight: 1.7,
+                  marginBottom: 20,
+                }}
+              >
+                Disfruta de una experiencia completa con Menu Master.
+              </p>
+
+              <div style={{ color: "#ddd", lineHeight: 2 }}>
+                ✅ Descargas ilimitadas<br />
+                ✅ Menús ilimitados<br />
+                ✅ Plantillas Premium<br />
+                ✅ Publicaciones sin restricciones<br />
+                ✅ Más herramientas profesionales<br />
+                ✅ Reduce costos operativos
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  marginTop: 30,
+                }}
+              >
+                <a
+                  href="/planes"
+                  style={{
+                    flex: 1,
+                    textDecoration: "none",
+                  }}
+                >
+                  <button
+                    style={{
+                      width: "100%",
+                      padding: 14,
+                      border: "none",
+                      borderRadius: 12,
+                      background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+                      color: "white",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Activar Premium
+                  </button>
+                </a>
+
+                <button
+                  onClick={cerrarPopupPremium}
+                  style={{
+                    padding: "14px 18px",
+                    borderRadius: 12,
+                    border: "1px solid #2a2a35",
+                    background: "#20202a",
+                    color: "#aaa",
+                    cursor: "pointer",
+                  }}
+                >
+                  Más tarde
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       <main className="app-main" style={{ marginLeft: 220, flex: 1, padding: mobile ? 16 : 32 }}>
 
         {/* Header */}
@@ -356,32 +476,7 @@ export default function Dashboard() {
 
             </div>
         </div>
-        
-
-        {/* Stats Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-          {[
-            { label: "Menús guardados", value: String(menuRecientes.length || 0), icon: "", href: "/mis-menus" },
-            { label: "Estadisticas", value: "256", icon: "", href: "/analiticas" },
-            { label: "Plan actual", value: usuario?.plan || "Basico", icon: "", highlight: true, href: "/planes" },
-          ].map((stat) => (
-            <a key={stat.label} href={stat.href} style={{ textDecoration: "none" }}>
-              <div style={{
-                background: stat.highlight ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "#1e1e28",
-                border: stat.highlight ? "none" : "1px solid #2a2a35",
-                borderRadius: 12, padding: "20px", cursor: "pointer",
-                transition: "transform 0.15s",
-              }}
-                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.transform = "translateY(-2px)")}
-                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.transform = "translateY(0)")}
-              >
-                <div style={{ fontSize: 24, marginBottom: 8 }}>{stat.icon}</div>
-                <div style={{ color: "white", fontSize: 24, fontWeight: 700 }}>{stat.value}</div>
-                <div style={{ color: stat.highlight ? "rgba(255,255,255,0.8)" : "#666", fontSize: 12, marginTop: 4 }}>{stat.label}</div>
-              </div>
-            </a>
-          ))}
-        </div>
+      
 
 
         {/* Estadísticas rápidas */}
