@@ -136,6 +136,7 @@ export default function Login() {
       if (data.ok) {
         localStorage.setItem("usuario", JSON.stringify(data.usuario));
         localStorage.setItem("token", data.token);
+        sessionStorage.setItem("acaba-de-iniciar-sesion", "true");
         document.cookie = `usuario=${data.usuario.id}; path=/; max-age=${60 * 60 * 24 * (rememberMe ? 30 : 7)}`;
         window.location.href = "/";
       } else {
