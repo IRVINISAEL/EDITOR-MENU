@@ -46,7 +46,7 @@ const IconoEstadisticas = () => (
 
 export default function Dashboard() {
   const [activeNav] = useState("Dashboard");
-  const [usuario, setUsuario] = useState<{ nombre: string; plan: string } | null>(null);
+  const [usuario, setUsuario] = useState<{ id?: string; email?: string; nombre: string; plan: string } | null>(null);
   const [menuRecientes, setMenuRecientes] = useState<{ id: number; nombre: string; estado: string }[]>([]);
 
   const [mobile, setMobile] = useState(false);
@@ -70,9 +70,14 @@ export default function Dashboard() {
         const usuario = JSON.parse(data);
         setUsuario(usuario);
 
-        const popupVisto = localStorage.getItem("popup-premium");
+        const userId = usuario.id || usuario.email || "anon";
+        const popupKey = `popup-premium-${userId}`;
+        const popupVisto = localStorage.getItem(popupKey);
+        const plan = (usuario.plan || "").toString().trim().toLowerCase();
 
-        if (!popupVisto && usuario.plan === "Basico") {
+        console.log("DEBUG popup ->", { plan, popupVisto, userId });
+
+        if (!popupVisto && plan === "free") {
           setMostrarPremium(true);
         }
       }
@@ -87,9 +92,10 @@ export default function Dashboard() {
   }, []);
 
   const cerrarPopupPremium = () => {
-  localStorage.setItem("popup-premium", "true");
-  setMostrarPremium(false);
-};
+    const userId = usuario?.id || usuario?.email || "anon";
+    localStorage.setItem(`popup-premium-${userId}`, "true");
+    setMostrarPremium(false);
+  };
 
   const handleCerrarSesion = () => {
     localStorage.removeItem("usuario");
@@ -280,7 +286,7 @@ export default function Dashboard() {
             </div>
           </>
         )}
-        
+
       {/* MAIN */}
       <main className="app-main" style={{ marginLeft: 220, flex: 1, padding: mobile ? 16 : 32 }}>
 
