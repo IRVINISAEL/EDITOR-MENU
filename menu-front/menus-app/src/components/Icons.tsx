@@ -232,6 +232,45 @@ export const IconClock = ({ size }: Props) => (
   </svg>
 );
 
+export const IconAlert = ({ size }: Props) => (
+  <svg {...base(size)}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="13" />
+    <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const IconClipboard = ({ size }: Props) => (
+  <svg {...base(size)}>
+    <rect x="8" y="3" width="8" height="4" rx="1" />
+    <path d="M9 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3" />
+    <path d="M9 12h6" />
+    <path d="M9 16h4" />
+  </svg>
+);
+
+export const IconPackage = ({ size }: Props) => (
+  <svg {...base(size)}>
+    <path d="M21 8.5L12 13 3 8.5" />
+    <path d="M21 16V8l-9-5-9 5v8l9 5 9-5z" />
+    <path d="M12 13v8" />
+  </svg>
+);
+
+export const IconStar = ({ size, filled }: Props) => (
+  <svg
+    width={size || 18}
+    height={size || 18}
+    viewBox="0 0 24 24"
+    fill={filled ? "currentColor" : "none"}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polygon points="12 2 15.1 8.6 22 9.3 17 14.1 18.3 21 12 17.5 5.7 21 7 14.1 2 9.3 8.9 8.6 12 2" />
+  </svg>
+);
 
 export const IconHeart = ({ size, filled }: Props) => (
   <svg

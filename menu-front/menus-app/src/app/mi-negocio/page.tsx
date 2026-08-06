@@ -2,16 +2,12 @@
 import { useState, useEffect } from "react";
 import {
   IconEdit,
-  IconChart,
   IconBuilding,
   IconCard,
   IconImage,
   IconTrash,
   IconSettings,
-  IconGlobe,
   IconLogout,
-  IconArrowRight,
-  IconBulb,
   IconCamera,
   IconX,
   IconLink,

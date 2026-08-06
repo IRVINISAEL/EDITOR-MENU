@@ -1,5 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
+import {
+  IconEdit,
+  IconBuilding,
+  IconCard,
+  IconImage,
+  IconTrash,
+  IconSettings,
+  IconLogout,
+  IconLock,
+  IconPackage,
+  IconStar,
+} from "@/components/Icons";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -879,11 +891,12 @@ const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },
   { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
-  { icon: "✏️", label: "Mis Diseños", href: "#" },
-  { icon: "🖼️", label: "Medios", href: "#" },
-  { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
-  { icon: "💳", label: "Facturación", href: "/planes" },
-  { icon: "⚙️", label: "Configuración", href: "/configuracion" },
+  { icon: <IconEdit />, label: "Mis Diseños", href: "#" },
+  { icon: <IconImage />, label: "Medios", href: "#" },
+  { icon: <IconTrash />, label: "Papelera", href: "/papelera" },
+  { icon: <IconBuilding />, label: "Mi Negocio", href: "/mi-negocio" },
+  { icon: <IconCard />, label: "Facturación", href: "/planes" },
+  { icon: <IconSettings />, label: "Configuración", href: "/configuracion" },
 ];
 
 type Plantilla = typeof plantillas[number] & { premium?: boolean };
@@ -1000,7 +1013,7 @@ export default function Plantillas() {
             }}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}
           >
-            <span>🚪</span> Cerrar sesión
+            <span><IconLogout /></span> Cerrar sesión
           </div>
         </div>
       </aside>

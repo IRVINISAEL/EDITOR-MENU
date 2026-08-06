@@ -1,5 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
+import {
+  IconEdit,
+  IconBuilding,
+  IconCard,
+  IconImage,
+  IconTrash,
+  IconSettings,
+  IconLogout,
+  IconLock,
+  IconPackage,
+  IconStar,
+} from "@/components/Icons";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -7,12 +19,12 @@ const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },
   { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
-  { icon: "✏️", label: "Mis Diseños", href: "#" },
-  { icon: "🖼️", label: "Medios", href: "#" },
-  { icon: "🗑️", label: "Papelera", href: "/papelera" },
-  { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
-  { icon: "💳", label: "Facturación", href: "/planes" },
-  { icon: "⚙️", label: "Configuración", href: "/configuracion" },
+  { icon: <IconEdit />, label: "Mis Diseños", href: "#" },
+  { icon: <IconImage />, label: "Medios", href: "#" },
+  { icon: <IconTrash />, label: "Papelera", href: "/papelera" },
+  { icon: <IconBuilding />, label: "Mi Negocio", href: "/mi-negocio" },
+  { icon: <IconCard />, label: "Facturación", href: "/planes" },
+  { icon: <IconSettings />, label: "Configuración", href: "/configuracion" },
 ];
 
 type Plan = {
@@ -123,7 +135,7 @@ export default function Planes() {
             }}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}
           >
-            <span>🚪</span> Cerrar sesión
+           <span><IconLogout /></span> Cerrar sesión
           </div>
         </div>
       </aside>
@@ -154,7 +166,7 @@ export default function Planes() {
                       background: "linear-gradient(135deg, #7c3aed, #a855f7)",
                       borderRadius: 20, padding: "4px 16px",
                       color: "white", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", zIndex: 2,
-                    }}>⭐ MÁS POPULAR</div>
+                    }}><IconStar /> MÁS POPULAR</div>
                   )}
                   <div style={{
                     background: esPopular ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "#1e1e28",
@@ -164,7 +176,7 @@ export default function Planes() {
                     height: "100%", boxSizing: "border-box",
                   }}>
                     <div>
-                      <div style={{ fontSize: 32, marginBottom: 8 }}>{PLAN_EMOJI[plan.nombre] || "📦"}</div>
+                      <div style={{ fontSize: 32, marginBottom: 8 }}>{PLAN_EMOJI[plan.nombre] || <IconPackage />}</div>
                       <div style={{ color: "white", fontWeight: 700, fontSize: 16 }}>{plan.nombre.toUpperCase()}</div>
                       <div style={{ color: esPopular ? "rgba(255,255,255,0.7)" : "#666", fontSize: 12, marginTop: 4 }}>{plan.descripcion}</div>
                     </div>
@@ -213,7 +225,7 @@ export default function Planes() {
           background: "#1e1e28", border: "1px solid #2a2a35",
           borderRadius: 12, padding: "20px", maxWidth: 500, margin: "40px auto 0",
         }}>
-          <div style={{ fontSize: 24, marginBottom: 8 }}>🔒</div>
+          <div style={{ fontSize: 24, marginBottom: 8 }}><IconLock /></div>
           <div style={{ color: "white", fontSize: 14, fontWeight: 600 }}>Tus datos están 100% seguros</div>
           <div style={{ color: "#666", fontSize: 12, marginTop: 6 }}>
             Al dar clic en "Activar Plan" tu suscripción se actualiza de inmediato en tu cuenta.

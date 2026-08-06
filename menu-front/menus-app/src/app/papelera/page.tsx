@@ -1,5 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
+import {
+  IconEdit,
+  IconBuilding,
+  IconCard,
+  IconImage,
+  IconTrash,
+  IconSettings,
+  IconLogout,
+  IconRefresh
+} from "@/components/Icons";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -10,12 +20,12 @@ const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },
   { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
-  { icon: "✏️", label: "Mis Diseños", href: "#" },
-  { icon: "🖼️", label: "Medios", href: "#" },
-  { icon: "🗑️", label: "Papelera", href: "/papelera" },
-  { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
-  { icon: "💳", label: "Facturación", href: "/planes" },
-  { icon: "⚙️", label: "Configuración", href: "/configuracion" },
+  { icon: <IconEdit />, label: "Mis Diseños", href: "#" },
+  { icon: <IconImage />, label: "Medios", href: "#" },
+  { icon: <IconTrash />, label: "Papelera", href: "/papelera" },
+  { icon: <IconBuilding />, label: "Mi Negocio", href: "/mi-negocio" },
+  { icon: <IconCard />, label: "Facturación", href: "/planes" },
+  { icon: <IconSettings />, label: "Configuración", href: "/configuracion" },
 ];
 
 type MenuEliminado = {
@@ -156,7 +166,7 @@ export default function Papelera() {
             }}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}
           >
-            <span>🚪</span> Cerrar sesión
+            <span><IconLogout /></span> Cerrar sesión
           </div>
         </div>
       </aside>
@@ -192,7 +202,7 @@ export default function Papelera() {
             <div style={{ padding: 40, textAlign: "center", color: "#555" }}>Cargando papelera...</div>
           ) : menus.length === 0 ? (
             <div style={{ padding: 40, textAlign: "center", color: "#555" }}>
-              🗑️ La papelera está vacía.
+              <IconTrash /> La papelera está vacía.
             </div>
           ) : menus.map((menu, i) => {
             const restantes = diasRestantes(menu.eliminado_at);
@@ -225,7 +235,7 @@ export default function Papelera() {
                     disabled={restaurandoId === menu.id}
                     style={{ background: restaurandoId === menu.id ? "#555" : "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none", borderRadius: 6, padding: "8px 14px", color: "white", cursor: restaurandoId === menu.id ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600 }}
                   >
-                    {restaurandoId === menu.id ? "Restaurando..." : "↩️ Restaurar"}
+                    {restaurandoId === menu.id ? "Restaurando..." : "↩ Restaurar"}
                   </button>
                 </div>
               </div>
@@ -234,7 +244,7 @@ export default function Papelera() {
         </div>
 
         <div style={{ textAlign: "center", marginTop: 20 }}>
-          <button onClick={cargarPapelera} style={{ background: "transparent", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 24px", color: "#888", cursor: "pointer", fontSize: 13 }}>🔄 Actualizar</button>
+          <button onClick={cargarPapelera} style={{ background: "transparent", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 24px", color: "#888", cursor: "pointer", fontSize: 13 }}><IconRefresh /> Actualizar</button>
         </div>
       </main>
     </div>
