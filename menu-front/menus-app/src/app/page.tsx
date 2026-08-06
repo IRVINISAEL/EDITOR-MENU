@@ -1,15 +1,26 @@
 "use client";
 import { useState, useEffect } from "react";
+import {
+  IconEdit,
+  IconChart,
+  IconBuilding,
+  IconCard,
+  IconSettings,
+  IconGlobe,
+  IconLogout,
+  IconArrowRight,
+  IconBulb,
+} from "@/components/Icons";
 
 const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },
   { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
-  { icon: "✏️", label: "Editor", href: "/editor" },
-  { icon: "📊", label: "Analíticas", href: "/analiticas" },
-  { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
-  { icon: "💳", label: "Facturación", href: "/planes" },
-  { icon: "⚙️", label: "Configuración", href: "/configuracion" },
+  { icon: <IconEdit />, label: "Editor", href: "/editor" },
+  { icon: <IconChart />, label: "Analíticas", href: "/analiticas" },
+  { icon: <IconBuilding />, label: "Mi Negocio", href: "/mi-negocio" },
+  { icon: <IconCard />, label: "Facturación", href: "/planes" },
+  { icon: <IconSettings />, label: "Configuración", href: "/configuracion" },
 ];
 const plantillasPopulares = [
   { id: 2, nombre: "Moderno Minimalista", color: "#1a1a1a", textColor: "#ffffff", emoji: "⬛" },
@@ -133,7 +144,7 @@ export default function Dashboard() {
               onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = "white")}
               onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = "#888")}
             >
-              <span>🌐</span> Landing Page
+              <span><IconGlobe /></span> Landing Page
             </div>
           </a>
           <div onClick={handleCerrarSesion} style={{
@@ -144,7 +155,7 @@ export default function Dashboard() {
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = "white")}
             onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = "#888")}
           >
-            <span>🚪</span> Cerrar sesión
+            <span><IconLogout /></span> Cerrar sesión
           </div>
         </div>
       </aside>
@@ -308,7 +319,7 @@ export default function Dashboard() {
                 alignItems: mobile ? "flex-start" : "center",
                 gap: mobile ? 16 : 0, marginBottom: 20 }}>
               <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Estadísticas rápidas</h2>
-              <span style={{ color: "#a855f7", fontSize: 12, fontWeight: 600 }}>Ver analíticas →</span>
+              <span style={{ color: "#a855f7", fontSize: 12, fontWeight: 600 }}>Ver analíticas <IconArrowRight /></span> 
             </div>
             <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16 }}>
               {[
@@ -344,7 +355,7 @@ export default function Dashboard() {
                 marginBottom: 8,
               }}
             >
-              💡 Consejo
+              <IconBulb /> Consejo
             </div>
 
             <div
@@ -367,7 +378,7 @@ export default function Dashboard() {
               alignItems: mobile ? "flex-start" : "center",
               gap: mobile ? 16 : 0, marginBottom: 16 }}>
               <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Plantillas populares</h2>
-              <a href="/plantillas" style={{ color: "#a855f7", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Ver todas →</a>
+              <a href="/plantillas" style={{ color: "#a855f7", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Ver todas <IconArrowRight /></a>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16 }}>
               {plantillasPopulares.map((p) => (

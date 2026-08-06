@@ -1,16 +1,36 @@
 "use client";
 import { useState, useEffect } from "react";
+import {
+  IconEdit,
+  IconChart,
+  IconBuilding,
+  IconCard,
+  IconImage,
+  IconTrash,
+  IconSettings,
+  IconGlobe,
+  IconLogout,
+  IconArrowRight,
+  IconBulb,
+  IconCamera,
+  IconX,
+  IconLink,
+  IconMusic,
+  IconMessageCircle,
+  IconCheck,
+  IconSave,
+} from "@/components/Icons";
 
 const navItems = [
   { icon: "⊞", label: "Dashboard", href: "/" },
   { icon: "☰", label: "Mis Menús", href: "/mis-menus" },
   { icon: "▦", label: "Plantillas", href: "/plantillas" },
-  { icon: "✏️", label: "Mis Diseños", href: "#" },
-  { icon: "🖼️", label: "Medios", href: "#" },
-  { icon: "🗑️", label: "Papelera", href: "/papelera" },
-  { icon: "🏢", label: "Mi Negocio", href: "/mi-negocio" },
-  { icon: "💳", label: "Facturación", href: "/planes" },
-  { icon: "⚙️", label: "Configuración", href: "/configuracion" },
+  { icon: <IconEdit />, label: "Mis Diseños", href: "#" },
+  { icon: <IconImage />, label: "Medios", href: "#" },
+  { icon: <IconTrash />, label: "Papelera", href: "/papelera" },
+  { icon: <IconBuilding />, label: "Mi Negocio", href: "/mi-negocio" },
+  { icon: <IconCard />, label: "Facturación", href: "/planes" },
+  { icon: <IconSettings />, label: "Configuración", href: "/configuracion" },
 ];
 
 export default function MiNegocio() {
@@ -75,10 +95,10 @@ export default function MiNegocio() {
       const res = await fetch(`${API}/api/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
       const data = await res.json();
       if (data.ok && data.url) setLogo(data.url);
-      else alert("❌ No se pudo subir el logo: " + (data.mensaje || "error desconocido"));
+      else alert("No se pudo subir el logo: " + (data.mensaje || "error desconocido"));
     } catch (err) {
       console.error(err);
-      alert("❌ Error de conexión al subir el logo.");
+      alert(" Error de conexión al subir el logo.");
     } finally {
       setSubiendoLogo(false);
     }
@@ -100,10 +120,10 @@ export default function MiNegocio() {
       });
       const data = await res.json();
       if (data.ok) { setGuardado(true); setTimeout(() => setGuardado(false), 2000); }
-      else alert("❌ No se pudo guardar: " + (data.mensaje || "error desconocido"));
+      else alert(" No se pudo guardar: " + (data.mensaje || "error desconocido"));
     } catch (err) {
       console.error(err);
-      alert("❌ Error de conexión al guardar la información del negocio.");
+      alert(" Error de conexión al guardar la información del negocio.");
     } finally {
       setGuardando(false);
     }
@@ -151,7 +171,7 @@ export default function MiNegocio() {
             }}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}
           >
-            <span>🚪</span> Cerrar sesión
+            <span><IconLogout /></span> Cerrar sesión
           </div>
         </div>
       </aside>
@@ -168,16 +188,16 @@ export default function MiNegocio() {
           <div style={{ color: "white", fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Logo del negocio</div>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <div style={{ width: 100, height: 100, borderRadius: 12, background: "#16161d", border: "2px dashed #2a2a35", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
-              {logo ? <img src={logo} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 32 }}>🏢</span>}
+              {logo ? <img src={logo} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 32 }}><IconBuilding /></span>}
             </div>
             <div>
               <label style={{ cursor: "pointer" }}>
                 <div style={{ background: "#7c3aed22", border: "1px solid #7c3aed44", borderRadius: 8, padding: "10px 18px", color: "#a855f7", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "inline-block" }}>
-                  📷 Subir logo
+                  <IconCamera /> Subir logo
                 </div>
                 <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) handleLogo(f); }} />
               </label>
-              {logo && <button onClick={() => setLogo("")} style={{ display: "block", marginTop: 8, background: "transparent", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer" }}>✕ Quitar logo</button>}
+              {logo && <button onClick={() => setLogo("")} style={{ display: "block", marginTop: 8, background: "transparent", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer" }}><IconX /> Quitar logo</button>}
               <p style={{ color: "#555", fontSize: 11, marginTop: 8 }}>PNG, JPG. Recomendado: 400x400px</p>
             </div>
           </div>
@@ -244,10 +264,10 @@ export default function MiNegocio() {
           <div style={{ color: "white", fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Redes sociales</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {[
-              { label: "INSTAGRAM", icon: "📸", value: instagram, set: setInstagram, placeholder: "@minegocio" },
-              { label: "FACEBOOK", icon: "📘", value: facebook, set: setFacebook, placeholder: "facebook.com/minegocio" },
-              { label: "TIKTOK", icon: "🎵", value: tiktok, set: setTiktok, placeholder: "@minegocio" },
-              { label: "WHATSAPP", icon: "💬", value: whatsapp, set: setWhatsapp, placeholder: "+52 55 1234 5678" },
+              { label: "INSTAGRAM", icon: <IconCamera />, value: instagram, set: setInstagram, placeholder: "@minegocio" },
+              { label: "FACEBOOK", icon: <IconLink />, value: facebook, set: setFacebook, placeholder: "facebook.com/minegocio" },
+              { label: "TIKTOK", icon: <IconMusic />, value: tiktok, set: setTiktok, placeholder: "@minegocio" },
+              { label: "WHATSAPP", icon: <IconMessageCircle />, value: whatsapp, set: setWhatsapp, placeholder: "+52 55 1234 5678" },
             ].map(r => (
               <div key={r.label}>
                 <label style={labelStyle}>{r.icon} {r.label}</label>
@@ -258,7 +278,7 @@ export default function MiNegocio() {
         </div>
 
         <button onClick={guardar} style={{ background: guardado ? "#16a34a" : "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none", borderRadius: 10, padding: "14px 32px", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", transition: "all 0.3s" }}>
-          {guardando ? "Guardando..." : guardado ? "✓ Guardado" : "💾 Guardar cambios"}
+           {guardando ? "Guardando..." : guardado ? (<><IconCheck /> Guardado</>) : (<><IconSave /> Guardar cambios</>)}
         </button>
       </main>
     </div>
