@@ -9,7 +9,10 @@ import DescargasInfo from "@/components/DescargasInfo";
 const fuentes = [
   "Playfair Display", "Georgia", "Arial", "Montserrat", "Times New Roman",
   "Lora", "Raleway", "Oswald", "Merriweather", "Poppins",
-  "EB Garamond", "Cinzel", "Dancing Script", "Josefin Sans", "Libre Baskerville"
+  "EB Garamond", "Cinzel", "Dancing Script", "Josefin Sans", "Libre Baskerville",
+  "Bebas Neue", "Abril Fatface", "Quicksand", "Cormorant Garamond", "Nunito",
+  "Pacifico", "Crimson Text", "Rubik", "Barlow Condensed", "Space Grotesk",
+  "DM Serif Display", "Fjalla One", "Prata", "Caveat", "Marcellus"
 ];
 
 const fondos = [
@@ -25,6 +28,19 @@ const fondos = [
   { nombre: "Naranja", bg: "linear-gradient(135deg, #fff7ed, #fed7aa)", texto: "#7c2d12", acento: "#ea580c" },
   { nombre: "Carbón", bg: "linear-gradient(135deg, #18181b, #27272a)", texto: "#fafafa", acento: "#facc15" },
   { nombre: "Rojo Vino", bg: "linear-gradient(135deg, #fff1f2, #ffe4e6)", texto: "#4c0519", acento: "#be123c" },
+  { nombre: "Terracota", bg: "linear-gradient(135deg, #fff5eb, #ffe4cc)", texto: "#7c2d12", acento: "#c2410c" },
+  { nombre: "Esmeralda Oscuro", bg: "linear-gradient(135deg, #052e1f, #0a4a32)", texto: "#d1fae5", acento: "#34d399" },
+  { nombre: "Marfil Dorado", bg: "linear-gradient(135deg, #fffdf5, #fef3c7)", texto: "#78350f", acento: "#d97706" },
+  { nombre: "Azul Petróleo", bg: "linear-gradient(135deg, #083344, #0e4a5c)", texto: "#cffafe", acento: "#22d3ee" },
+  { nombre: "Ciruela", bg: "linear-gradient(135deg, #2e1065, #4c1d95)", texto: "#ede9fe", acento: "#c084fc" },
+  { nombre: "Coral", bg: "linear-gradient(135deg, #fff1ee, #ffe0d6)", texto: "#7f1d1d", acento: "#f97316" },
+  { nombre: "Grafito Neón", bg: "linear-gradient(135deg, #09090b, #18181b)", texto: "#f4f4f5", acento: "#22c55e" },
+  { nombre: "Durazno Suave", bg: "linear-gradient(135deg, #fff7f0, #ffe8d6)", texto: "#7c2d12", acento: "#fb923c" },
+  { nombre: "Índigo Real", bg: "linear-gradient(135deg, #1e1b4b, #312e81)", texto: "#e0e7ff", acento: "#818cf8" },
+  { nombre: "Piedra Cálida", bg: "linear-gradient(135deg, #fafaf9, #f0ede8)", texto: "#44403c", acento: "#78716c" },
+  { nombre: "Borgoña Noche", bg: "linear-gradient(135deg, #1c0a0a, #3d1015)", texto: "#fecaca", acento: "#f43f5e" },
+  { nombre: "Turquesa Fresca", bg: "linear-gradient(135deg, #ecfeff, #cffafe)", texto: "#164e63", acento: "#06b6d4" },
+  { nombre: "Bronce Vintage", bg: "linear-gradient(135deg, #2b1d0e, #4a3520)", texto: "#f5deb3", acento: "#d4a24c" },
 ];
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -127,6 +143,12 @@ export default function Editor() {
   const [colorTitulo, setColorTitulo] = useState("");
   const [colorSubtitulo, setColorSubtitulo] = useState("");
   const [fuenteTitulo, setFuenteTitulo] = useState("");
+  const [negritaTitulo, setNegritaTitulo] = useState(true);
+  const [cursivaTitulo, setCursivaTitulo] = useState(false);
+  const [espaciadoTitulo, setEspaciadoTitulo] = useState(4);
+  const [negritaSubtitulo, setNegritaSubtitulo] = useState(false);
+  const [cursivaSubtitulo, setCursivaSubtitulo] = useState(false);
+  const [espaciadoSubtitulo, setEspaciadoSubtitulo] = useState(6);
  const menuRef = useRef<HTMLDivElement>(null);
   const [mobile, setMobile] = useState(false);
   const [anchoVentana, setAnchoVentana] = useState(1200);
@@ -1018,8 +1040,10 @@ export default function Editor() {
                   onClick={() => setEditando({ tipo: "titulo" })}
                   style={{
                     fontSize: tamaño / 2.8, color: colorTitulo || fondoActivo.texto,
-                    fontWeight: 700, fontFamily: fuenteTitulo || fuenteActiva,
-                    letterSpacing: 4, textAlign: "center", width: "100%", cursor: "text", margin: 0, textTransform: "uppercase"
+                    fontWeight: negritaTitulo ? 700 : 400,
+                    fontStyle: cursivaTitulo ? "italic" : "normal",
+                    fontFamily: fuenteTitulo || fuenteActiva,
+                    letterSpacing: espaciadoTitulo, textAlign: "center", width: "100%", cursor: "text", margin: 0, textTransform: "uppercase"
                   }}
                 >
                   {nombreMenu || "MENÚ RESTAURANTE"}
@@ -1037,8 +1061,10 @@ export default function Editor() {
                     borderBottom: `2px solid ${fondoActivo.acento}`,
                     outline: "none", fontSize: tamaño / 5,
                     color: colorSubtitulo || fondoActivo.acento,
-                    fontWeight: 400, fontFamily: fuenteTitulo || fuenteActiva,
-                    letterSpacing: 6, textAlign: "center", width: "100%", marginTop: 4
+                    fontWeight: negritaSubtitulo ? 700 : 400,
+                    fontStyle: cursivaSubtitulo ? "italic" : "normal",
+                    fontFamily: fuenteTitulo || fuenteActiva,
+                    letterSpacing: espaciadoSubtitulo, textAlign: "center", width: "100%", marginTop: 4
                   }}
                 />
               ) : (
@@ -1046,8 +1072,10 @@ export default function Editor() {
                   onClick={() => setEditando({ tipo: "subtitulo" })}
                   style={{
                     fontSize: tamaño / 5, color: colorSubtitulo || fondoActivo.acento,
-                    fontWeight: 400, fontFamily: fuenteTitulo || fuenteActiva,
-                    letterSpacing: 6, textAlign: "center", width: "100%", cursor: "text", marginTop: 4, marginBottom: 0, textTransform: "uppercase"
+                    fontWeight: negritaSubtitulo ? 700 : 400,
+                    fontStyle: cursivaSubtitulo ? "italic" : "normal",
+                    fontFamily: fuenteTitulo || fuenteActiva,
+                    letterSpacing: espaciadoSubtitulo, textAlign: "center", width: "100%", cursor: "text", marginTop: 4, marginBottom: 0, textTransform: "uppercase"
                   }}
                 >
                   {subtitulo || "RESTAURANTE"}
@@ -1262,23 +1290,84 @@ export default function Editor() {
               </select>
             </div>
 
+            <div>
+              <label style={{ color: "#888", fontSize: 11, display: "block", marginBottom: 6 }}>Tamaño de Fuente Principal</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="range" min={24} max={80} value={tamaño}
+                  onChange={e => { setTamaño(Number(e.target.value)); setGuardado(false); }}
+                  style={{ flex: 1, accentColor: "#a855f7" }}
+                />
+                <span style={{ color: "#a855f7", fontSize: 11, fontWeight: 700, width: 28, textAlign: "right" }}>{tamaño}</span>
+              </div>
+            </div>
+
             {editando?.tipo === "titulo" || editando?.tipo === "subtitulo" ? (
-              <div style={{ background: "#1e1e28", padding: 10, borderRadius: 6, border: "1px solid #7c3aed44" }}>
-                <span style={{ color: "#a855f7", fontSize: 11, fontWeight: 600 }}>Personalizar {editando.tipo}</span>
-                <div style={{ marginTop: 8 }}>
-                  <label style={{ color: "#aaa", fontSize: 10, display: "block", marginBottom: 4 }}>Color Personalizado</label>
-                  <input type="color" value={editando.tipo === "titulo" ? colorTitulo || fondoActivo.texto : colorSubtitulo || fondoActivo.acento} onChange={e => { if (editando.tipo === "titulo") setColorTitulo(e.target.value); else setColorSubtitulo(e.target.value); setGuardado(false); }} style={{ width: "100%", height: 28, border: "none", borderRadius: 4, cursor: "pointer", background: "transparent" }} />
+              <div style={{ background: "#1e1e28", padding: 12, borderRadius: 8, border: "1px solid #7c3aed44", display: "flex", flexDirection: "column", gap: 10 }}>
+                <span style={{ color: "#a855f7", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  Personalizar {editando.tipo === "titulo" ? "título" : "subtítulo"}
+                </span>
+
+                <div>
+                  <label style={{ color: "#aaa", fontSize: 10, display: "block", marginBottom: 4 }}>Color</label>
+                  <input
+                    type="color"
+                    value={editando.tipo === "titulo" ? colorTitulo || fondoActivo.texto : colorSubtitulo || fondoActivo.acento}
+                    onChange={e => { if (editando.tipo === "titulo") setColorTitulo(e.target.value); else setColorSubtitulo(e.target.value); setGuardado(false); }}
+                    style={{ width: "100%", height: 30, border: "1px solid #2a2a35", borderRadius: 6, cursor: "pointer", background: "transparent" }}
+                  />
                 </div>
-                <div style={{ marginTop: 8 }}>
-                  <label style={{ color: "#aaa", fontSize: 10, display: "block", marginBottom: 4 }}>Fuente de Títulos</label>
-                  <select value={fuenteTitulo || fuenteActiva} onChange={e => setFuenteTitulo(e.target.value)} style={{ width: "100%", background: "#16161d", border: "1px solid #2a2a35", borderRadius: 4, color: "white", padding: 4, fontSize: 11 }}>
+
+                <div>
+                  <label style={{ color: "#aaa", fontSize: 10, display: "block", marginBottom: 4 }}>Fuente</label>
+                  <select value={fuenteTitulo || fuenteActiva} onChange={e => { setFuenteTitulo(e.target.value); setGuardado(false); }} style={{ width: "100%", background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, color: "white", padding: 6, fontSize: 11 }}>
                     {fuentes.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
+                </div>
+
+                <div>
+                  <label style={{ color: "#aaa", fontSize: 10, display: "block", marginBottom: 4 }}>Estilo</label>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      onClick={() => { editando.tipo === "titulo" ? setNegritaTitulo(!negritaTitulo) : setNegritaSubtitulo(!negritaSubtitulo); setGuardado(false); }}
+                      style={{
+                        flex: 1, padding: "7px 0", borderRadius: 6, cursor: "pointer", fontWeight: 800, fontSize: 13,
+                        border: `1px solid ${(editando.tipo === "titulo" ? negritaTitulo : negritaSubtitulo) ? "#a855f7" : "#2a2a35"}`,
+                        background: (editando.tipo === "titulo" ? negritaTitulo : negritaSubtitulo) ? "#7c3aed33" : "#16161d",
+                        color: (editando.tipo === "titulo" ? negritaTitulo : negritaSubtitulo) ? "#a855f7" : "#888",
+                      }}
+                    >N</button>
+                    <button
+                      onClick={() => { editando.tipo === "titulo" ? setCursivaTitulo(!cursivaTitulo) : setCursivaSubtitulo(!cursivaSubtitulo); setGuardado(false); }}
+                      style={{
+                        flex: 1, padding: "7px 0", borderRadius: 6, cursor: "pointer", fontStyle: "italic", fontSize: 13,
+                        border: `1px solid ${(editando.tipo === "titulo" ? cursivaTitulo : cursivaSubtitulo) ? "#a855f7" : "#2a2a35"}`,
+                        background: (editando.tipo === "titulo" ? cursivaTitulo : cursivaSubtitulo) ? "#7c3aed33" : "#16161d",
+                        color: (editando.tipo === "titulo" ? cursivaTitulo : cursivaSubtitulo) ? "#a855f7" : "#888",
+                      }}
+                    >I</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ color: "#aaa", fontSize: 10, display: "block", marginBottom: 4 }}>
+                    Espaciado entre letras: {editando.tipo === "titulo" ? espaciadoTitulo : espaciadoSubtitulo}px
+                  </label>
+                  <input
+                    type="range" min={0} max={14}
+                    value={editando.tipo === "titulo" ? espaciadoTitulo : espaciadoSubtitulo}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      editando.tipo === "titulo" ? setEspaciadoTitulo(val) : setEspaciadoSubtitulo(val);
+                      setGuardado(false);
+                    }}
+                    style={{ width: "100%", accentColor: "#a855f7" }}
+                  />
                 </div>
               </div>
             ) : (
               <p style={{ color: "#555", fontSize: 11, fontStyle: "italic", margin: 0 }}>
-                Haz clic en cualquier texto del menú (Título, plato, sección) para editar su contenido directamente en caliente.
+                Haz clic en cualquier texto del menú (título, subtítulo, plato o sección) para editar su contenido y estilo directamente.
               </p>
             )}
           </div>
@@ -1286,12 +1375,47 @@ export default function Editor() {
 
         {herramienta === "Fondos" && (
           <div>
-            <label style={{ color: "#888", fontSize: 11, display: "block", marginBottom: 8 }}>Selecciona un Tema Estilizado</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <label style={{ color: "#888", fontSize: 11, display: "block", marginBottom: 10 }}>
+              Selecciona un tema estilizado <span style={{ color: "#444" }}>({fondos.length} disponibles)</span>
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               {fondos.map(f => (
-                <button key={f.nombre} onClick={() => { setFondoActivo(f); setGuardado(false); }} style={{ width: "100%", padding: "10px", background: f.bg, border: fondoActivo.nombre === f.nombre ? "2px solid #a855f7" : "1px solid #2a2a35", borderRadius: 6, textAlign: "left", cursor: "pointer" }}>
-                  <span style={{ color: f.texto, fontWeight: 600, fontSize: 12 }}>{f.nombre}</span>
-                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: f.acento, display: "inline-block", float: "right" }} />
+                <button
+                  key={f.nombre}
+                  onClick={() => { setFondoActivo(f); setGuardado(false); }}
+                  title={f.nombre}
+                  style={{
+                    padding: "10px 8px",
+                    background: f.bg,
+                    border: fondoActivo.nombre === f.nombre ? "2px solid #a855f7" : "1px solid #2a2a35",
+                    borderRadius: 8,
+                    textAlign: "left",
+                    cursor: "pointer",
+                    position: "relative",
+                    minHeight: 54,
+                    transition: "transform .12s ease, box-shadow .12s ease",
+                    boxShadow: fondoActivo.nombre === f.nombre ? "0 0 0 3px rgba(168,85,247,.18)" : "none",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.transform = "translateY(-2px)")}
+                  onMouseLeave={e => (e.currentTarget.style.transform = "translateY(0)")}
+                >
+                  <span style={{ color: f.texto, fontWeight: 700, fontSize: 10.5, display: "block", lineHeight: 1.3 }}>
+                    {f.nombre}
+                  </span>
+                  <div style={{
+                    width: 14, height: 14, borderRadius: "50%", background: f.acento,
+                    position: "absolute", bottom: 8, right: 8, border: "1px solid rgba(255,255,255,.4)",
+                  }} />
+                  {fondoActivo.nombre === f.nombre && (
+                    <div style={{
+                      position: "absolute", top: 6, right: 6, width: 16, height: 16, borderRadius: "50%",
+                      background: "#a855f7", display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6 9 17l-5-5" />
+                      </svg>
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
