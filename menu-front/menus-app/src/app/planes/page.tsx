@@ -185,6 +185,7 @@ export default function Planes() {
             {planes.map((plan) => {
               const esPopular = plan.nombre === PLAN_POPULAR;
               const esActivo = planActivo === plan.id;
+              const precioNum = Number(plan.precio) || 0;
               return (
                 <div key={plan.id} style={{ position: "relative" }}>
                   {esPopular && (
@@ -209,19 +210,19 @@ export default function Planes() {
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                        {plan.precio > 0 && (
+                        {precioNum > 0 && (
                           <span style={{
                             color: esPopular ? "rgba(255,255,255,0.6)" : "#666",
                             fontSize: 16, fontWeight: 600,
                             textDecoration: "line-through",
-                          }}>${plan.precio.toFixed(2)}</span>
+                          }}>${precioNum.toFixed(2)}</span>
                         )}
                         <span style={{ color: "white", fontSize: 32, fontWeight: 700 }}>
-                          ${(plan.precio / 2).toFixed(2)}
+                          ${(precioNum / 2).toFixed(2)}
                         </span>
                         <span style={{ color: esPopular ? "rgba(255,255,255,0.7)" : "#666", fontSize: 13 }}>/mes</span>
                       </div>
-                      {plan.precio > 0 && (
+                      {precioNum > 0 && (
                         <span style={{
                           display: "inline-block", marginTop: 6,
                           background: esPopular ? "rgba(255,255,255,0.2)" : "#a855f722",
@@ -232,7 +233,7 @@ export default function Planes() {
                       )}
                     </div>
                     <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-                      {plan.beneficios.map((f) => (
+                      {(plan.beneficios || []).map((f) => (
                         <div key={f} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ color: esPopular ? "white" : "#a855f7", fontSize: 14 }}>✓</span>
                           <span style={{ color: esPopular ? "rgba(255,255,255,0.9)" : "#aaa", fontSize: 13 }}>{f}</span>
