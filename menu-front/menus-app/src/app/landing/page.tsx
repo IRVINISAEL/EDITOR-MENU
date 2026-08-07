@@ -4,7 +4,7 @@ import { useState } from "react";
 const features = [
   { icon: "✏️", titulo: "Editor Profesional", desc: "Diseña tu menú con drag & drop. Sin conocimientos de diseño." },
   { icon: "⚡", titulo: "Actualización Instantánea", desc: "Cambia precios y platillos en segundos desde tu celular." },
-  { icon: "📄", titulo: "Exporta a PDF y QR", desc: "Descarga tu menú en PDF o comparte el link con un código QR." },
+  { icon: "📄", titulo: "Exporta a PDF", desc: "Descarga tu menú en PDF o PNG cuando quieras." },
   { icon: "🎨", titulo: "Plantillas Premium", desc: "Más de 20 plantillas profesionales para todo tipo de negocio." },
   { icon: "📱", titulo: "Vista Móvil", desc: "Tus clientes pueden ver el menú desde cualquier celular." },
   { icon: "💰", titulo: "Ahorra dinero", desc: "Olvídate de pagar $1,000 MXN cada vez que actualizas tu menú." },
@@ -17,9 +17,9 @@ const testimonios = [
 ];
 
 const planes = [
-  { nombre: "BÁSICO", precio: 99, features: ["1 Menú", "5 Plantillas", "Exportar PDF", "Soporte email"], popular: false },
-  { nombre: "PROFESIONAL", precio: 399, features: ["Menús ilimitados", "Plantillas Premium", "PDF + QR", "Soporte prioritario"], popular: true },
-  { nombre: "EMPRESARIAL", precio: 799, features: ["Todo en Pro", "Múltiples usuarios", "Marca Blanca", "Soporte 24/7"], popular: false },
+  { nombre: "BÁSICO", precio: 99, features: ["1 Menú", "5 Plantillas", "Exportar PDF", "Papelera (30 días)"], popular: false },
+  { nombre: "PROFESIONAL", precio: 399, features: ["Menús ilimitados", "Plantillas Premium", "Exportar PDF/PNG", "Estadísticas de vistas"], popular: true },
+  { nombre: "EMPRESARIAL", precio: 799, features: ["Todo en Pro", "Descargas ilimitadas", "Perfil de negocio + redes sociales"], popular: false },
 ];
 
 const WHATSAPP_NUMBER = "529001234567";
