@@ -35,12 +35,39 @@ type Plan = {
   beneficios: string[];
 };
 
-// Emoji e indicador "popular" solo visuales, no vienen del backend.
-const PLAN_EMOJI: Record<string, string> = {
-  Free: "🌱",
-  "Básico": "⚡",
-  Plus: "🚀",
-  Premium: "💎",
+// Iconos por plan (SVG en vez de emojis)
+const IconLeaf = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+    <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+  </svg>
+);
+const IconBolt = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </svg>
+);
+const IconRocket = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+    <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+    <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+    <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+  </svg>
+);
+const IconDiamond = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 3h12l4 6-10 12L2 9Z" />
+    <path d="M11 3 8 9l4 12 4-12-3-6" />
+    <path d="M2 9h20" />
+  </svg>
+);
+
+const PLAN_ICON: Record<string, React.ReactNode> = {
+  Free: <IconLeaf />,
+  "Básico": <IconBolt />,
+  Plus: <IconRocket />,
+  Premium: <IconDiamond />,
 };
 const PLAN_POPULAR = "Plus"; // nombre del plan que se resalta como más popular
 
@@ -176,13 +203,33 @@ export default function Planes() {
                     height: "100%", boxSizing: "border-box",
                   }}>
                     <div>
-                      <div style={{ fontSize: 32, marginBottom: 8 }}>{PLAN_EMOJI[plan.nombre] || <IconPackage />}</div>
+                      <div style={{ color: esPopular ? "white" : "#a855f7", marginBottom: 8 }}>{PLAN_ICON[plan.nombre] || <IconPackage />}</div>
                       <div style={{ color: "white", fontWeight: 700, fontSize: 16 }}>{plan.nombre.toUpperCase()}</div>
                       <div style={{ color: esPopular ? "rgba(255,255,255,0.7)" : "#666", fontSize: 12, marginTop: 4 }}>{plan.descripcion}</div>
                     </div>
                     <div>
-                      <span style={{ color: "white", fontSize: 32, fontWeight: 700 }}>${plan.precio}</span>
-                      <span style={{ color: esPopular ? "rgba(255,255,255,0.7)" : "#666", fontSize: 13 }}>/mes</span>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                        {plan.precio > 0 && (
+                          <span style={{
+                            color: esPopular ? "rgba(255,255,255,0.6)" : "#666",
+                            fontSize: 16, fontWeight: 600,
+                            textDecoration: "line-through",
+                          }}>${plan.precio.toFixed(2)}</span>
+                        )}
+                        <span style={{ color: "white", fontSize: 32, fontWeight: 700 }}>
+                          ${(plan.precio / 2).toFixed(2)}
+                        </span>
+                        <span style={{ color: esPopular ? "rgba(255,255,255,0.7)" : "#666", fontSize: 13 }}>/mes</span>
+                      </div>
+                      {plan.precio > 0 && (
+                        <span style={{
+                          display: "inline-block", marginTop: 6,
+                          background: esPopular ? "rgba(255,255,255,0.2)" : "#a855f722",
+                          color: esPopular ? "white" : "#a855f7",
+                          fontSize: 11, fontWeight: 700,
+                          padding: "3px 10px", borderRadius: 20,
+                        }}>-50% OFERTA</span>
+                      )}
                     </div>
                     <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
                       {plan.beneficios.map((f) => (

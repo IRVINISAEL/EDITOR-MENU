@@ -636,38 +636,6 @@ export default function Dashboard() {
 
             </div>
         </div>
-      
-
-
-        {/* Estadísticas rápidas */}
-        <a href="/analiticas" style={{ textDecoration: "none" }}>
-          <div style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 12, padding: 24, cursor: "pointer" }}
-            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = "#a855f7")}
-            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = "#2a2a35")}
-          >
-            <div style={{ display: "flex",
-                flexDirection: mobile ? "column" : "row",
-                justifyContent: "space-between",
-                alignItems: mobile ? "flex-start" : "center",
-                gap: mobile ? 16 : 0, marginBottom: 20 }}>
-              <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Estadísticas rápidas</h2>
-              <span style={{ color: "#a855f7", fontSize: 12, fontWeight: 600 }}>Ver analíticas <IconArrowRight /></span> 
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16 }}>
-              {[
-                { label: "Vistas totales", value: "1,256" },
-                { label: "Descargas", value: "342" },
-                { label: "Impresiones", value: "128" },
-                { label: "QR Escaneos", value: "786" },
-              ].map((stat) => (
-                <div key={stat.label} style={{ textAlign: "center" }}>
-                  <div style={{ color: "white", fontSize: 28, fontWeight: 700 }}>{stat.value}</div>
-                  <div style={{ color: "#555", fontSize: 12, marginTop: 4 }}>{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </a>
 
         <div
             style={{
