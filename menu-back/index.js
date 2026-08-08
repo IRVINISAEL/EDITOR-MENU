@@ -41,6 +41,20 @@ const verificarToken = (req, res, next) => {
   }
 };
 
+// Igual que verificarToken pero no bloquea si no hay sesión (para saber "yaDioLike" en vistas públicas)
+const usuarioOpcional = (req, res, next) => {
+  const auth = req.headers["authorization"];
+  if (auth && auth.startsWith("Bearer ")) {
+    try {
+      const token = auth.split(" ")[1];
+      req.usuario = jwt.verify(token, process.env.JWT_SECRET || "secret_dev");
+    } catch {
+      req.usuario = null;
+    }
+  }
+  next();
+};
+
 // RN-04: solo formatos permitidos | RN-05: tamaño máximo (5MB)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -193,6 +207,21 @@ async function notificarSiHabilitado(usuarioId, { email, subject, html }) {
 
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
+app.get("/api/public/explorar", (req, res, next) => {
+  db.query(
+    `SELECT m.${C.menus.id} AS id, m.${C.menus.nombre} AS nombre_menu,
+            n.${C.negocios.nombre} AS negocio, n.${C.negocios.tipo} AS tipo
+     FROM ${C.menus.table} m
+     LEFT JOIN ${C.negocios.table} n ON n.${C.negocios.usuarioId} = m.${C.menus.usuarioId}
+     WHERE m.${C.menus.estado} = 'Publicado' AND m.${C.menus.eliminadoAt} IS NULL
+     ORDER BY m.${C.menus.fechaCreacion} DESC`,
+    (err, results) => {
+      if (err) return next(err);
+      res.json({ ok: true, cartas: results });
+    }
+  );
+});
+
 // Obter menus, opcionalmente filtrando por user_id
 // CA-01/CA-03: consulta pública de un menú, sin autenticación y sin datos del propietario
 app.get("/api/public/menus/:id", (req, res, next) => {
@@ -255,6 +284,91 @@ app.get("/api/public/menus/:id", (req, res, next) => {
               );
             }
           );
+        }
+      );
+    }
+  );
+});
+
+app.get("/api/public/menus/:id/likes", usuarioOpcional, (req, res, next) => {
+  const menuId = req.params.id;
+  db.query(
+    `SELECT COUNT(*) AS total FROM ${C.likesMenu.table} WHERE ${C.likesMenu.menuId} = ?`,
+    [menuId],
+    (err, results) => {
+      if (err) return next(err);
+      const total = results[0].total;
+      if (!req.usuario) return res.json({ ok: true, total, yaDioLike: false });
+      db.query(
+        `SELECT ${C.likesMenu.id} FROM ${C.likesMenu.table} WHERE ${C.likesMenu.menuId} = ? AND ${C.likesMenu.usuarioId} = ?`,
+        [menuId, req.usuario.id],
+        (err2, results2) => {
+          if (err2) return next(err2);
+          res.json({ ok: true, total, yaDioLike: results2.length > 0 });
+        }
+      );
+    }
+  );
+});
+
+app.post("/api/public/menus/:id/likes", verificarToken, (req, res, next) => {
+  const menuId = req.params.id;
+  const usuarioId = req.usuario.id;
+  db.query(
+    `SELECT ${C.likesMenu.id} FROM ${C.likesMenu.table} WHERE ${C.likesMenu.menuId} = ? AND ${C.likesMenu.usuarioId} = ?`,
+    [menuId, usuarioId],
+    (err, results) => {
+      if (err) return next(err);
+      if (results.length > 0) {
+        db.query(`DELETE FROM ${C.likesMenu.table} WHERE ${C.likesMenu.id} = ?`, [results[0][C.likesMenu.id]], (err2) => {
+          if (err2) return next(err2);
+          res.json({ ok: true, yaDioLike: false });
+        });
+      } else {
+        db.query(
+          `INSERT INTO ${C.likesMenu.table} (${C.likesMenu.menuId}, ${C.likesMenu.usuarioId}) VALUES (?, ?)`,
+          [menuId, usuarioId],
+          (err3) => {
+            if (err3) return next(err3);
+            res.json({ ok: true, yaDioLike: true });
+          }
+        );
+      }
+    }
+  );
+});
+
+app.get("/api/public/menus/:id/comentarios", (req, res, next) => {
+  db.query(
+    `SELECT c.${C.comentariosMenu.id} AS id, c.${C.comentariosMenu.texto} AS texto, c.${C.comentariosMenu.fecha} AS fecha,
+            u.${C.usuarios.nombre} AS nombre
+     FROM ${C.comentariosMenu.table} c
+     JOIN ${C.usuarios.table} u ON u.${C.usuarios.id} = c.${C.comentariosMenu.usuarioId}
+     WHERE c.${C.comentariosMenu.menuId} = ?
+     ORDER BY c.${C.comentariosMenu.fecha} DESC`,
+    [req.params.id],
+    (err, results) => {
+      if (err) return next(err);
+      res.json({ ok: true, comentarios: results });
+    }
+  );
+});
+
+app.post("/api/public/menus/:id/comentarios", verificarToken, (req, res, next) => {
+  const texto = (req.body.texto || "").trim();
+  if (!texto) return res.status(400).json({ ok: false, mensaje: "El comentario no puede estar vacío" });
+  if (texto.length > 500) return res.status(400).json({ ok: false, mensaje: "Comentario demasiado largo" });
+  db.query(
+    `INSERT INTO ${C.comentariosMenu.table} (${C.comentariosMenu.menuId}, ${C.comentariosMenu.usuarioId}, ${C.comentariosMenu.texto}) VALUES (?, ?, ?)`,
+    [req.params.id, req.usuario.id, texto],
+    (err, result) => {
+      if (err) return next(err);
+      db.query(
+        `SELECT ${C.usuarios.nombre} AS nombre FROM ${C.usuarios.table} WHERE ${C.usuarios.id} = ?`,
+        [req.usuario.id],
+        (err2, results2) => {
+          if (err2) return next(err2);
+          res.json({ ok: true, comentario: { id: result.insertId, texto, nombre: (results2[0] && results2[0].nombre) || "Usuario", fecha: new Date().toISOString() } });
         }
       );
     }

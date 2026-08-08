@@ -87,14 +87,21 @@ CREATE TABLE `direcciones` (
 --
 
 CREATE TABLE `menus` (
-  `id` int(11) NOT NULL,
-  `usuario_id` int(11) NOT NULL,
-  `nombre_m` varchar(100) NOT NULL,
-  `descripcion` varchar(100) NOT NULL,
-  `estado` varchar(100) NOT NULL,
-  `favorito` tinyint(1) NOT NULL,
-  `fecha_creacion` datetime NOT NULL,
-  `eliminado_at` datetime DEFAULT NULL
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `estado` varchar(20) NOT NULL DEFAULT 'Borrador',
+  `data_json` LONGTEXT,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `eliminado_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `vistas_menu` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `menu_id` int(11) NOT NULL,
+  `fecha` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -337,6 +344,24 @@ ALTER TABLE `platillos`
 ALTER TABLE `redes_sociales`
   ADD CONSTRAINT `redes_sociales_ibfk_1` FOREIGN KEY (`negocio_id`) REFERENCES `negocios` (`id`) ON UPDATE CASCADE;
 COMMIT;
+
+CREATE TABLE `likes_menu` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `menu_id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unico_like` (`menu_id`, `usuario_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `comentarios_menu` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `menu_id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `texto` varchar(500) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
