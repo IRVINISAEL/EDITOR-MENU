@@ -630,25 +630,27 @@ export default function Dashboard() {
               </a>
 
               {/* Perfil */}
-              <div
-                title="Perfil"
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg,#7c3aed,#a855f7)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: 14,
-                  marginLeft: 4,
-                  cursor: "pointer",
-                }}
-              >
-                {usuario?.nombre?.charAt(0).toUpperCase() || "U"}
-              </div>
+              <a href="/configuracion">
+                <div
+                  title="Perfil"
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    marginLeft: 4,
+                    cursor: "pointer",
+                  }}
+                >
+                  {usuario?.nombre?.charAt(0).toUpperCase() || "U"}
+                </div>
+              </a>
 
             </div>
         </div>
