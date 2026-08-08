@@ -936,7 +936,45 @@ export default function Plantillas() {
       .finally(() => setCargandoPlan(false));
   }, []);
 
+  useEffect(() => {
+    try {
+      const yaRespondio = localStorage.getItem("preferencia_plantillas");
+      if (!yaRespondio) {
+        const t = setTimeout(() => setMostrarEncuesta(true), 600);
+        return () => clearTimeout(t);
+      }
+      const datos = JSON.parse(yaRespondio);
+      if (datos.negocio) setNegocioElegido(datos.negocio);
+      if (datos.preferencia) setPreferenciaElegida(datos.preferencia);
+    } catch {}
+  }, []);
+
   const tienePlanPremium = planUsuario === "Plus" || planUsuario === "Premium";
+
+  const NEGOCIOS_ENCUESTA = ["Restaurante", "Cafetería", "Postres", "Italiano", "Mexicano", "Japonés", "Vegano", "Moderno"];
+  const [mostrarEncuesta, setMostrarEncuesta] = useState(false);
+  const [pasoEncuesta, setPasoEncuesta] = useState<1 | 2>(1);
+  const [negocioElegido, setNegocioElegido] = useState<string | null>(null);
+  const [preferenciaElegida, setPreferenciaElegida] = useState<"Premium" | "Gratuitas" | "Ambas" | null>(null);
+
+  const guardarPreferencia = (negocio: string, preferencia: "Premium" | "Gratuitas" | "Ambas") => {
+    const datos = { negocio, preferencia, fecha: new Date().toISOString() };
+    try {
+      localStorage.setItem("preferencia_plantillas", JSON.stringify(datos));
+    } catch {}
+
+    const token = localStorage.getItem("token");
+    fetch(`${API}/api/preferencias-plantillas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(datos),
+    }).catch(() => {});
+
+    setNegocioElegido(negocio);
+    setPreferenciaElegida(preferencia);
+    if (NEGOCIOS_ENCUESTA.includes(negocio)) setCategoriaActiva(negocio);
+    setMostrarEncuesta(false);
+  };
 
   const toggleFavorito = (id: number) => {
     setFavoritos(prev => {
@@ -946,13 +984,19 @@ export default function Plantillas() {
     });
   };
 
-  const plantillasFiltradas = plantillas.filter((p) => {
-    if (categoriaActiva === "Favoritos") return favoritos.includes(p.id);
-    const coincideCategoria = categoriaActiva === "Todas" || p.categoria === categoriaActiva;
-    const q = busqueda.toLowerCase();
-    const coincideBusqueda = p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q);
-    return coincideCategoria && coincideBusqueda;
-  });
+  const plantillasFiltradas = plantillas
+    .filter((p) => {
+      if (categoriaActiva === "Favoritos") return favoritos.includes(p.id);
+      const coincideCategoria = categoriaActiva === "Todas" || p.categoria === categoriaActiva;
+      const q = busqueda.toLowerCase();
+      const coincideBusqueda = p.nombre.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q);
+      return coincideCategoria && coincideBusqueda;
+    })
+    .sort((a, b) => {
+      if (preferenciaElegida === "Premium") return (b.premium ? 1 : 0) - (a.premium ? 1 : 0);
+      if (preferenciaElegida === "Gratuitas") return (a.premium ? 1 : 0) - (b.premium ? 1 : 0);
+      return 0;
+    });
 
   const totalPaginas = Math.ceil(plantillasFiltradas.length / POR_PAGINA);
   const plantillasPagina = plantillasFiltradas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
@@ -1025,11 +1069,20 @@ export default function Plantillas() {
             <h1 style={{ color: "white", fontSize: 22, fontWeight: 700, margin: 0 }}>Plantillas</h1>
             <p style={{ color: "#666", fontSize: 13, margin: "4px 0 0" }}>Elige una plantilla para empezar tu menú</p>
           </div>
-          <input
-            type="text" placeholder="🔍 Buscar plantillas..."
-            value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
-            style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 16px", color: "white", fontSize: 13, outline: "none", width: 220 }}
-          />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => { setPasoEncuesta(1); setMostrarEncuesta(true); }}
+              title="Editar tus preferencias"
+              style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 14px", color: "#a855f7", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+            >
+              🎯 {negocioElegido ? `Para ti: ${negocioElegido}` : "Personalizar"}
+            </button>
+            <input
+              type="text" placeholder="🔍 Buscar plantillas..."
+              value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
+              style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 16px", color: "white", fontSize: 13, outline: "none", width: 220 }}
+            />
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
@@ -1114,6 +1167,72 @@ export default function Plantillas() {
           </div>
         )}
       </main>
+
+      {/* MODAL ENCUESTA DE PREFERENCIAS */}
+      {mostrarEncuesta && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}>
+          <div style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 16, padding: "32px 28px", width: 380, maxWidth: "90vw", boxShadow: "0 30px 80px rgba(0,0,0,0.8)" }}>
+            <button
+              onClick={() => setMostrarEncuesta(false)}
+              style={{ float: "right", background: "transparent", border: "none", color: "#666", cursor: "pointer", fontSize: 16 }}
+            >✕</button>
+
+            {pasoEncuesta === 1 && (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 4 }}>¿Qué tipo de negocio tienes?</div>
+                <div style={{ fontSize: 12, color: "#888", marginBottom: 18 }}>Así te mostramos primero las plantillas que más te pueden gustar.</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {NEGOCIOS_ENCUESTA.map((neg) => (
+                    <button
+                      key={neg}
+                      onClick={() => { setNegocioElegido(neg); setPasoEncuesta(2); }}
+                      style={{
+                        background: negocioElegido === neg ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#1e1e28",
+                        border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 8px",
+                        color: "white", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      }}
+                    >
+                      {neg}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {pasoEncuesta === 2 && (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "white", marginBottom: 4 }}>¿Qué te gustaría ver primero?</div>
+                <div style={{ fontSize: 12, color: "#888", marginBottom: 18 }}>Puedes cambiarlo cuando quieras desde los filtros.</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {([
+                    ["Premium", "✨ Plantillas premium primero"],
+                    ["Gratuitas", "🆓 Plantillas gratuitas primero"],
+                    ["Ambas", "🔀 Mostrarme de todo, sin orden fijo"],
+                  ] as const).map(([valor, texto]) => (
+                    <button
+                      key={valor}
+                      onClick={() => guardarPreferencia(negocioElegido || "Todas", valor)}
+                      style={{
+                        background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
+                        padding: "12px 14px", color: "white", fontSize: 13, fontWeight: 600,
+                        cursor: "pointer", textAlign: "left",
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = "#a855f7")}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = "#2a2a35")}
+                    >
+                      {texto}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setPasoEncuesta(1)}
+                  style={{ marginTop: 14, background: "transparent", border: "none", color: "#666", fontSize: 12, cursor: "pointer" }}
+                >← Volver</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* MODAL VISTA PREVIA */}
       {preview && (
