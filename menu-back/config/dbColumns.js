@@ -30,6 +30,21 @@ module.exports = {
     menuId: "menu_id",
     fecha: "fecha",
   },
+  likesMenu: {
+    table: "likes_menu",
+    id: "id",
+    menuId: "menu_id",
+    usuarioId: "usuario_id",
+    fecha: "created_at",
+  },
+  comentariosMenu: {
+    table: "comentarios_menu",
+    id: "id",
+    menuId: "menu_id",
+    usuarioId: "usuario_id",
+    texto: "texto",
+    fecha: "created_at",
+  },
   configuracionUsuario: {
     table: "configuracion_usuario",
     id: "id",
