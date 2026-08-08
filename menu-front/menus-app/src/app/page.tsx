@@ -23,10 +23,10 @@ const navItems = [
   { icon: <IconSettings />, label: "Configuración", href: "/configuracion" },
 ];
 const plantillasPopulares = [
-  { id: 2, nombre: "Moderno Minimalista", color: "#1a1a1a", textColor: "#ffffff", emoji: "⬛" },
-  { id: 4, nombre: "Pastelería Dulce",    color: "#fce4ec", textColor: "#880e4f", emoji: "🍰" },
-  { id: 8, nombre: "Tacos & Antojitos",   color: "#fff3e0", textColor: "#bf360c", emoji: "🌮" },
-  { id: 9, nombre: "Sushi & Japonés",     color: "#0d0d0d", textColor: "#e8d5b0", emoji: "🍱" },
+  { id: 12, nombre: "Bistro Elegante",     gradient: "linear-gradient(160deg, #2b2118 0%, #6b4a23 55%, #b8862f 100%)", textColor: "#f5e6c8", emoji: "🍽️", badge: "PREMIUM" },
+  { id: 13, nombre: "Café Boutique",       gradient: "linear-gradient(160deg, #3e2723 0%, #6d4c41 55%, #c9a26d 100%)", textColor: "#fbe9c8", emoji: "☕", badge: "PREMIUM" },
+  { id: 14, nombre: "Sushi Deluxe",        gradient: "linear-gradient(160deg, #0d0d0d 0%, #3a0d12 55%, #8b1e2f 100%)", textColor: "#f2d9b0", emoji: "🍣", badge: "PREMIUM" },
+  { id: 15, nombre: "Steakhouse Royal",    gradient: "linear-gradient(160deg, #1a1a1a 0%, #4a1518 55%, #a83232 100%)", textColor: "#f5d9b8", emoji: "🥩", badge: "PREMIUM" },
 ];
 
 const IconoCampana = () => (
@@ -179,6 +179,22 @@ export default function Dashboard() {
         </nav>
 
         <div style={{ padding: "12px", borderTop: "1px solid #2a2a35", display: "flex", flexDirection: "column", gap: 4 }}>
+          <a href="/explorar" style={{ textDecoration: "none" }}>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "10px 12px", borderRadius: 8,
+              color: "#a855f7", cursor: "pointer", fontSize: 13, fontWeight: 600,
+            }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span><IconGlobe /></span> Explorar cartas
+              </span>
+              <span style={{
+                background: "#a855f7", color: "white", fontSize: 9, fontWeight: 700,
+                padding: "2px 6px", borderRadius: 6,
+              }}>Nuevo</span>
+            </div>
+          </a>
           <a href="/landing" style={{ textDecoration: "none" }}>
             <div style={{
               display: "flex", alignItems: "center", gap: 10,
@@ -684,13 +700,22 @@ export default function Dashboard() {
               {plantillasPopulares.map((p) => (
                 <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
                   <div style={{
-                    background: p.color, borderRadius: 12, aspectRatio: "3/4",
+                    background: p.gradient, borderRadius: 12, aspectRatio: "3/4",
                     display: "flex", flexDirection: "column", alignItems: "center",
-                    justifyContent: "center", gap: 8, cursor: "pointer",
-                    border: "1px solid #2a2a35",
+                    justifyContent: "center", gap: 8, cursor: "pointer", position: "relative",
+                    border: "1px solid rgba(212,175,55,0.35)",
+                    boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
                   }}>
+                    {p.badge && (
+                      <div style={{
+                        position: "absolute", top: 8, right: 8,
+                        background: "linear-gradient(90deg,#d4af37,#f5e08a)",
+                        color: "#2b2118", fontSize: 9, fontWeight: 800,
+                        letterSpacing: 0.5, padding: "3px 7px", borderRadius: 6,
+                      }}>{p.badge}</div>
+                    )}
                     <div style={{ fontSize: 36 }}>{p.emoji}</div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: p.textColor }}>{p.nombre}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: p.textColor, textAlign: "center", padding: "0 6px" }}>{p.nombre}</div>
                   </div>
                 </a>
               ))}
