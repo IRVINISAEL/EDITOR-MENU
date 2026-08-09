@@ -11,6 +11,7 @@ import {
   IconLock,
   IconPackage,
   IconStar,
+  IconoPlantilla,
 } from "@/components/Icons";
 import { plantillas, categorias } from "@/data/plantillas";
 
@@ -74,28 +75,6 @@ const IconJapones = ({ size = 36 }: { size?: number }) => (
   </svg>
 );
 
-const IconVegano = ({ size = 36 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 19c-1-7 2-13 14-14-1 12-7 15-14 14z" />
-    <path d="M6 18c3-4 6-7 12-11" />
-  </svg>
-);
-
-const ICONO_POR_CATEGORIA: Record<string, (props: { size?: number }) => React.ReactElement> = {
-  "Restaurante": IconRestaurante,
-  "Cafetería": IconCafeteria,
-  "Postres": IconPostres,
-  "Italiano": IconItaliano,
-  "Moderno": IconModernoCat,
-  "Mexicano": IconMexicano,
-  "Japonés": IconJapones,
-  "Vegano": IconVegano,
-};
-
-const IconoPlantilla = ({ categoria, size = 36 }: { categoria: string; size?: number }) => {
-  const Icono = ICONO_POR_CATEGORIA[categoria] || IconRestaurante;
-  return <Icono size={size} />;
-};
 
 const navItems = [  
   { icon: "⊞", label: "Inicio", href: "/" },
