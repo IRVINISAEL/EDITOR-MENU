@@ -706,12 +706,15 @@ export default function Editor() {
                 <option value="horizontal">Horizontal</option>
               </select>
               <button onClick={() => { setMostrarPortada(!mostrarPortada); setPaginaVista("menu"); setGuardado(false); }} style={{
-                display: "flex", alignItems: "center", gap: 6, width: "100%",
+                width: "100%", display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center", gap: 3,
+                padding: "8px 4px", borderRadius: 8, border: "1px solid #2a2a35",
                 background: mostrarPortada ? "#7c3aed33" : "#1e1e28",
-                border: "1px solid #2a2a35", borderRadius: 6,
-                color: mostrarPortada ? "#a855f7" : "#aaa",
-                padding: "6px 8px", cursor: "pointer", fontSize: 11,
-              }} title="Activar hoja de portada"><IconBookOpen size={13} /> Portada</button>
+                color: mostrarPortada ? "#a855f7" : "#aaa", cursor: "pointer",
+              }} title="Activar hoja de portada">
+                <IconBookOpen size={18} />
+                <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1 }}>Portada</span>
+              </button>
             </div>
           </>
         )}
