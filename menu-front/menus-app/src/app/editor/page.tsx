@@ -60,6 +60,8 @@ type Platillo = {
   imagen?: string;
   colorTexto?: string;
   imagenPos?: { x: number; y: number };
+  forma?: "cuadrado" | "circular";
+  alineacion?: "izquierda" | "centro" | "derecha";
 };
 
 type Seccion = { id: number; nombre: string; platillos: Platillo[] };
@@ -1268,22 +1270,36 @@ export default function Editor() {
                 </div>
 
                 {seccion.platillos.map((platillo, idx) => (
-                  <div key={idx} style={{ marginBottom: 10, padding: "6px 0", borderBottom: `1px dotted ${fondoActivo.acento}44` }}>
+                 <div key={idx} style={{ marginBottom: 10, padding: "6px 0", borderBottom: `1px dotted ${fondoActivo.acento}44`, overflow: "hidden" }}>
                     
                     {/* Imagen del platillo */}
                     {mostrarImagenes && (
-                      <div style={{ marginBottom: 6 }}>
+                      <div style={{
+                        marginBottom: 6,
+                        float: platillo.alineacion === "izquierda" ? "left" : platillo.alineacion === "derecha" ? "right" : "none",
+                        width: platillo.alineacion && platillo.alineacion !== "centro" ? 100 : "100%",
+                        marginRight: platillo.alineacion === "izquierda" ? 10 : 0,
+                        marginLeft: platillo.alineacion === "derecha" ? 10 : 0,
+                      }}>
                         {platillo.imagen ? (
                           <div
                             onMouseDown={!exportando ? (e) => iniciarArrastreImagen(e, seccion.id, idx, platillo.imagenPos) : undefined}
-                            style={{ position: "relative", height: 130, overflow: "hidden", borderRadius: 6, background: "#00000022", cursor: exportando ? "default" : "grab" }}
+                            style={{
+                              position: "relative",
+                              height: platillo.alineacion && platillo.alineacion !== "centro" ? 100 : 130,
+                              overflow: "hidden",
+                              borderRadius: platillo.forma === "circular" ? "50%" : 6,
+                              background: "#00000022",
+                              cursor: exportando ? "default" : "grab",
+                            }}
                           >
                             <img
                               src={platillo.imagen}
                               alt={platillo.nombre}
                               draggable={false}
                               style={{
-                                width: "100%", height: "100%", borderRadius: 6,
+                                width: "100%", height: "100%",
+                                borderRadius: platillo.forma === "circular" ? "50%" : 6,
                                 objectFit: "cover",
                                 objectPosition: `${platillo.imagenPos?.x ?? 50}% ${platillo.imagenPos?.y ?? 50}%`,
                                 userSelect: "none", pointerEvents: "none",
@@ -1292,7 +1308,7 @@ export default function Editor() {
                             {!exportando && (
                               <>
                                 <button onClick={(e) => { e.stopPropagation(); eliminarImagen(seccion.id, idx); }} className="no-imprimir" style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", color: "white", cursor: "pointer", width: 20, height: 20, fontSize: 10, zIndex: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-                                <div className="no-imprimir" style={{ position: "absolute", bottom: 4, left: 4, background: "rgba(0,0,0,0.55)", color: "white", fontSize: 9, padding: "2px 6px", borderRadius: 4, pointerEvents: "none" }}>↕ Arrastra para acomodar</div>
+                                <div className="no-imprimir" style={{ position: "absolute", bottom: 4, left: 4, background: "rgba(0,0,0,0.55)", color: "white", fontSize: 9, padding: "2px 6px", borderRadius: 4, pointerEvents: "none" }}>↕ Arrastra</div>
                               </>
                             )}
                           </div>
@@ -1303,6 +1319,22 @@ export default function Editor() {
                               <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files?.[0]; if (file) subirImagen(seccion.id, idx, file); }} />
                             </label>
                           )
+                        )}
+
+                        {!exportando && platillo.imagen && (
+                          <div className="no-imprimir" style={{ display: "flex", gap: 4, marginTop: 4, justifyContent: "center", flexWrap: "wrap" }}>
+                            <button
+                              onClick={() => editarPlatillo(seccion.id, idx, "forma", platillo.forma === "circular" ? "cuadrado" : "circular")}
+                              style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 4, color: "#aaa", fontSize: 9, padding: "2px 6px", cursor: "pointer" }}
+                            >{platillo.forma === "circular" ? "◻ Cuadrado" : "◯ Círculo"}</button>
+                            <button
+                              onClick={() => {
+                                const siguiente = platillo.alineacion === "izquierda" ? "centro" : platillo.alineacion === "derecha" ? "izquierda" : "derecha";
+                                editarPlatillo(seccion.id, idx, "alineacion", siguiente);
+                              }}
+                              style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 4, color: "#aaa", fontSize: 9, padding: "2px 6px", cursor: "pointer" }}
+                            >⇔ {platillo.alineacion === "izquierda" ? "Izquierda" : platillo.alineacion === "derecha" ? "Derecha" : "Centro"}</button>
+                          </div>
                         )}
                       </div>
                     )}
