@@ -9,8 +9,10 @@ import {
   IconGlobe,
   IconLogout,
   IconArrowRight,
+  IconArrowLeft,
   IconBulb,
 } from "@/components/Icons";
+import { plantillas } from "@/data/plantillas";
 
 const navItems = [
   { icon: "⊞", label: "Inicio", href: "/" },
@@ -92,12 +94,7 @@ const IconCarne = ({ size = 36 }: { size?: number }) => (
   </svg>
 );
 
-const plantillasPopulares = [
-  { id: 12, nombre: "Bistro Elegante",     gradient: "linear-gradient(160deg, #2b2118 0%, #6b4a23 55%, #b8862f 100%)", textColor: "#f5e6c8", icono: IconPlato, badge: "PREMIUM" },
-  { id: 13, nombre: "Café Boutique",       gradient: "linear-gradient(160deg, #3e2723 0%, #6d4c41 55%, #c9a26d 100%)", textColor: "#fbe9c8", icono: IconTaza, badge: "PREMIUM" },
-  { id: 14, nombre: "Sushi Deluxe",        gradient: "linear-gradient(160deg, #0d0d0d 0%, #3a0d12 55%, #8b1e2f 100%)", textColor: "#f2d9b0", icono: IconSushiIcono, badge: "PREMIUM" },
-  { id: 15, nombre: "Steakhouse Royal",    gradient: "linear-gradient(160deg, #1a1a1a 0%, #4a1518 55%, #a83232 100%)", textColor: "#f5d9b8", icono: IconCarne, badge: "PREMIUM" },
-];
+const plantillasPopulares = plantillas.filter((p) => p.popular);
 
 export default function Dashboard() {
   const [activeNav] = useState("Dashboard");
@@ -107,6 +104,13 @@ export default function Dashboard() {
   const [mobile, setMobile] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [mostrarPremium, setMostrarPremium] = useState(false);
+  const [carruselIndex, setCarruselIndex] = useState(0);
+
+  const porPagina = mobile ? 2 : 4;
+  const totalPaginas = Math.ceil(plantillasPopulares.length / porPagina);
+  const siguientePagina = () => setCarruselIndex((i) => (i + 1) % totalPaginas);
+  const anteriorPagina = () => setCarruselIndex((i) => (i - 1 + totalPaginas) % totalPaginas);
+  const plantillasVisibles = plantillasPopulares.slice(carruselIndex * porPagina, carruselIndex * porPagina + porPagina);
 
   useEffect(() => {
     const resize = () => setMobile(window.innerWidth <= 768);
@@ -730,30 +734,48 @@ export default function Dashboard() {
               <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Plantillas populares</h2>
               <a href="/plantillas" style={{ color: "#a855f7", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Ver todas <IconArrowRight /></a>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16 }}>
-              {plantillasPopulares.map((p) => (
-                <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
-                  <div style={{
-                    background: p.gradient, borderRadius: 12, aspectRatio: "3/4",
-                    display: "flex", flexDirection: "column", alignItems: "center",
-                    justifyContent: "center", gap: 8, cursor: "pointer", position: "relative",
-                    border: "1px solid rgba(212,175,55,0.35)",
-                    boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
-                  }}>
-                    {p.badge && (
-                      <div style={{
-                        position: "absolute", top: 8, right: 8,
-                        background: "linear-gradient(90deg,#d4af37,#f5e08a)",
-                        color: "#2b2118", fontSize: 9, fontWeight: 800,
-                        letterSpacing: 0.5, padding: "3px 7px", borderRadius: 6,
-                      }}>{p.badge}</div>
-                    )}
-                    <div style={{ color: p.textColor }}>
-                      <p.icono size={36} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button onClick={anteriorPagina} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "white", width: 32, height: 32, cursor: "pointer", flexShrink: 0 }}>
+                <IconArrowLeft />
+              </button>
+
+              <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16, flex: 1 }}>
+                {plantillasVisibles.map((p) => (
+                  <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
+                    <div style={{
+                      background: p.color, borderRadius: 12, aspectRatio: "3/4",
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      justifyContent: "center", gap: 8, cursor: "pointer", position: "relative",
+                      border: "1px solid rgba(212,175,55,0.35)",
+                      boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
+                    }}>
+                      {p.premium && (
+                        <div style={{
+                          position: "absolute", top: 8, right: 8,
+                          background: "linear-gradient(90deg,#d4af37,#f5e08a)",
+                          color: "#2b2118", fontSize: 9, fontWeight: 800,
+                          letterSpacing: 0.5, padding: "3px 7px", borderRadius: 6,
+                        }}>PREMIUM</div>
+                      )}
+                      <div style={{ fontSize: 36 }}>{p.emoji}</div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: p.textColor, textAlign: "center", padding: "0 6px" }}>{p.nombre}</div>
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: p.textColor, textAlign: "center", padding: "0 6px" }}>{p.nombre}</div>
-                  </div>
-                </a>
+                  </a>
+                ))}
+              </div>
+
+              <button onClick={siguientePagina} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "white", width: 32, height: 32, cursor: "pointer", flexShrink: 0 }}>
+                <IconArrowRight />
+              </button>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
+              {Array.from({ length: totalPaginas }).map((_, i) => (
+                <span key={i} onClick={() => setCarruselIndex(i)} style={{
+                  width: 6, height: 6, borderRadius: "50%", cursor: "pointer",
+                  background: i === carruselIndex ? "#a855f7" : "rgba(255,255,255,0.25)",
+                }} />
               ))}
             </div>
           </div>
