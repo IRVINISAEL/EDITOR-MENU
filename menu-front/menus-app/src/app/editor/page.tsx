@@ -634,56 +634,6 @@ export default function Editor() {
 
         <div style={{ width: mobile ? 1 : "80%", height: mobile ? 24 : 1, background: "#2a2a35", flexShrink: 0 }} />
 
-        {/* Formato (antes era la Fila 2 de la barra superior) */}
-        {!mobile && (
-          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 10, color: "#666", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Formato</span>
-            <select value={fuenteActiva} onChange={e => { setFuenteActiva(e.target.value); setGuardado(false); }} style={{
-              background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
-              color: "white", padding: "6px 8px", fontSize: 11, outline: "none", width: "100%",
-            }}>
-              {fuentes.map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 10, color: "#666" }}>Tamaño</span>
-              <input type="number" value={tamaño} onChange={e => { setTamaño(Number(e.target.value)); setGuardado(false); }} style={{
-                width: 56, background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
-                color: "white", padding: "4px 6px", fontSize: 11, outline: "none", textAlign: "center",
-              }} />
-            </div>
-            <button onClick={() => setMostrarDescripciones(!mostrarDescripciones)} style={{
-              display: "flex", alignItems: "center", gap: 6, width: "100%",
-              background: mostrarDescripciones ? "#7c3aed33" : "#1e1e28",
-              border: "1px solid #2a2a35", borderRadius: 6,
-              color: mostrarDescripciones ? "#a855f7" : "#aaa",
-              padding: "6px 8px", cursor: "pointer", fontSize: 11,
-            }}><IconClipboard size={13} /> Descripciones</button>
-            <button onClick={() => setMostrarImagenes(!mostrarImagenes)} style={{
-              display: "flex", alignItems: "center", gap: 6, width: "100%",
-              background: mostrarImagenes ? "#7c3aed33" : "#1e1e28",
-              border: "1px solid #2a2a35", borderRadius: 6,
-              color: mostrarImagenes ? "#a855f7" : "#aaa",
-              padding: "6px 8px", cursor: "pointer", fontSize: 11,
-            }}><IconImage size={13} /> Imágenes</button>
-            <select value={orientacion} onChange={e => setOrientacion(e.target.value as "vertical" | "horizontal")} style={{
-              background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
-              color: "white", padding: "6px 8px", fontSize: 11, outline: "none", width: "100%",
-            }}>
-              <option value="vertical">Vertical</option>
-              <option value="horizontal">Horizontal</option>
-            </select>
-            <button onClick={() => { setMostrarPortada(!mostrarPortada); setPaginaVista("menu"); setGuardado(false); }} style={{
-              display: "flex", alignItems: "center", gap: 6, width: "100%",
-              background: mostrarPortada ? "#7c3aed33" : "#1e1e28",
-              border: "1px solid #2a2a35", borderRadius: 6,
-              color: mostrarPortada ? "#a855f7" : "#aaa",
-              padding: "6px 8px", cursor: "pointer", fontSize: 11,
-            }} title="Activar hoja de portada"><IconBookOpen size={13} /> Portada</button>
-          </div>
-        )}
-
-        <div style={{ width: mobile ? 1 : "80%", height: mobile ? 24 : 1, background: "#2a2a35", flexShrink: 0 }} />
-
         {/* Acciones (antes estaban en la barra superior) */}
         <button onClick={exportarPDF} style={{
           width: mobile ? "auto" : "100%", display: "flex", flexDirection: "column",
@@ -714,6 +664,57 @@ export default function Editor() {
           <IconRocket size={18} />
           <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1 }}>Publicar</span>
         </button>
+
+        {/* Formato (antes era la Fila 2 de la barra superior) — va al final, separado de los íconos */}
+        {!mobile && (
+          <>
+            <div style={{ width: "100%", height: 1, background: "#2a2a35", flexShrink: 0, margin: "10px 0 4px" }} />
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6, marginBottom: 4 }}>
+              <span style={{ fontSize: 10, color: "#666", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Formato</span>
+              <select value={fuenteActiva} onChange={e => { setFuenteActiva(e.target.value); setGuardado(false); }} style={{
+                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
+                color: "white", padding: "6px 8px", fontSize: 11, outline: "none", width: "100%",
+              }}>
+                {fuentes.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 10, color: "#666" }}>Tamaño</span>
+                <input type="number" value={tamaño} onChange={e => { setTamaño(Number(e.target.value)); setGuardado(false); }} style={{
+                  width: 56, background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
+                  color: "white", padding: "4px 6px", fontSize: 11, outline: "none", textAlign: "center",
+                }} />
+              </div>
+              <button onClick={() => setMostrarDescripciones(!mostrarDescripciones)} style={{
+                display: "flex", alignItems: "center", gap: 6, width: "100%",
+                background: mostrarDescripciones ? "#7c3aed33" : "#1e1e28",
+                border: "1px solid #2a2a35", borderRadius: 6,
+                color: mostrarDescripciones ? "#a855f7" : "#aaa",
+                padding: "6px 8px", cursor: "pointer", fontSize: 11,
+              }}><IconClipboard size={13} /> Descripciones</button>
+              <button onClick={() => setMostrarImagenes(!mostrarImagenes)} style={{
+                display: "flex", alignItems: "center", gap: 6, width: "100%",
+                background: mostrarImagenes ? "#7c3aed33" : "#1e1e28",
+                border: "1px solid #2a2a35", borderRadius: 6,
+                color: mostrarImagenes ? "#a855f7" : "#aaa",
+                padding: "6px 8px", cursor: "pointer", fontSize: 11,
+              }}><IconImage size={13} /> Imágenes</button>
+              <select value={orientacion} onChange={e => setOrientacion(e.target.value as "vertical" | "horizontal")} style={{
+                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
+                color: "white", padding: "6px 8px", fontSize: 11, outline: "none", width: "100%",
+              }}>
+                <option value="vertical">Vertical</option>
+                <option value="horizontal">Horizontal</option>
+              </select>
+              <button onClick={() => { setMostrarPortada(!mostrarPortada); setPaginaVista("menu"); setGuardado(false); }} style={{
+                display: "flex", alignItems: "center", gap: 6, width: "100%",
+                background: mostrarPortada ? "#7c3aed33" : "#1e1e28",
+                border: "1px solid #2a2a35", borderRadius: 6,
+                color: mostrarPortada ? "#a855f7" : "#aaa",
+                padding: "6px 8px", cursor: "pointer", fontSize: 11,
+              }} title="Activar hoja de portada"><IconBookOpen size={13} /> Portada</button>
+            </div>
+          </>
+        )}
       </aside>
 
       {/* PANEL CENTRAL + BARRA SUPERIOR */}
