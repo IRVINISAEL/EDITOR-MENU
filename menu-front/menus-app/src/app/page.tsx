@@ -11,6 +11,7 @@ import {
   IconArrowRight,
   IconArrowLeft,
   IconBulb,
+  IconoPlantilla,
 } from "@/components/Icons";
 import { plantillas } from "@/data/plantillas";
 
@@ -60,37 +61,6 @@ const IconCerrarX = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-
-const IconPlato = ({ size = 36 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="8" />
-    <circle cx="12" cy="12" r="3.2" />
-    <path d="M3 3l3.5 3.5M21 3l-3.5 3.5" />
-  </svg>
-);
-
-const IconTaza = ({ size = 36 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8z" />
-    <path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17" />
-    <path d="M8 3.5c-.6.7-.6 1.3 0 2M12 3.5c-.6.7-.6 1.3 0 2" />
-  </svg>
-);
-
-const IconSushiIcono = ({ size = 36 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <ellipse cx="12" cy="15" rx="9" ry="4" />
-    <path d="M4.5 15c0-4.5 2-9 7.5-9s7.5 4.5 7.5 9" />
-    <circle cx="12" cy="11" r="1.3" fill="currentColor" stroke="none" />
-  </svg>
-);
-
-const IconCarne = ({ size = 36 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M7 4c-3 1-4 4-2.5 7 1 2 .5 3.5-1 5 2 1.5 5 1 6.5-1.5 2.5 2 6-.5 6-4 0-3-2-5-4-5.5" />
-    <circle cx="15.5" cy="9.5" r="2.3" />
   </svg>
 );
 
@@ -758,7 +728,9 @@ export default function Dashboard() {
                           letterSpacing: 0.5, padding: "3px 7px", borderRadius: 6,
                         }}>PREMIUM</div>
                       )}
-                      <div style={{ fontSize: 36 }}>{p.emoji}</div>
+                      <div style={{ color: p.textColor }}>
+                        <IconoPlantilla categoria={p.categoria} size={36} />
+                      </div>
                       <div style={{ fontWeight: 700, fontSize: 13, color: p.textColor, textAlign: "center", padding: "0 6px" }}>{p.nombre}</div>
                     </div>
                   </a>
