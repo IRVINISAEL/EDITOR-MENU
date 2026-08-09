@@ -553,31 +553,84 @@ export default function Editor() {
 
       {/* SIDEBAR IZQUIERDO */}
       <aside className="no-imprimir" style={{
-        width: mobile ? "100%" : 56, background: "#16161d",
+        width: mobile ? "100%" : 84, background: "#16161d",
         borderRight: mobile ? "none" : "1px solid #2a2a35",
         borderBottom: mobile ? "1px solid #2a2a35" : "none",
         display: "flex", flexDirection: mobile ? "row" : "column", alignItems: "center",
-        padding: mobile ? "8px" : "12px 0", gap: 4, zIndex: 10,
-        overflowX: mobile ? "auto" : "visible", flexShrink: 0,
+        padding: mobile ? "8px" : "12px 8px", gap: 6, zIndex: 10,
+        overflowX: mobile ? "auto" : "visible", overflowY: mobile ? "visible" : "auto",
+        flexShrink: 0,
       }}>
         <a href="/" style={{ textDecoration: "none" }}>
-          <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 8, marginBottom: 12 }} />
+          <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 8, marginBottom: 8 }} />
         </a>
+
+        {/* Volver (antes estaba en la barra superior) */}
+        <a href="/mis-menus" onClick={handleBackClick} style={{
+          width: mobile ? "auto" : "100%", display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 3,
+          padding: "8px 4px", borderRadius: 8, textDecoration: "none",
+          color: "#888", cursor: "pointer", flexShrink: 0,
+        }}>
+          <IconArrowLeft size={18} />
+          <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1 }}>Volver</span>
+        </a>
+
+        <div style={{ width: mobile ? 1 : "80%", height: mobile ? 24 : 1, background: "#2a2a35", flexShrink: 0 }} />
+
+        {/* Herramientas de edición */}
         {[
-          { icon: <span style={{ fontWeight: 700 }}>T</span>, label: "Texto" },
+          { icon: <span style={{ fontWeight: 700, fontSize: 16 }}>T</span>, label: "Texto" },
           { icon: <IconPalette size={18} />, label: "Fondos" },
           { icon: <IconMenuList size={18} />, label: "Secciones" },
           { icon: <IconImage size={18} />, label: "Imágenes" },
         ].map(h => (
           <button key={h.label} onClick={() => setHerramienta(h.label)} style={{
-            width: 44, height: 44, borderRadius: 8, border: "none",
+            width: mobile ? "auto" : "100%", display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 3,
+            padding: "8px 4px", borderRadius: 8, border: "none",
             background: herramienta === h.label ? "#7c3aed33" : "transparent",
             color: herramienta === h.label ? "#a855f7" : "#666",
-            cursor: "pointer", fontSize: 16,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            borderLeft: herramienta === h.label ? "2px solid #a855f7" : "2px solid transparent",
-          }} title={h.label}>{h.icon}</button>
+            cursor: "pointer", flexShrink: 0,
+            borderLeft: mobile ? "none" : (herramienta === h.label ? "2px solid #a855f7" : "2px solid transparent"),
+          }}>
+            {h.icon}
+            <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1 }}>{h.label}</span>
+          </button>
         ))}
+
+        <div style={{ width: mobile ? 1 : "80%", height: mobile ? 24 : 1, background: "#2a2a35", flexShrink: 0 }} />
+
+        {/* Acciones (antes estaban en la barra superior) */}
+        <button onClick={exportarPDF} style={{
+          width: mobile ? "auto" : "100%", display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 3,
+          padding: "8px 4px", borderRadius: 8, border: "none", background: "transparent",
+          color: "#aaa", cursor: "pointer", flexShrink: 0,
+        }}>
+          <IconFileText size={18} />
+          <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1 }}>PDF</span>
+        </button>
+
+        <button onClick={() => handleGuardar("Borrador")} style={{
+          width: mobile ? "auto" : "100%", display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 3,
+          padding: "8px 4px", borderRadius: 8, border: "none", background: "transparent",
+          color: "#aaa", cursor: "pointer", flexShrink: 0,
+        }}>
+          <IconSave size={18} />
+          <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1 }}>Guardar</span>
+        </button>
+
+        <button onClick={() => handleGuardar("Publicado")} style={{
+          width: mobile ? "auto" : "100%", display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 3,
+          padding: "8px 4px", borderRadius: 8, border: "1px solid #7c3aed",
+          background: "#7c3aed22", color: "#c4b5fd", cursor: "pointer", fontWeight: 600, flexShrink: 0,
+        }}>
+          <IconRocket size={18} />
+          <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1 }}>Publicar</span>
+        </button>
       </aside>
 
       {/* PANEL CENTRAL + BARRA SUPERIOR */}
@@ -593,11 +646,6 @@ export default function Editor() {
             padding: "10px 16px", gap: 10,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: mobile ? "wrap" : "nowrap" }}>
-              <a href="/mis-menus" onClick={handleBackClick} style={{ display: "flex", alignItems: "center", gap: 4, color: "#888", fontSize: 12, textDecoration: "none" }}>
-                <IconArrowLeft size={14} /> Volver
-              </a>
-              <span style={{ color: "#333" }}>|</span>
-
               <input
                 value={nombreMenu}
                 onChange={e => { setNombreMenu(e.target.value); setGuardado(false); }}
@@ -617,31 +665,11 @@ export default function Editor() {
               </span>
             </div>
 
-            <div style={{ display: "flex", gap: 6, alignItems: "center", width: mobile ? "100%" : "auto", flexWrap: "wrap" }}>
-              {!mobile && (
-                <div style={{ marginRight: 6 }}>
-                  <DescargasInfo refreshKey={descargasRefresh} />
-                </div>
-              )}
-              <button onClick={exportarPDF} style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-                color: "#aaa", padding: "7px 10px", cursor: "pointer", fontSize: 12,
-                flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
-              }}><IconFileText size={14} /> {mobile ? "" : "PDF"}</button>
-              <button onClick={() => handleGuardar("Borrador")} style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-                color: "#aaa", padding: "7px 10px", cursor: "pointer", fontSize: 12,
-                flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
-              }}><IconSave size={14} /> {mobile ? "Guardar" : "Guardar borrador"}</button>
-              <button onClick={() => handleGuardar("Publicado")} style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                background: "#7c3aed", border: "1px solid #7c3aed", borderRadius: 8,
-                color: "white", padding: "7px 10px", cursor: "pointer", fontSize: 12, fontWeight: 600,
-                flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
-              }}><IconRocket size={14} /> {mobile ? "Publicar" : "Publicar menú"}</button>
-            </div>
+            {!mobile && (
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <DescargasInfo refreshKey={descargasRefresh} />
+              </div>
+            )}
           </div>
 
           {/* Fila 2: herramientas de formato, separadas del nombre y de publicar */}
