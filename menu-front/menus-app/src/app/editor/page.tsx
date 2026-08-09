@@ -5,6 +5,10 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import ModalUpgrade from "@/components/ModalUpgrade";
 import DescargasInfo from "@/components/DescargasInfo";
+import {
+  IconArrowLeft, IconFileText, IconSave, IconRocket, IconBookOpen,IconBulb,IconEye,
+  IconPalette, IconMenuList, IconImage, IconClipboard, IconCamera, IconPlus,
+} from "@/components/Icons";
 
 const fuentes = [
   "Playfair Display", "Georgia", "Arial", "Montserrat", "Times New Roman",
@@ -559,12 +563,18 @@ export default function Editor() {
         <a href="/" style={{ textDecoration: "none" }}>
           <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 8, marginBottom: 12 }} />
         </a>
-        {[{ icon: "T", label: "Texto" }, { icon: "🎨", label: "Fondos" }, { icon: "☰", label: "Secciones" }, { icon: "🖼️", label: "Imágenes" }].map(h => (
+        {[
+          { icon: <span style={{ fontWeight: 700 }}>T</span>, label: "Texto" },
+          { icon: <IconPalette size={18} />, label: "Fondos" },
+          { icon: <IconMenuList size={18} />, label: "Secciones" },
+          { icon: <IconImage size={18} />, label: "Imágenes" },
+        ].map(h => (
           <button key={h.label} onClick={() => setHerramienta(h.label)} style={{
             width: 44, height: 44, borderRadius: 8, border: "none",
             background: herramienta === h.label ? "#7c3aed33" : "transparent",
             color: herramienta === h.label ? "#a855f7" : "#666",
             cursor: "pointer", fontSize: 16,
+            display: "flex", alignItems: "center", justifyContent: "center",
             borderLeft: herramienta === h.label ? "2px solid #a855f7" : "2px solid transparent",
           }} title={h.label}>{h.icon}</button>
         ))}
@@ -573,37 +583,72 @@ export default function Editor() {
       {/* PANEL CENTRAL + BARRA SUPERIOR */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-        {/* BARRA SUPERIOR */}
-        <div className="no-imprimir" style={{
-          minHeight: 52, background: "#16161d", borderBottom: "1px solid #2a2a35",
-          display: "flex", flexDirection: mobile ? "column" : "row",
-          alignItems: mobile ? "stretch" : "center", justifyContent: "space-between",
-          padding: "8px 16px", gap: 8, flexWrap: mobile ? "nowrap" : "wrap",
-        }}>
+       {/* BARRA SUPERIOR */}
+        <div className="no-imprimir" style={{ background: "#16161d", borderBottom: "1px solid #2a2a35" }}>
+
+          {/* Fila 1: nombre + acciones principales (esto ya no se mezcla con las herramientas) */}
+          <div style={{
+            display: "flex", flexDirection: mobile ? "column" : "row",
+            alignItems: mobile ? "stretch" : "center", justifyContent: "space-between",
+            padding: "10px 16px", gap: 10,
+          }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: mobile ? "wrap" : "nowrap" }}>
-            <a href="/mis-menus" onClick={handleBackClick} style={{ color: "#888", fontSize: 12, textDecoration: "none" }}>← Volver</a>
-            <span style={{ color: "#333" }}>|</span>
-            
-            <input
-              value={nombreMenu}
-              onChange={e => { setNombreMenu(e.target.value); setGuardado(false); }}
-              style={{
-                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
-                color: "white", fontSize: 13, fontWeight: 600, outline: "none",
-                padding: "4px 10px", width: mobile ? "100%" : 180, minWidth: 0,
-              }}
-            />
-            <span style={{
-              background: guardado ? "#16a34a22" : "#ca8a0422",
-              color: guardado ? "#4ade80" : "#fbbf24",
-              border: `1px solid ${guardado ? "#16a34a44" : "#ca8a0444"}`,
-              borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 600,
-            }}>
-              {guardando ? "● Guardando..." : guardado ? "● Guardado" : "● Sin guardar"}
-            </span>
+              <a href="/mis-menus" onClick={handleBackClick} style={{ display: "flex", alignItems: "center", gap: 4, color: "#888", fontSize: 12, textDecoration: "none" }}>
+                <IconArrowLeft size={14} /> Volver
+              </a>
+              <span style={{ color: "#333" }}>|</span>
+
+              <input
+                value={nombreMenu}
+                onChange={e => { setNombreMenu(e.target.value); setGuardado(false); }}
+                style={{
+                  background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
+                  color: "white", fontSize: 13, fontWeight: 600, outline: "none",
+                  padding: "4px 10px", width: mobile ? "100%" : 180, minWidth: 0,
+                }}
+              />
+              <span style={{
+                background: guardado ? "#16a34a22" : "#ca8a0422",
+                color: guardado ? "#4ade80" : "#fbbf24",
+                border: `1px solid ${guardado ? "#16a34a44" : "#ca8a0444"}`,
+                borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 600,
+              }}>
+                {guardando ? "● Guardando..." : guardado ? "● Guardado" : "● Sin guardar"}
+              </span>
+            </div>
+
+            <div style={{ display: "flex", gap: 6, alignItems: "center", width: mobile ? "100%" : "auto", flexWrap: "wrap" }}>
+              {!mobile && (
+                <div style={{ marginRight: 6 }}>
+                  <DescargasInfo refreshKey={descargasRefresh} />
+                </div>
+              )}
+              <button onClick={exportarPDF} style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
+                color: "#aaa", padding: "7px 10px", cursor: "pointer", fontSize: 12,
+                flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
+              }}><IconFileText size={14} /> {mobile ? "" : "PDF"}</button>
+              <button onClick={() => handleGuardar("Borrador")} style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
+                color: "#aaa", padding: "7px 10px", cursor: "pointer", fontSize: 12,
+                flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
+              }}><IconSave size={14} /> {mobile ? "Guardar" : "Guardar borrador"}</button>
+              <button onClick={() => handleGuardar("Publicado")} style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                background: "#7c3aed", border: "1px solid #7c3aed", borderRadius: 8,
+                color: "white", padding: "7px 10px", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
+              }}><IconRocket size={14} /> {mobile ? "Publicar" : "Publicar menú"}</button>
+            </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", width: mobile ? "100%" : "auto" }}>
+          {/* Fila 2: herramientas de formato, separadas del nombre y de publicar */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
+            padding: "10px 16px", borderTop: "1px solid #2a2a35",
+          }}>
             <select value={fuenteActiva} onChange={e => { setFuenteActiva(e.target.value); setGuardado(false); }} style={{
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
               color: "white", padding: "4px 8px", fontSize: 11, outline: "none",
@@ -616,17 +661,19 @@ export default function Editor() {
               color: "white", padding: "4px 6px", fontSize: 11, outline: "none", textAlign: "center",
             }} />
             <button onClick={() => setMostrarDescripciones(!mostrarDescripciones)} style={{
+              display: "flex", alignItems: "center", gap: 4,
               background: mostrarDescripciones ? "#7c3aed33" : "#1e1e28",
               border: "1px solid #2a2a35", borderRadius: 6,
               color: mostrarDescripciones ? "#a855f7" : "#aaa",
               padding: "4px 8px", cursor: "pointer", fontSize: 11,
-            }}>📝</button>
+            }}><IconClipboard size={13} /> Descripciones</button>
             <button onClick={() => setMostrarImagenes(!mostrarImagenes)} style={{
+              display: "flex", alignItems: "center", gap: 4,
               background: mostrarImagenes ? "#7c3aed33" : "#1e1e28",
               border: "1px solid #2a2a35", borderRadius: 6,
               color: mostrarImagenes ? "#a855f7" : "#aaa",
               padding: "4px 8px", cursor: "pointer", fontSize: 11,
-            }}>🖼️</button>
+            }}><IconImage size={13} /> Imágenes</button>
             <select value={orientacion} onChange={e => setOrientacion(e.target.value as "vertical" | "horizontal")} style={{
               background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
               color: "white", padding: "4px 8px", fontSize: 11, outline: "none",
@@ -635,34 +682,12 @@ export default function Editor() {
               <option value="horizontal">Horizontal</option>
             </select>
             <button onClick={() => { setMostrarPortada(!mostrarPortada); setPaginaVista("menu"); setGuardado(false); }} style={{
+              display: "flex", alignItems: "center", gap: 4,
               background: mostrarPortada ? "#7c3aed33" : "#1e1e28",
               border: "1px solid #2a2a35", borderRadius: 6,
               color: mostrarPortada ? "#a855f7" : "#aaa",
               padding: "4px 8px", cursor: "pointer", fontSize: 11,
-            }} title="Activar hoja de portada">📖 Portada</button>
-          </div>
-
-          <div style={{ display: "flex", gap: 6, alignItems: "center", width: mobile ? "100%" : "auto" }}>
-            {!mobile && (
-              <div style={{ marginRight: 6 }}>
-                <DescargasInfo refreshKey={descargasRefresh} />
-              </div>
-            )}
-            <button onClick={exportarPDF} style={{
-              background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-              color: "#aaa", padding: "7px 10px", cursor: "pointer", fontSize: 12,
-              flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
-            }}>📄 {mobile ? "" : "PDF"}</button>
-            <button onClick={() => handleGuardar("Borrador")} style={{
-              background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 8,
-              color: "#aaa", padding: "7px 10px", cursor: "pointer", fontSize: 12,
-              flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
-            }}>💾 {mobile ? "Guardar" : "Guardar borrador"}</button>
-            <button onClick={() => handleGuardar("Publicado")} style={{
-              background: "#7c3aed", border: "1px solid #7c3aed", borderRadius: 8,
-              color: "white", padding: "7px 10px", cursor: "pointer", fontSize: 12, fontWeight: 600,
-              flex: mobile ? 1 : "unset", whiteSpace: "nowrap",
-            }}>🚀 {mobile ? "Publicar" : "Publicar menú"}</button>
+            }} title="Activar hoja de portada"><IconBookOpen size={13} /> Portada</button>
           </div>
         </div>
 
@@ -686,8 +711,8 @@ export default function Editor() {
                 userSelect: "none",
               }}
             >
-              <span style={{ color: "#fff", fontWeight: 600, fontSize: mobile ? 13 : 14 }}>
-                🚀 Guía rápida para crear tu menú
+              <span style={{ color: "#fff", fontWeight: 600, fontSize: mobile ? 13 : 14, display: "flex", alignItems: "center", gap: 6 }}>
+                <IconRocket size={15} /> Guía rápida para crear tu menú
               </span>
               <span
                 style={{
@@ -808,7 +833,8 @@ export default function Editor() {
                         border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 8,
                         padding: "16px 24px", textAlign: "center", opacity: 0.6,
                         color: fondoActivo.acento, fontSize: 12,
-                      }}>🖼️ Subir logo</div>
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                      }}><IconImage size={16} /> Subir logo</div>
                       <input
                         type="file" accept="image/*" style={{ display: "none" }}
                         onChange={e => { const file = e.target.files?.[0]; if (file) subirLogoPortada(file); }}
@@ -1152,7 +1178,7 @@ export default function Editor() {
                         ) : (
                           !exportando && (
                             <label className="no-imprimir" style={{ cursor: "pointer", display: "block" }}>
-                              <div style={{ border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 6, padding: "8px", textAlign: "center", opacity: 0.5, color: fondoActivo.acento, fontSize: 10 }}>📷 Agregar imagen</div>
+                              <div style={{ border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 6, padding: "8px", textAlign: "center", opacity: 0.5, color: fondoActivo.acento, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}><IconCamera size={12} /> Agregar imagen</div>
                               <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files?.[0]; if (file) subirImagen(seccion.id, idx, file); }} />
                             </label>
                           )
@@ -1228,12 +1254,12 @@ export default function Editor() {
                   </div>
                 ))}
                 {!exportando && (
-                  <button onClick={() => agregarPlatillo(seccion.id)} className="no-imprimir" style={{ background: "transparent", border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 4, color: fondoActivo.acento, cursor: "pointer", fontSize: 10, padding: "4px 12px", marginTop: 4, width: "100%", opacity: 0.7 }}>🍽️ Agregar nuevo platillo</button>
+                  <button onClick={() => agregarPlatillo(seccion.id)} className="no-imprimir" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, background: "transparent", border: `1px dashed ${fondoActivo.acento}55`, borderRadius: 4, color: fondoActivo.acento, cursor: "pointer", fontSize: 10, padding: "4px 12px", marginTop: 4, width: "100%", opacity: 0.7 }}><IconPlus size={11} /> Agregar nuevo platillo</button>
                 )}
               </div>
             ))}
            {!exportando && (
-              <button onClick={agregarSeccion} className="no-imprimir" style={{ background: "transparent", border: `2px dashed ${fondoActivo.acento}33`, borderRadius: 8, color: fondoActivo.acento, cursor: "pointer", fontSize: 11, padding: "8px 16px", width: "100%", fontWeight: 600, marginTop: 8 }}>➕ Agregar una nueva sección</button>
+              <button onClick={agregarSeccion} className="no-imprimir" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "transparent", border: `2px dashed ${fondoActivo.acento}33`, borderRadius: 8, color: fondoActivo.acento, cursor: "pointer", fontSize: 11, padding: "8px 16px", width: "100%", fontWeight: 600, marginTop: 8 }}><IconPlus size={13} /> Agregar una nueva sección</button>
             )}
           </>
           )}
@@ -1263,8 +1289,8 @@ export default function Editor() {
               marginTop: 12,
             }}
           >
-            <div style={{ color: "#a855f7", fontWeight: 600, marginBottom: 6 }}>
-              💡 Consejo
+            <div style={{ color: "#a855f7", fontWeight: 600, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+              <IconBulb size={15} /> Consejo
             </div>
 
             <p
@@ -1440,11 +1466,11 @@ export default function Editor() {
         {herramienta === "Imágenes" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <span style={{ color: "#888", fontSize: 11 }}>Visualización</span>
-            <button onClick={() => setMostrarImagenes(!mostrarImagenes)} style={{ width: "100%", background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6, color: "white", padding: 8, fontSize: 12, cursor: "pointer" }}>
-              {mostrarImagenes ? "👁️ Ocultar Todas las Imágenes" : "👁️ Mostrar Imágenes"}
+            <button onClick={() => setMostrarImagenes(!mostrarImagenes)} style={{ width: "100%", background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6, color: "white", padding: 8, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <IconEye size={14} /> {mostrarImagenes ? "Ocultar Todas las Imágenes" : "Mostrar Imágenes"}
             </button>
-            <p style={{ color: "#555", fontSize: 10, margin: "4px 0" }}>
-              💡 Consejo: Al exportar, la aplicación limpiará los focos activos de edición de forma automática para asegurar un acabado limpio y profesional.
+            <p style={{ color: "#555", fontSize: 10, margin: "4px 0", display: "flex", alignItems: "flex-start", gap: 5 }}>
+              <IconBulb size={12} /> <span>Consejo: Al exportar, la aplicación limpiará los focos activos de edición de forma automática para asegurar un acabado limpio y profesional.</span>
             </p>
           </div>
         )}
