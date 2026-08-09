@@ -66,6 +66,17 @@ const IconCerrarX = () => (
 
 const plantillasPopulares = plantillas.filter((p) => p.popular);
 
+const formatosMenu = [
+  { id: 1, nombre: "Menú de mesa", descripcion: "Doble cara, para poner sobre la mesa", ratio: "3 / 4", gradient: "linear-gradient(160deg, #7c3aed, #a855f7)" },
+  { id: 2, nombre: "Cartel de pared", descripcion: "Vertical grande para colgar en barra", ratio: "3 / 4", gradient: "linear-gradient(160deg, #0ea5e9, #38bdf8)" },
+  { id: 3, nombre: "Lona horizontal", descripcion: "Fachada o exterior del local", ratio: "16 / 9", gradient: "linear-gradient(160deg, #ea580c, #fb923c)" },
+  { id: 4, nombre: "Pizarra de especiales", descripcion: "Estilo tiza, cambia cada día", ratio: "1 / 1", gradient: "linear-gradient(160deg, #16a34a, #4ade80)" },
+  { id: 5, nombre: "Menú QR vertical", descripcion: "Para celular, se escanea en mesa", ratio: "9 / 16", gradient: "linear-gradient(160deg, #db2777, #f472b6)" },
+  { id: 6, nombre: "Post para redes", descripcion: "Cuadrado 1:1 para Instagram/Facebook", ratio: "1 / 1", gradient: "linear-gradient(160deg, #ca8a04, #facc15)" },
+  { id: 7, nombre: "Historia / Story", descripcion: "9:16 para promos del día", ratio: "9 / 16", gradient: "linear-gradient(160deg, #4f46e5, #818cf8)" },
+  { id: 8, nombre: "Tríptico", descripcion: "Cartas largas con varias secciones", ratio: "3 / 4", gradient: "linear-gradient(160deg, #0f766e, #2dd4bf)" },
+];
+
 export default function Dashboard() {
   const [activeNav] = useState("Dashboard");
   const [usuario, setUsuario] = useState<{ id?: string; email?: string; nombre: string; plan: string } | null>(null);
@@ -748,6 +759,41 @@ export default function Dashboard() {
                   width: 6, height: 6, borderRadius: "50%", cursor: "pointer",
                   background: i === carruselIndex ? "#a855f7" : "rgba(255,255,255,0.25)",
                 }} />
+              ))}
+            </div>
+          </div>
+
+        {/* FORMATOS DE MENÚ */}
+          <div style={{ marginTop: 32 }}>
+            <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: "0 0 4px" }}>Explora por formato</h2>
+            <p style={{ color: "#666", fontSize: 12, margin: "0 0 16px" }}>Elige el tamaño ideal según dónde vas a usar tu menú</p>
+
+            <div style={{
+              display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8,
+              scrollSnapType: "x mandatory",
+            }}>
+              {formatosMenu.map((f) => (
+                <a key={f.id} href="/plantillas" style={{ textDecoration: "none", flexShrink: 0, scrollSnapAlign: "start" }}>
+                  <div style={{
+                    width: 180, height: 130, borderRadius: 14, position: "relative",
+                    background: f.gradient, overflow: "hidden", cursor: "pointer",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+                  }}>
+                    <div style={{
+                      position: "absolute", right: 12, bottom: 12,
+                      width: f.ratio === "16 / 9" ? 70 : f.ratio === "9 / 16" ? 34 : 46,
+                      aspectRatio: f.ratio,
+                      background: "rgba(255,255,255,0.9)",
+                      borderRadius: 6,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+                    }} />
+                    <div style={{ position: "absolute", top: 12, left: 12, right: 12 }}>
+                      <div style={{ color: "white", fontWeight: 700, fontSize: 13.5, lineHeight: 1.3 }}>{f.nombre}</div>
+                      <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 10.5, marginTop: 4, lineHeight: 1.4 }}>{f.descripcion}</div>
+                    </div>
+                  </div>
+                </a>
               ))}
             </div>
           </div>
