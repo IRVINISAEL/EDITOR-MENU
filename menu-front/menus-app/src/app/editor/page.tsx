@@ -553,17 +553,50 @@ export default function Editor() {
 
       {/* SIDEBAR IZQUIERDO */}
       <aside className="no-imprimir" style={{
-        width: mobile ? "100%" : 84, background: "#16161d",
+        width: mobile ? "100%" : 220, background: "#16161d",
         borderRight: mobile ? "none" : "1px solid #2a2a35",
         borderBottom: mobile ? "1px solid #2a2a35" : "none",
-        display: "flex", flexDirection: mobile ? "row" : "column", alignItems: "center",
-        padding: mobile ? "8px" : "12px 8px", gap: 6, zIndex: 10,
+        display: "flex", flexDirection: mobile ? "row" : "column", alignItems: mobile ? "center" : "stretch",
+        padding: mobile ? "8px" : "12px 10px", gap: 6, zIndex: 10,
         overflowX: mobile ? "auto" : "visible", overflowY: mobile ? "visible" : "auto",
         flexShrink: 0,
       }}>
-        <a href="/" style={{ textDecoration: "none" }}>
-          <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 8, marginBottom: 8 }} />
+        <a href="/" style={{ textDecoration: "none", alignSelf: mobile ? "auto" : "center" }}>
+          <img src="/logo.png" alt="Menu Master" style={{ width: 36, height: 36, borderRadius: 8, marginBottom: mobile ? 0 : 8 }} />
         </a>
+
+        {/* Nombre del menú + estado de guardado (antes en la Fila 1 de la barra superior) */}
+        {!mobile && (
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6, marginBottom: 4 }}>
+            <input
+              value={nombreMenu}
+              onChange={e => { setNombreMenu(e.target.value); setGuardado(false); }}
+              style={{
+                background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
+                color: "white", fontSize: 13, fontWeight: 600, outline: "none",
+                padding: "6px 10px", width: "100%", minWidth: 0,
+              }}
+            />
+            <span style={{
+              background: guardado ? "#16a34a22" : "#ca8a0422",
+              color: guardado ? "#4ade80" : "#fbbf24",
+              border: `1px solid ${guardado ? "#16a34a44" : "#ca8a0444"}`,
+              borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 600,
+              textAlign: "center",
+            }}>
+              {guardando ? "● Guardando..." : guardado ? "● Guardado" : "● Sin guardar"}
+            </span>
+          </div>
+        )}
+
+        {/* Contador de descargas (antes en la Fila 1 de la barra superior) */}
+        {!mobile && (
+          <div style={{ width: "100%", marginBottom: 4 }}>
+            <DescargasInfo refreshKey={descargasRefresh} />
+          </div>
+        )}
+
+        <div style={{ width: mobile ? 1 : "100%", height: mobile ? 24 : 1, background: "#2a2a35", flexShrink: 0 }} />
 
         {/* Volver (antes estaba en la barra superior) */}
         <a href="/mis-menus" onClick={handleBackClick} style={{
@@ -598,6 +631,56 @@ export default function Editor() {
             <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1 }}>{h.label}</span>
           </button>
         ))}
+
+        <div style={{ width: mobile ? 1 : "80%", height: mobile ? 24 : 1, background: "#2a2a35", flexShrink: 0 }} />
+
+        {/* Formato (antes era la Fila 2 de la barra superior) */}
+        {!mobile && (
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6, marginBottom: 4 }}>
+            <span style={{ fontSize: 10, color: "#666", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Formato</span>
+            <select value={fuenteActiva} onChange={e => { setFuenteActiva(e.target.value); setGuardado(false); }} style={{
+              background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
+              color: "white", padding: "6px 8px", fontSize: 11, outline: "none", width: "100%",
+            }}>
+              {fuentes.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 10, color: "#666" }}>Tamaño</span>
+              <input type="number" value={tamaño} onChange={e => { setTamaño(Number(e.target.value)); setGuardado(false); }} style={{
+                width: 56, background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
+                color: "white", padding: "4px 6px", fontSize: 11, outline: "none", textAlign: "center",
+              }} />
+            </div>
+            <button onClick={() => setMostrarDescripciones(!mostrarDescripciones)} style={{
+              display: "flex", alignItems: "center", gap: 6, width: "100%",
+              background: mostrarDescripciones ? "#7c3aed33" : "#1e1e28",
+              border: "1px solid #2a2a35", borderRadius: 6,
+              color: mostrarDescripciones ? "#a855f7" : "#aaa",
+              padding: "6px 8px", cursor: "pointer", fontSize: 11,
+            }}><IconClipboard size={13} /> Descripciones</button>
+            <button onClick={() => setMostrarImagenes(!mostrarImagenes)} style={{
+              display: "flex", alignItems: "center", gap: 6, width: "100%",
+              background: mostrarImagenes ? "#7c3aed33" : "#1e1e28",
+              border: "1px solid #2a2a35", borderRadius: 6,
+              color: mostrarImagenes ? "#a855f7" : "#aaa",
+              padding: "6px 8px", cursor: "pointer", fontSize: 11,
+            }}><IconImage size={13} /> Imágenes</button>
+            <select value={orientacion} onChange={e => setOrientacion(e.target.value as "vertical" | "horizontal")} style={{
+              background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 6,
+              color: "white", padding: "6px 8px", fontSize: 11, outline: "none", width: "100%",
+            }}>
+              <option value="vertical">Vertical</option>
+              <option value="horizontal">Horizontal</option>
+            </select>
+            <button onClick={() => { setMostrarPortada(!mostrarPortada); setPaginaVista("menu"); setGuardado(false); }} style={{
+              display: "flex", alignItems: "center", gap: 6, width: "100%",
+              background: mostrarPortada ? "#7c3aed33" : "#1e1e28",
+              border: "1px solid #2a2a35", borderRadius: 6,
+              color: mostrarPortada ? "#a855f7" : "#aaa",
+              padding: "6px 8px", cursor: "pointer", fontSize: 11,
+            }} title="Activar hoja de portada"><IconBookOpen size={13} /> Portada</button>
+          </div>
+        )}
 
         <div style={{ width: mobile ? 1 : "80%", height: mobile ? 24 : 1, background: "#2a2a35", flexShrink: 0 }} />
 
@@ -636,7 +719,8 @@ export default function Editor() {
       {/* PANEL CENTRAL + BARRA SUPERIOR */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-       {/* BARRA SUPERIOR */}
+       {/* BARRA SUPERIOR (solo en móvil; en escritorio todo esto vive en el sidebar izquierdo) */}
+        {mobile && (
         <div className="no-imprimir" style={{ background: "#16161d", borderBottom: "1px solid #2a2a35" }}>
 
           {/* Fila 1: nombre + acciones principales (esto ya no se mezcla con las herramientas) */}
@@ -718,6 +802,7 @@ export default function Editor() {
             }} title="Activar hoja de portada"><IconBookOpen size={13} /> Portada</button>
           </div>
         </div>
+        )}
 
         {/* GUÍA RÁPIDA (deslizable, colapsada por defecto) */}
           <div
