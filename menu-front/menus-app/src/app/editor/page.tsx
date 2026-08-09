@@ -632,6 +632,20 @@ export default function Editor() {
           </button>
         ))}
 
+        {!mobile && (
+          <button onClick={() => { setMostrarPortada(!mostrarPortada); setPaginaVista("menu"); setGuardado(false); }} style={{
+            width: "100%", display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 3,
+            padding: "8px 4px", borderRadius: 8, border: "none",
+            background: mostrarPortada ? "#7c3aed33" : "transparent",
+            color: mostrarPortada ? "#a855f7" : "#666",
+            cursor: "pointer", flexShrink: 0,
+          }} title="Activar hoja de portada">
+            <IconBookOpen size={18} />
+            <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1 }}>Portada</span>
+          </button>
+        )}
+
         <div style={{ width: mobile ? 1 : "80%", height: mobile ? 24 : 1, background: "#2a2a35", flexShrink: 0 }} />
 
         {/* Acciones (antes estaban en la barra superior) */}
@@ -705,16 +719,6 @@ export default function Editor() {
                 <option value="vertical">Vertical</option>
                 <option value="horizontal">Horizontal</option>
               </select>
-              <button onClick={() => { setMostrarPortada(!mostrarPortada); setPaginaVista("menu"); setGuardado(false); }} style={{
-                width: "100%", display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center", gap: 3,
-                padding: "8px 4px", borderRadius: 8, border: "1px solid #2a2a35",
-                background: mostrarPortada ? "#7c3aed33" : "#1e1e28",
-                color: mostrarPortada ? "#a855f7" : "#aaa", cursor: "pointer",
-              }} title="Activar hoja de portada">
-                <IconBookOpen size={18} />
-                <span style={{ fontSize: 10, textAlign: "center", lineHeight: 1.1 }}>Portada</span>
-              </button>
             </div>
           </>
         )}
