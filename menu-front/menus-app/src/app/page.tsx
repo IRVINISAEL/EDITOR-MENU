@@ -721,7 +721,7 @@ export default function Dashboard() {
                 <IconArrowLeft />
               </button>
 
-              <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 16, flex: 1, minWidth: 0 }}>
+              <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))", gap: 16, flex: 1, minWidth: 0 }}>
                 {plantillasVisibles.map((p) => (
                   <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
                     <div style={{
