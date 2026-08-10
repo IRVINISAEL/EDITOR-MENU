@@ -11,6 +11,8 @@ import {
   IconEye,
   IconX,
   IconRefresh,
+  IconCamera,
+  IconCheck,
 } from "@/components/Icons";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -57,6 +59,12 @@ export default function MisMenus() {
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState("Todos");
   const [menuViendo, setMenuViendo] = useState<Menu | null>(null);
+  const [menuPortada, setMenuPortada] = useState<Menu | null>(null);
+  const [portadaUrl, setPortadaUrl] = useState<string>("");
+  const [descripcionPublica, setDescripcionPublica] = useState("");
+  const [subiendoPortada, setSubiendoPortada] = useState(false);
+  const [guardandoDetalles, setGuardandoDetalles] = useState(false);
+  const [detallesGuardados, setDetallesGuardados] = useState(false);
   const [confirmEliminar, setConfirmEliminar] = useState<number | null>(null);
   const [eliminando, setEliminando] = useState(false);
 
@@ -135,6 +143,86 @@ export default function MisMenus() {
       return;
     }
     window.location.href = "/editor";
+  };
+
+  // Abrir modal de portada/descripción, precargando lo que ya haya guardado
+  const abrirPortada = (menu: Menu) => {
+    let data: any = {};
+    try { data = JSON.parse(menu.data_json || "{}"); } catch { data = {}; }
+    setPortadaUrl(data.imagen_url || "");
+    setDescripcionPublica(data.descripcion_publica || "");
+    setDetallesGuardados(false);
+    setMenuPortada(menu);
+  };
+
+  // Subir nueva imagen de portada para la carta (se guarda de inmediato en el backend)
+  const subirPortada = async (file: File) => {
+    if (!menuPortada) return;
+    setSubiendoPortada(true);
+    try {
+      const formData = new FormData();
+      formData.append("imagen", file);
+      formData.append("menu_id", String(menuPortada.id));
+      const res = await fetch(`${API}/api/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setPortadaUrl(data.url);
+        setMenus((prev) =>
+          prev.map((m) => {
+            if (m.id !== menuPortada.id) return m;
+            let json: any = {};
+            try { json = JSON.parse(m.data_json || "{}"); } catch { json = {}; }
+            json.imagen_url = data.url;
+            return { ...m, data_json: JSON.stringify(json) };
+          })
+        );
+      } else {
+        alert(data.mensaje || "No se pudo subir la imagen");
+      }
+    } catch {
+      alert("Error de conexión al subir la imagen");
+    } finally {
+      setSubiendoPortada(false);
+    }
+  };
+
+  // Guardar la descripción corta que se muestra en Explorar, sin tocar
+  // secciones ni platillos ya guardados en el menú
+  const guardarDetalles = async () => {
+    if (!menuPortada) return;
+    setGuardandoDetalles(true);
+    try {
+      const resGet = await fetch(`${API}/api/menus/${menuPortada.id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      const dataGet = await resGet.json();
+      if (!dataGet.ok) throw new Error();
+      let json: any = {};
+      try { json = JSON.parse(dataGet.menu.data_json || "{}"); } catch { json = {}; }
+      json.descripcion_publica = descripcionPublica;
+
+      const resPut = await fetch(`${API}/api/menus/${menuPortada.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify({ nombre: menuPortada.nombre, estado: menuPortada.estado, data_json: json }),
+      });
+      const dataPut = await resPut.json();
+      if (dataPut.ok) {
+        setMenus((prev) => prev.map((m) => (m.id === menuPortada.id ? { ...m, data_json: JSON.stringify(json) } : m)));
+        setDetallesGuardados(true);
+        setTimeout(() => setDetallesGuardados(false), 2000);
+      } else {
+        alert(dataPut.mensaje || "No se pudo guardar la descripción");
+      }
+    } catch {
+      alert("Error de conexión al guardar la descripción");
+    } finally {
+      setGuardandoDetalles(false);
+    }
   };
 
   const menusFiltrados = menus.filter((m) => {
@@ -292,6 +380,7 @@ export default function MisMenus() {
 
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => setMenuViendo(menu)} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, padding: "6px 10px", color: "#aaa", cursor: "pointer", fontSize: 14 }} title="Ver"><IconEye /></button>
+                <button onClick={() => abrirPortada(menu)} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, padding: "6px 10px", color: "#a855f7", cursor: "pointer", fontSize: 14 }} title="Editar portada y descripción para Explorar"><IconCamera /></button>
                 <button onClick={() => editarMenu(menu)} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, padding: "6px 10px", color: "#a855f7", cursor: "pointer", fontSize: 14 }} title="Editar"><IconEdit /></button>
                 <button onClick={() => setConfirmEliminar(menu.id)} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 6, padding: "6px 10px", color: "#f87171", cursor: "pointer", fontSize: 14 }} title="Eliminar"><IconTrash /></button>
               </div>
@@ -329,6 +418,77 @@ export default function MisMenus() {
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => { setMenuViendo(null); editarMenu(menuViendo); }} style={{ flex: 1, background: "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none", borderRadius: 8, padding: "10px", color: "white", fontWeight: 600, cursor: "pointer", fontSize: 13 }}>✏️ Editar</button>
               <button onClick={() => setMenuViendo(null)} style={{ flex: 1, background: "transparent", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px", color: "#aaa", cursor: "pointer", fontSize: 13 }}>Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PORTADA Y DESCRIPCIÓN */}
+      {menuPortada && (
+        <div onClick={() => setMenuPortada(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#1e1e28", border: "1px solid #2a2a35", borderRadius: 16, padding: 28, width: 440, maxWidth: "100%", position: "relative" }}>
+            <button onClick={() => setMenuPortada(null)} style={{ position: "absolute", top: 12, right: 12, background: "#16161d", border: "1px solid #2a2a35", borderRadius: "50%", width: 28, height: 28, color: "#aaa", cursor: "pointer", fontSize: 14 }}><IconX /></button>
+
+            <div style={{ color: "white", fontSize: 16, fontWeight: 700, marginBottom: 2 }}>Portada de tu carta</div>
+            <div style={{ color: "#666", fontSize: 12, marginBottom: 20 }}>Así se verá "{menuPortada.nombre}" en Explorar</div>
+
+            {/* Vista previa + subida de portada */}
+            <label
+              htmlFor="input-portada"
+              style={{
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                aspectRatio: "16/9", borderRadius: 12, cursor: subiendoPortada ? "wait" : "pointer",
+                background: portadaUrl ? `#0d0d12 url(${portadaUrl}) center/cover no-repeat` : "#16161d",
+                border: "1px dashed #3a3a45", position: "relative", overflow: "hidden", marginBottom: 8,
+              }}
+            >
+              {!portadaUrl && (
+                <>
+                  <div style={{ fontSize: 24, marginBottom: 6 }}><IconCamera size={24} /></div>
+                  <span style={{ color: "#888", fontSize: 12 }}>Sube una foto de tu carta o platillos</span>
+                </>
+              )}
+              {subiendoPortada && (
+                <div style={{ position: "absolute", inset: 0, background: "rgba(13,13,18,0.7)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 600 }}>
+                  Subiendo...
+                </div>
+              )}
+              {portadaUrl && !subiendoPortada && (
+                <span style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(13,13,18,0.75)", color: "white", fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20 }}>
+                  Cambiar foto
+                </span>
+              )}
+              <input
+                id="input-portada"
+                type="file"
+                accept="image/*"
+                disabled={subiendoPortada}
+                onChange={(e) => { const file = e.target.files?.[0]; if (file) subirPortada(file); e.target.value = ""; }}
+                style={{ display: "none" }}
+              />
+            </label>
+            <p style={{ color: "#555", fontSize: 11, margin: "0 0 20px" }}>JPG o PNG. Se guarda automáticamente al subirla.</p>
+
+            {/* Descripción corta para Explorar */}
+            <label style={{ color: "#aaa", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 8 }}>Descripción corta</label>
+            <textarea
+              value={descripcionPublica}
+              onChange={(e) => setDescripcionPublica(e.target.value.slice(0, 140))}
+              placeholder="Ej. Cocina casera con toque mediterráneo, ideal para comer en familia."
+              rows={3}
+              style={{ width: "100%", resize: "none", background: "#16161d", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px 12px", color: "white", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+            />
+            <div style={{ color: "#555", fontSize: 11, textAlign: "right", marginTop: 4, marginBottom: 20 }}>{descripcionPublica.length}/140</div>
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={guardarDetalles}
+                disabled={guardandoDetalles}
+                style={{ flex: 1, background: detallesGuardados ? "#16a34a" : "linear-gradient(135deg, #7c3aed, #a855f7)", border: "none", borderRadius: 8, padding: "10px", color: "white", fontWeight: 600, cursor: guardandoDetalles ? "not-allowed" : "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+              >
+                {detallesGuardados ? (<><IconCheck size={14} /> Guardado</>) : guardandoDetalles ? "Guardando..." : "Guardar descripción"}
+              </button>
+              <button onClick={() => setMenuPortada(null)} style={{ flex: 1, background: "transparent", border: "1px solid #2a2a35", borderRadius: 8, padding: "10px", color: "#aaa", cursor: "pointer", fontSize: 13 }}>Cerrar</button>
             </div>
           </div>
         </div>
