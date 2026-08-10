@@ -12,6 +12,8 @@ import {
   IconArrowLeft,
   IconBulb,
   IconoPlantilla,
+  IconSearch,
+  IconMapPin,
 } from "@/components/Icons";
 import { plantillas } from "@/data/plantillas";
 
@@ -66,6 +68,23 @@ const IconCerrarX = () => (
 
 const plantillasPopulares = plantillas.filter((p) => p.popular);
 
+// --- Explorar cartas (unido al dashboard) ---
+const API = process.env.NEXT_PUBLIC_API_URL;
+
+const ACENTO_POR_TIPO: Record<string, string> = {
+  "Cafetería": "#a1662f",
+  "Parrilla": "#b3452f",
+  "Sushi": "#7c3aed",
+  "Italiana": "#c23b3b",
+  "Mexicana": "#d97706",
+  "Saludable": "#22a35a",
+};
+const ACENTO_DEFAULT = "#6b6b78";
+
+type Carta = { id: number; negocio: string; categoria: string; tipo: string; portada: string | null; descripcion: string };
+
+const CATEGORIAS_EXPLORAR = ["Todas", "Cafetería", "Parrilla", "Sushi", "Italiana", "Mexicana", "Saludable"];
+
 
 export default function Dashboard() {
   const [activeNav] = useState("Dashboard");
@@ -76,6 +95,13 @@ export default function Dashboard() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [mostrarPremium, setMostrarPremium] = useState(false);
   const [carruselIndex, setCarruselIndex] = useState(0);
+
+  // --- Explorar cartas ---
+  const [busquedaCartas, setBusquedaCartas] = useState("");
+  const [categoriaCartas, setCategoriaCartas] = useState("Todas");
+  const [cartas, setCartas] = useState<Carta[]>([]);
+  const [cargandoCartas, setCargandoCartas] = useState(true);
+  const [errorCartas, setErrorCartas] = useState(false);
 
   const porPagina = mobile ? 2 : 4;
   const totalPaginas = Math.ceil(plantillasPopulares.length / porPagina);
@@ -121,6 +147,41 @@ export default function Dashboard() {
       })
       .catch(err => console.error(err));
   }, []);
+
+  useEffect(() => {
+    // Cargar cartas públicas de otros negocios (sección Explorar)
+    fetch(`${API}/api/public/explorar`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.ok) {
+          setCartas(
+            json.cartas.map((c: any) => ({
+              id: c.id,
+              negocio: c.negocio || c.nombre_menu || "Negocio",
+              categoria: c.tipo || "Otro",
+              tipo: c.tipo || "Restaurante",
+              portada: c.portada || null,
+              descripcion: c.descripcion || "",
+            }))
+          );
+        } else {
+          setErrorCartas(true);
+        }
+      })
+      .catch(() => setErrorCartas(true))
+      .finally(() => setCargandoCartas(false));
+  }, []);
+
+  const cartasFiltradas = cartas.filter((c) => {
+    const coincideBusqueda =
+      c.negocio.toLowerCase().includes(busquedaCartas.toLowerCase()) ||
+      c.tipo.toLowerCase().includes(busquedaCartas.toLowerCase());
+    const coincideCategoria = categoriaCartas === "Todas" || c.categoria === categoriaCartas;
+    return coincideBusqueda && coincideCategoria;
+  });
+
+  const conteoPorCategoria = (cat: string) =>
+    cat === "Todas" ? cartas.length : cartas.filter((c) => c.categoria === cat).length;
 
   const cerrarPopupPremium = () => {
     setMostrarPremium(false);
@@ -186,7 +247,7 @@ export default function Dashboard() {
         </nav>
 
         <div style={{ padding: "12px", borderTop: "1px solid #2a2a35", display: "flex", flexDirection: "column", gap: 4 }}>
-          <a href="/explorar" style={{ textDecoration: "none" }}>
+          <a href="#explorar" style={{ textDecoration: "none" }}>
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "10px 12px", borderRadius: 8,
@@ -752,6 +813,196 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
+
+        {/* EXPLORAR CARTAS DE OTROS NEGOCIOS */}
+        <div id="explorar" style={{ marginTop: 48, scrollMarginTop: 24 }}>
+          <div style={{ display: "flex",
+            flexDirection: mobile ? "column" : "row",
+            justifyContent: "space-between",
+            alignItems: mobile ? "flex-start" : "center",
+            gap: mobile ? 16 : 0, marginBottom: 16 }}>
+            <div>
+              <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                Explora cartas de otros negocios
+                <span style={{ background: "#a855f7", color: "white", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6 }}>Nuevo</span>
+              </h2>
+              <p style={{ color: "#666", fontSize: 12, margin: "4px 0 0" }}>Descubre menús publicados por otros negocios en Menu Master</p>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#16161d",
+                border: "1px solid #2a2a35",
+                borderRadius: 10,
+                padding: "9px 14px",
+                width: mobile ? "100%" : 260,
+              }}
+            >
+              <IconSearch size={14} />
+              <input
+                value={busquedaCartas}
+                onChange={(e) => setBusquedaCartas(e.target.value)}
+                placeholder="Buscar negocio o tipo de comida..."
+                style={{ background: "transparent", border: "none", outline: "none", color: "white", fontSize: 13, flex: 1 }}
+              />
+            </div>
+          </div>
+
+          {/* Filtros por categoría */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+            {CATEGORIAS_EXPLORAR.map((cat) => {
+              const activo = categoriaCartas === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setCategoriaCartas(cat)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "7px 14px",
+                    borderRadius: 20,
+                    cursor: "pointer",
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    background: activo ? "linear-gradient(135deg, #7c3aed, #a855f7)" : "#16161d",
+                    border: activo ? "1px solid transparent" : "1px solid #2a2a35",
+                    color: activo ? "white" : "#9a97a8",
+                    transition: "border-color 0.15s, color 0.15s",
+                  }}
+                >
+                  {cat !== "Todas" && (
+                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: ACENTO_POR_TIPO[cat] || ACENTO_DEFAULT, display: "inline-block" }} />
+                  )}
+                  {cat}
+                  {!cargandoCartas && !errorCartas && (
+                    <span style={{ fontSize: 10.5, opacity: 0.7 }}>{conteoPorCategoria(cat)}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Grid de cartas */}
+          {cargandoCartas && (
+            <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+              {Array.from({ length: mobile ? 4 : 8 }).map((_, i) => (
+                <div key={i} style={{ background: "#16161d", border: "1px solid #2a2a35", borderRadius: 12, overflow: "hidden" }}>
+                  <div style={{ aspectRatio: "4/3", background: "#1c1c24" }} />
+                  <div style={{ padding: "12px 14px" }}>
+                    <div style={{ height: 11, width: "60%", background: "#1c1c24", borderRadius: 4 }} />
+                    <div style={{ height: 9, width: "40%", background: "#1c1c24", borderRadius: 4, marginTop: 8 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!cargandoCartas && errorCartas && (
+            <div style={{ textAlign: "center", background: "#16161d", border: "1px solid #2a2a35", borderRadius: 12, padding: "40px 20px" }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>⚠️</div>
+              <p style={{ color: "white", fontWeight: 600, margin: 0, fontSize: 14 }}>No se pudieron cargar las cartas</p>
+              <p style={{ color: "#888", fontSize: 12, marginTop: 4 }}>Intenta más tarde o recarga la página.</p>
+            </div>
+          )}
+
+          {!cargandoCartas && !errorCartas && (
+            <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2, minmax(0, 1fr))" : "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+              {cartasFiltradas.map((c) => {
+                const acento = ACENTO_POR_TIPO[c.categoria] || ACENTO_DEFAULT;
+                return (
+                  <a key={c.id} href={`/explorar/${c.id}`} style={{ textDecoration: "none" }}>
+                    <div
+                      style={{
+                        background: "#16161d",
+                        border: "1px solid #2a2a35",
+                        borderRadius: 12,
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        transition: "transform 0.15s, border-color 0.15s, box-shadow 0.15s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-3px)";
+                        e.currentTarget.style.borderColor = "#7c3aed";
+                        e.currentTarget.style.boxShadow = "0 10px 24px rgba(124,58,237,0.18)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.borderColor = "#2a2a35";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                    >
+                      <div style={{ position: "relative", aspectRatio: "4/3", background: "#0d0d12" }}>
+                        {c.portada ? (
+                          <img src={c.portada} alt={c.negocio} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                        ) : (
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "linear-gradient(160deg, #1a1a20 0%, #101014 100%)",
+                            }}
+                          >
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ width: 30, height: 3, borderRadius: 2, background: acento, margin: "0 auto 8px" }} />
+                              <span style={{ color: "#555", fontSize: 10.5, letterSpacing: 0.5 }}>Sin portada aún</span>
+                            </div>
+                          </div>
+                        )}
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            left: 8,
+                            background: "rgba(13,13,18,0.72)",
+                            backdropFilter: "blur(4px)",
+                            color: "white",
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            padding: "3px 9px 3px 7px",
+                            borderRadius: 20,
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 5,
+                          }}
+                        >
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: acento, display: "inline-block" }} />
+                          {c.categoria}
+                        </span>
+                      </div>
+                      <div style={{ padding: "12px 14px" }}>
+                        <div style={{ color: "white", fontWeight: 700, fontSize: 13 }}>{c.negocio}</div>
+                        {c.descripcion ? (
+                          <div style={{ color: "#888", fontSize: 11.5, marginTop: 4, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                            {c.descripcion}
+                          </div>
+                        ) : (
+                          <div style={{ color: "#888", fontSize: 11.5, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                            <IconMapPin size={11} /> {c.tipo}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          )}
+
+          {!cargandoCartas && !errorCartas && cartasFiltradas.length === 0 && (
+            <div style={{ textAlign: "center", marginTop: 40 }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
+              <p style={{ color: "white", fontWeight: 600, margin: 0, fontSize: 14 }}>No se encontraron negocios</p>
+              <p style={{ color: "#888", fontSize: 12, marginTop: 4 }}>Prueba con otro nombre o categoría.</p>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
