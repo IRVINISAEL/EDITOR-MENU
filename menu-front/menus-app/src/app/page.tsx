@@ -14,6 +14,8 @@ import {
   IconoPlantilla,
   IconSearch,
   IconMapPin,
+  IconHeart,
+  IconMessageCircle,
 } from "@/components/Icons";
 import { plantillas } from "@/data/plantillas";
 
@@ -81,7 +83,17 @@ const ACENTO_POR_TIPO: Record<string, string> = {
 };
 const ACENTO_DEFAULT = "#6b6b78";
 
-type Carta = { id: number; negocio: string; categoria: string; tipo: string; portada: string | null; descripcion: string };
+type Carta = {
+  id: number;
+  negocio: string;
+  categoria: string;
+  tipo: string;
+  portada: string | null;
+  descripcion: string;
+  likes: number;
+  likedByMe: boolean;
+  comentarios: number;
+};
 
 const CATEGORIAS_EXPLORAR = ["Todas", "Cafetería", "Parrilla", "Sushi", "Italiana", "Mexicana", "Saludable"];
 
@@ -103,6 +115,8 @@ export default function Dashboard() {
   const [cargandoCartas, setCargandoCartas] = useState(true);
   const [errorCartas, setErrorCartas] = useState(false);
   const [buscadorEnfocado, setBuscadorEnfocado] = useState(false);
+  const [comentandoId, setComentandoId] = useState<number | null>(null);
+  const [textoComentario, setTextoComentario] = useState("");
 
   const porPagina = mobile ? 2 : 4;
   const totalPaginas = Math.ceil(plantillasPopulares.length / porPagina);
@@ -163,6 +177,9 @@ export default function Dashboard() {
               tipo: c.tipo || "Restaurante",
               portada: c.portada || null,
               descripcion: c.descripcion || "",
+              likes: c.likes ?? 0,
+              likedByMe: !!c.liked_by_me,
+              comentarios: c.comentarios ?? 0,
             }))
           );
         } else {
@@ -186,6 +203,70 @@ export default function Dashboard() {
 
   const cerrarPopupPremium = () => {
     setMostrarPremium(false);
+  };
+
+  const handleLike = (carta: Carta, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const yaLeDioLike = carta.likedByMe;
+
+    // Actualización optimista en pantalla
+    setCartas((prev) =>
+      prev.map((c) =>
+        c.id === carta.id
+          ? { ...c, likedByMe: !yaLeDioLike, likes: c.likes + (yaLeDioLike ? -1 : 1) }
+          : c
+      )
+    );
+
+    // TODO: reemplazar por el endpoint real del backend cuando exista
+    fetch(`${API}/api/public/explorar/${carta.id}/like`, {
+      method: yaLeDioLike ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json" },
+    }).catch(() => {
+      // Si falla, regresamos el estado anterior
+      setCartas((prev) =>
+        prev.map((c) =>
+          c.id === carta.id
+            ? { ...c, likedByMe: yaLeDioLike, likes: c.likes + (yaLeDioLike ? 1 : -1) }
+            : c
+        )
+      );
+    });
+  };
+
+  const handleAbrirComentar = (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setComentandoId((actual) => (actual === id ? null : id));
+    setTextoComentario("");
+  };
+
+  const handleEnviarComentario = (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const texto = textoComentario.trim();
+    if (!texto) return;
+
+    // Actualización optimista del contador
+    setCartas((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, comentarios: c.comentarios + 1 } : c))
+    );
+    setComentandoId(null);
+    setTextoComentario("");
+
+    // TODO: reemplazar por el endpoint real del backend cuando exista
+    fetch(`${API}/api/public/explorar/${id}/comentarios`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texto }),
+    }).catch(() => {
+      setCartas((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, comentarios: Math.max(0, c.comentarios - 1) } : c))
+      );
+    });
   };
 
   const handleCerrarSesion = () => {
@@ -959,6 +1040,98 @@ export default function Dashboard() {
                         ) : (
                           <div style={{ color: "#888", fontSize: 11.5, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
                             <IconMapPin size={11} /> {c.tipo}
+                          </div>
+                        )}
+
+                        {/* Barra de acciones: like y comentar */}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 14,
+                            marginTop: 10,
+                            paddingTop: 10,
+                            borderTop: "1px solid #232330",
+                          }}
+                        >
+                          <button
+                            onClick={(e) => handleLike(c, e)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 5,
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: 0,
+                              color: c.likedByMe ? "#e0245e" : "#888",
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                          >
+                            <IconHeart size={15} filled={c.likedByMe} />
+                            {c.likes}
+                          </button>
+
+                          <button
+                            onClick={(e) => handleAbrirComentar(c.id, e)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 5,
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: 0,
+                              color: comentandoId === c.id ? "#7c3aed" : "#888",
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                          >
+                            <IconMessageCircle size={15} />
+                            {c.comentarios}
+                          </button>
+                        </div>
+
+                        {/* Caja para escribir un comentario */}
+                        {comentandoId === c.id && (
+                          <div
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                            style={{ marginTop: 8, display: "flex", gap: 6 }}
+                          >
+                            <input
+                              autoFocus
+                              value={textoComentario}
+                              onChange={(e) => setTextoComentario(e.target.value)}
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                              onKeyDown={(e) => e.key === "Enter" && handleEnviarComentario(c.id, e as any)}
+                              placeholder="Escribe un comentario..."
+                              style={{
+                                flex: 1,
+                                background: "#0d0d12",
+                                border: "1px solid #2a2a35",
+                                borderRadius: 8,
+                                color: "white",
+                                fontSize: 11.5,
+                                padding: "6px 8px",
+                                outline: "none",
+                              }}
+                            />
+                            <button
+                              onClick={(e) => handleEnviarComentario(c.id, e)}
+                              style={{
+                                background: "#7c3aed",
+                                border: "none",
+                                borderRadius: 8,
+                                color: "white",
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                padding: "6px 10px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              Enviar
+                            </button>
                           </div>
                         )}
                       </div>
