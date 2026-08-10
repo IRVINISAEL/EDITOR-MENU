@@ -209,7 +209,7 @@ app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
 app.get("/api/public/explorar", (req, res, next) => {
   db.query(
-    `SELECT m.${C.menus.id} AS id, m.${C.menus.nombre} AS nombre_menu,
+    `SELECT m.${C.menus.id} AS id, m.${C.menus.nombre} AS nombre_menu, m.${C.menus.dataJson} AS data_json,
             n.${C.negocios.nombre} AS negocio, n.${C.negocios.tipo} AS tipo
      FROM ${C.menus.table} m
      LEFT JOIN ${C.negocios.table} n ON n.${C.negocios.usuarioId} = m.${C.menus.usuarioId}
@@ -217,7 +217,21 @@ app.get("/api/public/explorar", (req, res, next) => {
      ORDER BY m.${C.menus.fechaCreacion} DESC`,
     (err, results) => {
       if (err) return next(err);
-      res.json({ ok: true, cartas: results });
+      // CA: exponer solo lo necesario para la tarjeta pública (portada y
+      // descripción corta que el dueño definió), sin filtrar el data_json crudo.
+      const cartas = results.map((r) => {
+        let data = {};
+        try { data = JSON.parse(r.data_json || "{}"); } catch { data = {}; }
+        return {
+          id: r.id,
+          nombre_menu: r.nombre_menu,
+          negocio: r.negocio,
+          tipo: r.tipo,
+          portada: data.imagen_url || null,
+          descripcion: data.descripcion_publica || "",
+        };
+      });
+      res.json({ ok: true, cartas });
     }
   );
 });

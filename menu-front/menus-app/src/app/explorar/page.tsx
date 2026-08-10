@@ -27,17 +27,19 @@ const navItems = [
   { icon: <IconSettings />, label: "Configuración", href: "/configuracion" },
 ];
 
-const ESTILO_POR_TIPO: Record<string, { emoji: string; gradient: string }> = {
-  "Cafetería": { emoji: "☕", gradient: "linear-gradient(160deg, #3e2723 0%, #6d4c41 100%)" },
-  "Parrilla": { emoji: "🥩", gradient: "linear-gradient(160deg, #2b0f0f 0%, #6b1d1d 100%)" },
-  "Sushi": { emoji: "🍣", gradient: "linear-gradient(160deg, #0d0d0d 0%, #2c1320 100%)" },
-  "Italiana": { emoji: "🍕", gradient: "linear-gradient(160deg, #2b1010 0%, #7a2020 100%)" },
-  "Mexicana": { emoji: "🌮", gradient: "linear-gradient(160deg, #3d1a05 0%, #a8460d 100%)" },
-  "Saludable": { emoji: "🥗", gradient: "linear-gradient(160deg, #0d2b12 0%, #245c2e 100%)" },
+// Acento de color por tipo de cocina — se usa solo como franja/etiqueta,
+// nunca reemplaza la foto real que el negocio subió.
+const ACENTO_POR_TIPO: Record<string, string> = {
+  "Cafetería": "#a1662f",
+  "Parrilla": "#b3452f",
+  "Sushi": "#7c3aed",
+  "Italiana": "#c23b3b",
+  "Mexicana": "#d97706",
+  "Saludable": "#22a35a",
 };
-const ESTILO_DEFAULT = { emoji: "🍽️", gradient: "linear-gradient(160deg,#1a1a1a,#2d2d2d)" };
+const ACENTO_DEFAULT = "#6b6b78";
 
-type Carta = { id: number; negocio: string; categoria: string; tipo: string };
+type Carta = { id: number; negocio: string; categoria: string; tipo: string; portada: string | null; descripcion: string };
 
 const CATEGORIAS = ["Todas", "Cafetería", "Parrilla", "Sushi", "Italiana", "Mexicana", "Saludable"];
 
@@ -69,6 +71,8 @@ export default function ExplorarPage() {
               negocio: c.negocio || c.nombre_menu || "Negocio",
               categoria: c.tipo || "Otro",
               tipo: c.tipo || "Restaurante",
+              portada: c.portada || null,
+              descripcion: c.descripcion || "",
             }))
           );
         } else {
@@ -171,10 +175,9 @@ export default function ExplorarPage() {
             marginBottom: 28,
           }}
         >
-          <div style={{ position: "absolute", top: -30, right: -20, fontSize: 160, opacity: 0.08, filter: "blur(1px)", lineHeight: 1 }}>🍽️</div>
           <div style={{ position: "relative", maxWidth: 560 }}>
             <span style={{ display: "inline-block", padding: "4px 12px", borderRadius: 20, background: "#7c3aed22", border: "1px solid #7c3aed55", color: "#c4a3f7", fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>
-            Directorio de sabores
+              Directorio de sabores
             </span>
             <h1 style={{ color: "white", fontSize: mobile ? 24 : 32, fontWeight: 800, margin: 0, letterSpacing: "-0.5px", lineHeight: 1.15 }}>
               Explora cartas de restaurantes y cafeterías
@@ -211,7 +214,6 @@ export default function ExplorarPage() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
           {CATEGORIAS.map((cat) => {
             const activo = categoria === cat;
-            const estilo = ESTILO_POR_TIPO[cat];
             return (
               <button
                 key={cat}
@@ -231,7 +233,9 @@ export default function ExplorarPage() {
                   transition: "border-color 0.15s, color 0.15s",
                 }}
               >
-                {estilo && <span style={{ fontSize: 13 }}>{estilo.emoji}</span>}
+                {cat !== "Todas" && (
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: ACENTO_POR_TIPO[cat] || ACENTO_DEFAULT, display: "inline-block" }} />
+                )}
                 {cat}
                 {!cargando && !error && (
                   <span style={{ fontSize: 11, opacity: 0.7 }}>{conteoPorCategoria(cat)}</span>
@@ -267,7 +271,7 @@ export default function ExplorarPage() {
         {!cargando && !error && (
           <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(auto-fill, minmax(240px, 1fr))", gap: 20 }}>
             {cartasFiltradas.map((c) => {
-              const estilo = ESTILO_POR_TIPO[c.categoria] || ESTILO_DEFAULT;
+              const acento = ACENTO_POR_TIPO[c.categoria] || ACENTO_DEFAULT;
               return (
                 <a key={c.id} href={`/explorar/${c.id}`} style={{ textDecoration: "none" }}>
                   <div
@@ -290,31 +294,59 @@ export default function ExplorarPage() {
                       e.currentTarget.style.boxShadow = "none";
                     }}
                   >
-                    <div style={{ position: "relative", aspectRatio: "4/3", background: estilo.gradient, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontSize: 40, filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.4))" }}>{estilo.emoji}</span>
+                    <div style={{ position: "relative", aspectRatio: "4/3", background: "#0d0d12" }}>
+                      {c.portada ? (
+                        <img src={c.portada} alt={c.negocio} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      ) : (
+                        <div
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: `linear-gradient(160deg, #1a1a20 0%, #101014 100%)`,
+                          }}
+                        >
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ width: 34, height: 3, borderRadius: 2, background: acento, margin: "0 auto 10px" }} />
+                            <span style={{ color: "#555", fontSize: 11, letterSpacing: 0.5 }}>Sin portada aún</span>
+                          </div>
+                        </div>
+                      )}
                       <span
                         style={{
                           position: "absolute",
                           top: 10,
                           left: 10,
-                          background: "rgba(13,13,18,0.7)",
+                          background: "rgba(13,13,18,0.72)",
                           backdropFilter: "blur(4px)",
-                          color: "#c4a3f7",
+                          color: "white",
                           fontSize: 11,
                           fontWeight: 700,
-                          padding: "4px 10px",
+                          padding: "4px 10px 4px 8px",
                           borderRadius: 20,
-                          border: "1px solid rgba(168,85,247,0.35)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: acento, display: "inline-block" }} />
                         {c.categoria}
                       </span>
                     </div>
                     <div style={{ padding: "14px 16px" }}>
                       <div style={{ color: "white", fontWeight: 700, fontSize: 14 }}>{c.negocio}</div>
-                      <div style={{ color: "#888", fontSize: 12, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
-                        <IconMapPin size={12} /> {c.tipo}
-                      </div>
+                      {c.descripcion ? (
+                        <div style={{ color: "#888", fontSize: 12, marginTop: 4, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                          {c.descripcion}
+                        </div>
+                      ) : (
+                        <div style={{ color: "#888", fontSize: 12, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                          <IconMapPin size={12} /> {c.tipo}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </a>
