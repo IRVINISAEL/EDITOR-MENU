@@ -207,14 +207,19 @@ async function notificarSiHabilitado(usuarioId, { email, subject, html }) {
 
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
 
-app.get("/api/public/explorar", (req, res, next) => {
+app.get("/api/public/explorar", usuarioOpcional, (req, res, next) => {
+  const usuarioId = req.usuario ? req.usuario.id : null;
   db.query(
     `SELECT m.${C.menus.id} AS id, m.${C.menus.nombre} AS nombre_menu, m.${C.menus.dataJson} AS data_json,
-            n.${C.negocios.nombre} AS negocio, n.${C.negocios.tipo} AS tipo
+            n.${C.negocios.nombre} AS negocio, n.${C.negocios.tipo} AS tipo,
+            (SELECT COUNT(*) FROM ${C.likesMenu.table} lm WHERE lm.${C.likesMenu.menuId} = m.${C.menus.id}) AS likes,
+            (SELECT COUNT(*) FROM ${C.comentariosMenu.table} cm WHERE cm.${C.comentariosMenu.menuId} = m.${C.menus.id}) AS comentarios,
+            (SELECT COUNT(*) FROM ${C.likesMenu.table} lm2 WHERE lm2.${C.likesMenu.menuId} = m.${C.menus.id} AND lm2.${C.likesMenu.usuarioId} = ?) AS liked_by_me
      FROM ${C.menus.table} m
      LEFT JOIN ${C.negocios.table} n ON n.${C.negocios.usuarioId} = m.${C.menus.usuarioId}
      WHERE m.${C.menus.estado} = 'Publicado' AND m.${C.menus.eliminadoAt} IS NULL
      ORDER BY m.${C.menus.fechaCreacion} DESC`,
+    [usuarioId],
     (err, results) => {
       if (err) return next(err);
       // CA: exponer solo lo necesario para la tarjeta pública (portada y
@@ -229,6 +234,9 @@ app.get("/api/public/explorar", (req, res, next) => {
           tipo: r.tipo,
           portada: data.imagen_url || null,
           descripcion: data.descripcion_publica || "",
+          likes: r.likes,
+          comentarios: r.comentarios,
+          liked_by_me: !!r.liked_by_me,
         };
       });
       res.json({ ok: true, cartas });
