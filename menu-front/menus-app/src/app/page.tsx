@@ -102,6 +102,7 @@ export default function Dashboard() {
   const [cartas, setCartas] = useState<Carta[]>([]);
   const [cargandoCartas, setCargandoCartas] = useState(true);
   const [errorCartas, setErrorCartas] = useState(false);
+  const [buscadorEnfocado, setBuscadorEnfocado] = useState(false);
 
   const porPagina = mobile ? 2 : 4;
   const totalPaginas = Math.ceil(plantillasPopulares.length / porPagina);
@@ -723,99 +724,92 @@ export default function Dashboard() {
             </div>
         </div>
 
-        <div
+        {/* EXPLORAR CARTAS DE OTROS NEGOCIOS (ahora primero, con buscador destacado arriba) */}
+        <div id="explorar" style={{ scrollMarginTop: 24 }}>
+
+          {/* Buscador destacado */}
+          <div
             style={{
-              background: "#16161d",
-              border: "1px solid #2a2a35",
-              borderLeft: "4px solid #a855f7",
-              padding: 18,
-              borderRadius: 10,
-              marginTop: 24,
-              marginBottom: 24,
+              position: "relative",
+              background: buscadorEnfocado
+                ? "linear-gradient(135deg, rgba(124,58,237,0.14), rgba(168,85,247,0.06))"
+                : "#16161d",
+              border: buscadorEnfocado ? "1px solid #7c3aed" : "1px solid #2a2a35",
+              borderRadius: 14,
+              padding: "16px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              boxShadow: buscadorEnfocado
+                ? "0 0 0 4px rgba(124,58,237,0.14), 0 10px 28px -12px rgba(124,58,237,0.35)"
+                : "none",
+              transition: "border-color .2s ease, box-shadow .2s ease, background .2s ease",
+              marginBottom: 20,
             }}
           >
-            <div
+            <span
               style={{
-                color: "#a855f7",
-                fontWeight: 700,
-                marginBottom: 8,
+                width: 38,
+                height: 38,
+                flexShrink: 0,
+                borderRadius: 10,
+                background: buscadorEnfocado ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#1e1e28",
+                border: buscadorEnfocado ? "none" : "1px solid #2a2a35",
+                color: buscadorEnfocado ? "white" : "#888",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all .2s ease",
               }}
             >
-              <IconBulb /> Consejo
-            </div>
-
-            <div
-              style={{
-                color: "#bbb",
-                fontSize: 13,
-                lineHeight: 1.6,
-              }}
-            >
-              Si es tu primera vez utilizando Menu Master, comienza creando un nuevo
-              menú o selecciona una plantilla para acelerar el proceso.
-            </div>
-          </div>
-
-        {/* PLANTILLAS */}
-          <div style={{ marginTop: 24 }}>
-            <div style={{ display: "flex",
-              flexDirection: mobile ? "column" : "row",
-              justifyContent: "space-between",
-              alignItems: mobile ? "flex-start" : "center",
-              gap: mobile ? 16 : 0, marginBottom: 16 }}>
-              <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Plantillas populares</h2>
-              <a href="/plantillas" style={{ color: "#a855f7", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Ver todas <IconArrowRight /></a>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button onClick={anteriorPagina} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "white", width: 32, height: 32, cursor: "pointer", flexShrink: 0 }}>
-                <IconArrowLeft />
-              </button>
-
-              <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))", gap: 16, flex: 1, minWidth: 0 }}>
-                {plantillasVisibles.map((p) => (
-                  <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
-                    <div style={{
-                      background: p.color, borderRadius: 12, aspectRatio: "3/4",
-                      display: "flex", flexDirection: "column", alignItems: "center",
-                      justifyContent: "center", gap: 8, cursor: "pointer", position: "relative",
-                      border: "1px solid rgba(212,175,55,0.35)",
-                      boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
-                    }}>
-                      {p.premium && (
-                        <div style={{
-                          position: "absolute", top: 8, right: 8,
-                          background: "linear-gradient(90deg,#d4af37,#f5e08a)",
-                          color: "#2b2118", fontSize: 9, fontWeight: 800,
-                          letterSpacing: 0.5, padding: "3px 7px", borderRadius: 6,
-                        }}>PREMIUM</div>
-                      )}
-                      <div style={{ color: p.textColor }}>
-                        <IconoPlantilla categoria={p.categoria} size={36} />
-                      </div>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: p.textColor, textAlign: "center", padding: "0 6px" }}>{p.nombre}</div>
-                    </div>
-                  </a>
-                ))}
+              <IconSearch size={16} />
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <input
+                value={busquedaCartas}
+                onChange={(e) => setBusquedaCartas(e.target.value)}
+                onFocus={() => setBuscadorEnfocado(true)}
+                onBlur={() => setBuscadorEnfocado(false)}
+                placeholder="Busca por nombre de negocio o tipo de comida..."
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  color: "white",
+                  fontSize: 15,
+                  fontWeight: 500,
+                }}
+              />
+              <div style={{ color: "#666", fontSize: 11.5, marginTop: 2 }}>
+                Explora cartas publicadas por otros negocios en Menu Master
               </div>
-
-              <button onClick={siguientePagina} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "white", width: 32, height: 32, cursor: "pointer", flexShrink: 0 }}>
-                <IconArrowRight />
+            </div>
+            {busquedaCartas && (
+              <button
+                onClick={() => setBusquedaCartas("")}
+                aria-label="Limpiar búsqueda"
+                style={{
+                  width: 26,
+                  height: 26,
+                  flexShrink: 0,
+                  borderRadius: "50%",
+                  border: "1px solid #2a2a35",
+                  background: "#1e1e28",
+                  color: "#888",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "#7c3aed"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "#888"; e.currentTarget.style.borderColor = "#2a2a35"; }}
+              >
+                <IconCerrarX />
               </button>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
-              {Array.from({ length: totalPaginas }).map((_, i) => (
-                <span key={i} onClick={() => setCarruselIndex(i)} style={{
-                  width: 6, height: 6, borderRadius: "50%", cursor: "pointer",
-                  background: i === carruselIndex ? "#a855f7" : "rgba(255,255,255,0.25)",
-                }} />
-              ))}
-            </div>
+            )}
           </div>
 
-        {/* EXPLORAR CARTAS DE OTROS NEGOCIOS */}
-        <div id="explorar" style={{ marginTop: 48, scrollMarginTop: 24 }}>
           <div style={{ display: "flex",
             flexDirection: mobile ? "column" : "row",
             justifyContent: "space-between",
@@ -827,26 +821,6 @@ export default function Dashboard() {
                 <span style={{ background: "#a855f7", color: "white", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6 }}>Nuevo</span>
               </h2>
               <p style={{ color: "#666", fontSize: 12, margin: "4px 0 0" }}>Descubre menús publicados por otros negocios en Menu Master</p>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: "#16161d",
-                border: "1px solid #2a2a35",
-                borderRadius: 10,
-                padding: "9px 14px",
-                width: mobile ? "100%" : 260,
-              }}
-            >
-              <IconSearch size={14} />
-              <input
-                value={busquedaCartas}
-                onChange={(e) => setBusquedaCartas(e.target.value)}
-                placeholder="Buscar negocio o tipo de comida..."
-                style={{ background: "transparent", border: "none", outline: "none", color: "white", fontSize: 13, flex: 1 }}
-              />
             </div>
           </div>
 
@@ -1003,6 +977,97 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        <div
+            style={{
+              background: "#16161d",
+              border: "1px solid #2a2a35",
+              borderLeft: "4px solid #a855f7",
+              padding: 18,
+              borderRadius: 10,
+              marginTop: 48,
+              marginBottom: 24,
+            }}
+          >
+            <div
+              style={{
+                color: "#a855f7",
+                fontWeight: 700,
+                marginBottom: 8,
+              }}
+            >
+              <IconBulb /> Consejo
+            </div>
+
+            <div
+              style={{
+                color: "#bbb",
+                fontSize: 13,
+                lineHeight: 1.6,
+              }}
+            >
+              Si es tu primera vez utilizando Menu Master, comienza creando un nuevo
+              menú o selecciona una plantilla para acelerar el proceso.
+            </div>
+          </div>
+
+        {/* PLANTILLAS */}
+          <div style={{ marginTop: 24 }}>
+            <div style={{ display: "flex",
+              flexDirection: mobile ? "column" : "row",
+              justifyContent: "space-between",
+              alignItems: mobile ? "flex-start" : "center",
+              gap: mobile ? 16 : 0, marginBottom: 16 }}>
+              <h2 style={{ color: "white", fontSize: 16, fontWeight: 600, margin: 0 }}>Plantillas populares</h2>
+              <a href="/plantillas" style={{ color: "#a855f7", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Ver todas <IconArrowRight /></a>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button onClick={anteriorPagina} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "white", width: 32, height: 32, cursor: "pointer", flexShrink: 0 }}>
+                <IconArrowLeft />
+              </button>
+
+              <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))", gap: 16, flex: 1, minWidth: 0 }}>
+                {plantillasVisibles.map((p) => (
+                  <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
+                    <div style={{
+                      background: p.color, borderRadius: 12, aspectRatio: "3/4",
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      justifyContent: "center", gap: 8, cursor: "pointer", position: "relative",
+                      border: "1px solid rgba(212,175,55,0.35)",
+                      boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
+                    }}>
+                      {p.premium && (
+                        <div style={{
+                          position: "absolute", top: 8, right: 8,
+                          background: "linear-gradient(90deg,#d4af37,#f5e08a)",
+                          color: "#2b2118", fontSize: 9, fontWeight: 800,
+                          letterSpacing: 0.5, padding: "3px 7px", borderRadius: 6,
+                        }}>PREMIUM</div>
+                      )}
+                      <div style={{ color: p.textColor }}>
+                        <IconoPlantilla categoria={p.categoria} size={36} />
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: p.textColor, textAlign: "center", padding: "0 6px" }}>{p.nombre}</div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+
+              <button onClick={siguientePagina} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "white", width: 32, height: 32, cursor: "pointer", flexShrink: 0 }}>
+                <IconArrowRight />
+              </button>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
+              {Array.from({ length: totalPaginas }).map((_, i) => (
+                <span key={i} onClick={() => setCarruselIndex(i)} style={{
+                  width: 6, height: 6, borderRadius: "50%", cursor: "pointer",
+                  background: i === carruselIndex ? "#a855f7" : "rgba(255,255,255,0.25)",
+                }} />
+              ))}
+            </div>
+          </div>
       </main>
     </div>
   );
