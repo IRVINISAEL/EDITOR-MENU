@@ -144,7 +144,7 @@ export default function DetalleCartaPage() {
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 40, marginBottom: 10 }}>🍽️</div>
           <p style={{ color: "white" }}>Esta carta no está disponible.</p>
-          <a href="/explorar" style={{ color: "#a855f7", fontSize: 13 }}>← Volver a explorar</a>
+          <a href="/#explorar" style={{ color: "#a855f7", fontSize: 13 }}>← Volver a explorar</a>
         </div>
       </div>
     );
@@ -179,7 +179,7 @@ export default function DetalleCartaPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#0d0d12", padding: "32px 24px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <a href="/explorar" style={{ color: "#888", fontSize: 13, textDecoration: "none" }}>← Volver a explorar</a>
+        <a href="/#explorar" style={{ color: "#888", fontSize: 13, textDecoration: "none" }}>← Volver a explorar</a>
 
         {/* Header del negocio */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 16, background: "#16161d", border: "1px solid #2a2a35", borderRadius: 14, padding: "16px 20px" }}>
