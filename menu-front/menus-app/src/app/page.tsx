@@ -155,7 +155,9 @@ export default function Dashboard() {
       }
 
     // Cargar menús reales del backend
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menus`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/menus`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    })
       .then(res => res.json())
       .then(data => {
         if (data.ok) setMenuRecientes(data.menus.slice(0, 3));

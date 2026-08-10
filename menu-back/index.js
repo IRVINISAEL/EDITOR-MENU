@@ -141,6 +141,68 @@ db.getConnection((err, connection) => {
       }
     }
   );
+
+  // CA-FIX: la sección "Explorar cartas" depende de estas 3 tablas.
+  // Si el despliegue en producción no corrió la migración del schema.sql,
+  // estas tablas no existen y /api/public/explorar responde 500.
+  // Se crean aquí de forma segura (IF NOT EXISTS) para autorepararlo.
+  db.query(
+    `CREATE TABLE IF NOT EXISTS ${C.negocios.table} (
+      ${C.negocios.id} INT AUTO_INCREMENT PRIMARY KEY,
+      ${C.negocios.usuarioId} INT NOT NULL,
+      ${C.negocios.nombre} VARCHAR(100) NOT NULL,
+      ${C.negocios.descripcion} VARCHAR(100) DEFAULT NULL,
+      ${C.negocios.tipo} VARCHAR(100) DEFAULT NULL,
+      ${C.negocios.telefono} VARCHAR(20) DEFAULT NULL,
+      ${C.negocios.email} VARCHAR(100) DEFAULT NULL,
+      ${C.negocios.sitioWeb} VARCHAR(100) DEFAULT NULL,
+      ${C.negocios.logo} VARCHAR(255) DEFAULT NULL,
+      ${C.negocios.horario} VARCHAR(255) DEFAULT NULL,
+      KEY usuario_id (${C.negocios.usuarioId})
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    (errTablaNegocios) => {
+      if (errTablaNegocios) {
+        console.error("❌ Error creando tabla negocios:", errTablaNegocios);
+      } else {
+        console.log("✅ Tabla negocios lista");
+      }
+    }
+  );
+
+  db.query(
+    `CREATE TABLE IF NOT EXISTS ${C.likesMenu.table} (
+      ${C.likesMenu.id} INT AUTO_INCREMENT PRIMARY KEY,
+      ${C.likesMenu.menuId} INT NOT NULL,
+      ${C.likesMenu.usuarioId} INT NOT NULL,
+      ${C.likesMenu.fecha} DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY unico_like (${C.likesMenu.menuId}, ${C.likesMenu.usuarioId})
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    (errTablaLikes) => {
+      if (errTablaLikes) {
+        console.error("❌ Error creando tabla likes_menu:", errTablaLikes);
+      } else {
+        console.log("✅ Tabla likes_menu lista");
+      }
+    }
+  );
+
+  db.query(
+    `CREATE TABLE IF NOT EXISTS ${C.comentariosMenu.table} (
+      ${C.comentariosMenu.id} INT AUTO_INCREMENT PRIMARY KEY,
+      ${C.comentariosMenu.menuId} INT NOT NULL,
+      ${C.comentariosMenu.usuarioId} INT NOT NULL,
+      ${C.comentariosMenu.texto} VARCHAR(500) NOT NULL,
+      ${C.comentariosMenu.fecha} DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      KEY menu_id (${C.comentariosMenu.menuId})
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    (errTablaComentarios) => {
+      if (errTablaComentarios) {
+        console.error("❌ Error creando tabla comentarios_menu:", errTablaComentarios);
+      } else {
+        console.log("✅ Tabla comentarios_menu lista");
+      }
+    }
+  );
 });
 
 // Middleware: verificar que el usuario sea propietario del menú
