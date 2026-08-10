@@ -221,9 +221,11 @@ export default function Dashboard() {
     );
 
     // TODO: reemplazar por el endpoint real del backend cuando exista
-    fetch(`${API}/api/public/explorar/${carta.id}/like`, {
-      method: yaLeDioLike ? "DELETE" : "POST",
-      headers: { "Content-Type": "application/json" },
+    // DESPUÉS
+    const token = localStorage.getItem("token");
+    fetch(`${API}/api/public/menus/${carta.id}/likes`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
     }).catch(() => {
       // Si falla, regresamos el estado anterior
       setCartas((prev) =>
@@ -258,9 +260,11 @@ export default function Dashboard() {
     setTextoComentario("");
 
     // TODO: reemplazar por el endpoint real del backend cuando exista
-    fetch(`${API}/api/public/explorar/${id}/comentarios`, {
+    // DESPUÉS
+    const token = localStorage.getItem("token");
+    fetch(`${API}/api/public/menus/${id}/comentarios`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ texto }),
     }).catch(() => {
       setCartas((prev) =>
