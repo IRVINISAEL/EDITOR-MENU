@@ -5,7 +5,7 @@ import { IconMapPin, IconClock, IconPhone, IconLink, IconArrowLeft, IconArrowRig
 
 type Platillo = { nombre: string; precio: string; descripcion?: string };
 type Seccion = { id: number; nombre: string; platillos: Platillo[]; imagenes?: string[] };
-type MenuData = { secciones: Seccion[]; nombreMenu?: string };
+type MenuData = { secciones: Seccion[]; nombreMenu?: string; imagen_url?: string };
 type Negocio = {
   nombre: string;
   descripcion?: string;
@@ -205,6 +205,17 @@ export default function DetalleCartaPage() {
             </a>
           )}
         </div>
+
+        {/* Imagen de la carta tal como fue publicada por el negocio */}
+        {data?.imagen_url && (
+          <div style={{ marginTop: 20, background: "#16161d", border: "1px solid #2a2a35", borderRadius: 14, padding: 16, textAlign: "center" }}>
+            <img
+              src={data.imagen_url}
+              alt={`Carta publicada de ${negocio?.nombre || nombre}`}
+              style={{ maxWidth: "100%", maxHeight: 720, borderRadius: 10, objectFit: "contain" }}
+            />
+          </div>
+        )}
 
         {secciones.length === 0 ? (
           <p style={{ color: "#888", marginTop: 40, textAlign: "center" }}>
