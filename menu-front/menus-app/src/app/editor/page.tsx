@@ -481,6 +481,50 @@ export default function Editor() {
     }
   };
 
+  // Captura la carta tal cual se ve (lo mismo que se usa para el PDF) y la sube
+  // como la imagen "portada" del menú, para que se vea en Explorar y en la
+  // vista de detalle pública de otros usuarios.
+  const capturarYSubirPortada = async (idMenu: number | string) => {
+    if (!menuRef.current) return;
+    const paginaOriginal = paginaVista;
+    setEditando(null);
+    setExportando(true);
+    try {
+      // Si el menú tiene portada, la usamos como imagen de la tarjeta;
+      // si no, usamos la hoja del menú.
+      setPaginaVista(mostrarPortada ? "portada" : "menu");
+      await new Promise((r) => setTimeout(r, 150));
+
+      const canvas = await html2canvas(menuRef.current!, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+      });
+
+      const blob: Blob | null = await new Promise((resolve) =>
+        canvas.toBlob((b) => resolve(b), "image/png")
+      );
+      if (!blob) return;
+
+      const formData = new FormData();
+      formData.append("imagen", blob, `menu-${idMenu}.png`);
+      formData.append("menu_id", String(idMenu));
+
+      await fetch(`${API}/api/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: formData,
+      });
+    } catch (err) {
+      console.error("No se pudo generar/subir la imagen publicada:", err);
+    } finally {
+      setPaginaVista(paginaOriginal);
+      setExportando(false);
+    }
+  };
+
   const handleGuardar = async (estado: "Borrador" | "Publicado", silencioso = false) => {
     if (!nombreMenu || nombreMenu.trim() === "") {
       if (!silencioso) alert("⚠️ Escribe un nombre para el menú antes de guardar");
@@ -523,7 +567,15 @@ export default function Editor() {
 
       const data = await res.json();
       if (data.ok || res.ok) {
+        const idFinal = data.menuId || menuId;
         if (data.menuId) setMenuId(data.menuId);
+
+        // Solo al publicar generamos y subimos la imagen "impresa" de la
+        // carta, para que otros usuarios la vean en Explorar cartas.
+        if (estado === "Publicado" && idFinal) {
+          await capturarYSubirPortada(idFinal);
+        }
+
         setGuardado(true);
         if (!silencioso) {
           alert(estado === "Publicado" ? "🚀 ¡Menú guardado y publicado exitosamente!" : "💾 ¡Borrador guardado correctamente!");
