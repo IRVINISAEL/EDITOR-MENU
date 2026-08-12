@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { IconMapPin, IconClock, IconPhone, IconLink, IconArrowLeft, IconArrowRight, IconHeart, IconMessageCircle } from "@/components/Icons";
+import { IconMapPin, IconClock, IconPhone, IconLink, IconArrowLeft, IconArrowRight, IconHeart, IconMessageCircle, IconRestaurante, IconWhatsapp, IconFacebook, IconXSocial } from "@/components/Icons";
 
 type Platillo = { nombre: string; precio: string; descripcion?: string };
 type Seccion = { id: number; nombre: string; platillos: Platillo[]; imagenes?: string[] };
@@ -135,14 +135,21 @@ export default function DetalleCartaPage() {
   };
 
   if (estado === "loading") {
-    return <div style={centrado}><p style={{ color: "white" }}>Cargando...</p></div>;
+    return (
+      <div style={centrado}>
+        <div style={{ textAlign: "center" }}>
+          <img src="/logo.svg" alt="MenuMaster" style={{ width: 44, height: 44, borderRadius: 12, marginBottom: 12, opacity: 0.85 }} />
+          <p style={{ color: "white", fontSize: 13 }}>Cargando...</p>
+        </div>
+      </div>
+    );
   }
 
   if (estado === "no-disponible") {
     return (
       <div style={centrado}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 10 }}>🍽️</div>
+          <img src="/logo.svg" alt="MenuMaster" style={{ width: 44, height: 44, borderRadius: 12, marginBottom: 12 }} />
           <p style={{ color: "white" }}>Esta carta no está disponible.</p>
           <a href="/#explorar" style={{ color: "#a855f7", fontSize: 13 }}>← Volver a explorar</a>
         </div>
@@ -171,9 +178,9 @@ export default function DetalleCartaPage() {
   };
 
   const botonesCompartir = [
-    { emoji: "💬", label: "WhatsApp", url: `https://wa.me/?text=${encodeURIComponent(`${tituloCompartir}: ${linkPublico}`)}` },
-    { emoji: "📘", label: "Facebook", url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(linkPublico)}` },
-    { emoji: "🐦", label: "Twitter", url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(tituloCompartir)}&url=${encodeURIComponent(linkPublico)}` },
+    { Icon: IconWhatsapp, label: "WhatsApp", color: "#25D366", url: `https://wa.me/?text=${encodeURIComponent(`${tituloCompartir}: ${linkPublico}`)}` },
+    { Icon: IconFacebook, label: "Facebook", color: "#1877F2", url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(linkPublico)}` },
+    { Icon: IconXSocial, label: "X", color: "#e8e8ee", url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(tituloCompartir)}&url=${encodeURIComponent(linkPublico)}` },
   ];
 
   return (
@@ -282,8 +289,8 @@ export default function DetalleCartaPage() {
         .like-btn { background: none; border: none; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; transition: transform .15s ease; }
         .like-btn:not(:disabled) { cursor: pointer; }
         .like-btn:not(:disabled):hover { transform: scale(1.08); }
-        .share-icon { font-size: 18px; text-decoration: none; transition: transform .15s ease; }
-        .share-icon:hover { transform: translateY(-2px) scale(1.15); }
+        .share-icon { display: inline-flex; align-items: center; text-decoration: none; transition: transform .15s ease, opacity .15s ease; opacity: 0.9; }
+        .share-icon:hover { transform: translateY(-2px) scale(1.15); opacity: 1; }
         .copy-btn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
 
         .comments-card { margin-top: 16px; padding: 20px; }
@@ -320,7 +327,7 @@ export default function DetalleCartaPage() {
             {negocio?.logo ? (
               <img src={negocio.logo} alt={negocio.nombre} className="logo-ring" />
             ) : (
-              <div className="logo-fallback">🍽️</div>
+              <img src="/logo.svg" alt="MenuMaster" className="logo-ring" />
             )}
             <div>
               <div className="biz-name">{negocio?.nombre || nombre}</div>
@@ -437,8 +444,8 @@ export default function DetalleCartaPage() {
                 </div>
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                   {botonesCompartir.map((b) => (
-                    <a key={b.label} href={b.url} target="_blank" rel="noopener noreferrer" title={b.label} className="share-icon">
-                      {b.emoji}
+                    <a key={b.label} href={b.url} target="_blank" rel="noopener noreferrer" title={b.label} className="share-icon" style={{ color: b.color }}>
+                      <b.Icon size={18} />
                     </a>
                   ))}
                   <button
