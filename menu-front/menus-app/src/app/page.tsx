@@ -118,6 +118,13 @@ export default function Dashboard() {
   const [comentandoId, setComentandoId] = useState<number | null>(null);
   const [textoComentario, setTextoComentario] = useState("");
 
+  // --- Notificaciones (campanita) ---
+  type Notificacion = { id: number; tipo: string; titulo: string; mensaje: string; leida: boolean | number; fecha: string };
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
+  const [noLeidas, setNoLeidas] = useState(0);
+  const [notifAbierta, setNotifAbierta] = useState(false);
+  const [cargandoNotif, setCargandoNotif] = useState(false);
+
   const porPagina = mobile ? 2 : 4;
   const totalPaginas = Math.ceil(plantillasPopulares.length / porPagina);
   const siguientePagina = () => setCarruselIndex((i) => (i + 1) % totalPaginas);
@@ -202,6 +209,94 @@ export default function Dashboard() {
 
   const conteoPorCategoria = (cat: string) =>
     cat === "Todas" ? cartas.length : cartas.filter((c) => c.categoria === cat).length;
+
+  // Genera un pequeño "ding" con el navegador, sin depender de ningún
+  // archivo de audio externo.
+  const reproducirSonidoNotificacion = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioCtx();
+      const tocarTono = (frecuencia: number, inicio: number, duracion: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = frecuencia;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const t0 = ctx.currentTime + inicio;
+        gain.gain.setValueAtTime(0, t0);
+        gain.gain.linearRampToValueAtTime(0.18, t0 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + duracion);
+        osc.start(t0);
+        osc.stop(t0 + duracion + 0.02);
+      };
+      tocarTono(880, 0, 0.16);
+      tocarTono(1320, 0.1, 0.22);
+    } catch {
+      // Si el navegador bloquea el audio (falta interacción del usuario), lo ignoramos.
+    }
+  };
+
+  const cargarNotificaciones = (avisarSiHayNuevas = false) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    setCargandoNotif(true);
+    fetch(`${API}/api/notificaciones`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        if (!json.ok) return;
+        setNotificaciones(json.notificaciones);
+        setNoLeidas((antes) => {
+          if (avisarSiHayNuevas && json.noLeidas > antes) {
+            reproducirSonidoNotificacion();
+          }
+          return json.noLeidas;
+        });
+      })
+      .catch(() => {})
+      .finally(() => setCargandoNotif(false));
+  };
+
+  useEffect(() => {
+    // Primera carga: si ya hay notificaciones sin leer (p. ej. la de
+    // bienvenida recién creada), suena una vez.
+    cargarNotificaciones(true);
+    const intervalo = setInterval(() => cargarNotificaciones(true), 30000);
+    return () => clearInterval(intervalo);
+  }, []);
+
+  const marcarNotifLeida = (id: number) => {
+    setNotificaciones((prev) => prev.map((n) => (n.id === id ? { ...n, leida: true } : n)));
+    setNoLeidas((v) => Math.max(0, v - 1));
+    const token = localStorage.getItem("token");
+    fetch(`${API}/api/notificaciones/${id}/leida`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => {});
+  };
+
+  const marcarTodasLeidas = () => {
+    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
+    setNoLeidas(0);
+    const token = localStorage.getItem("token");
+    fetch(`${API}/api/notificaciones/marcar-todas-leidas`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => {});
+  };
+
+  const tiempoNotif = (fechaIso: string) => {
+    const diffMs = Date.now() - new Date(fechaIso).getTime();
+    const min = Math.floor(diffMs / 60000);
+    if (min < 1) return "Ahora mismo";
+    if (min < 60) return `Hace ${min} min`;
+    const horas = Math.floor(min / 60);
+    if (horas < 24) return `Hace ${horas} h`;
+    const dias = Math.floor(horas / 24);
+    return `Hace ${dias} d`;
+  };
 
   const cerrarPopupPremium = () => {
     setMostrarPremium(false);
@@ -640,32 +735,142 @@ export default function Dashboard() {
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
 
               {/* Notificaciones */}
-              <button
-                title="Notificaciones"
-                style={{
-                  width: 42,
-                  height: 42,
-                  background: "#1e1e28",
-                  border: "1px solid #2a2a35",
-                  borderRadius: 10,
-                  color: "#888",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  transition: "all .2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#a855f7";
-                  e.currentTarget.style.borderColor = "#7c3aed";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "#888";
-                  e.currentTarget.style.borderColor = "#2a2a35";
-                }}
-              >
-                <IconoCampana />
-              </button>
+              <div style={{ position: "relative" }}>
+                <button
+                  title="Notificaciones"
+                  onClick={() => {
+                    const seVaAAbrir = !notifAbierta;
+                    setNotifAbierta(seVaAAbrir);
+                    if (seVaAAbrir) cargarNotificaciones(false);
+                  }}
+                  style={{
+                    width: 42,
+                    height: 42,
+                    background: notifAbierta ? "#7c3aed33" : "#1e1e28",
+                    border: notifAbierta ? "1px solid #7c3aed" : "1px solid #2a2a35",
+                    borderRadius: 10,
+                    color: notifAbierta ? "#a855f7" : "#888",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    transition: "all .2s",
+                    position: "relative",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#a855f7";
+                    e.currentTarget.style.borderColor = "#7c3aed";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!notifAbierta) {
+                      e.currentTarget.style.color = "#888";
+                      e.currentTarget.style.borderColor = "#2a2a35";
+                    }
+                  }}
+                >
+                  <IconoCampana />
+                  {noLeidas > 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: -4,
+                        right: -4,
+                        minWidth: 18,
+                        height: 18,
+                        padding: "0 4px",
+                        borderRadius: 9,
+                        background: "#ef4444",
+                        color: "white",
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "2px solid #0d0d12",
+                      }}
+                    >
+                      {noLeidas > 9 ? "9+" : noLeidas}
+                    </span>
+                  )}
+                </button>
+
+                {notifAbierta && (
+                  <>
+                    {/* Fondo invisible para cerrar el dropdown al hacer clic fuera */}
+                    <div
+                      onClick={() => setNotifAbierta(false)}
+                      style={{ position: "fixed", inset: 0, zIndex: 40 }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 50,
+                        right: 0,
+                        width: mobile ? 300 : 360,
+                        maxHeight: 420,
+                        overflowY: "auto",
+                        background: "#16161d",
+                        border: "1px solid #2a2a35",
+                        borderRadius: 14,
+                        boxShadow: "0 16px 40px rgba(0,0,0,0.45)",
+                        zIndex: 50,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: "1px solid #2a2a35" }}>
+                        <span style={{ color: "white", fontWeight: 700, fontSize: 14 }}>Notificaciones</span>
+                        {noLeidas > 0 && (
+                          <button
+                            onClick={marcarTodasLeidas}
+                            style={{ background: "transparent", border: "none", color: "#a855f7", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                          >
+                            Marcar todas como leídas
+                          </button>
+                        )}
+                      </div>
+
+                      {cargandoNotif && notificaciones.length === 0 && (
+                        <div style={{ padding: 20, textAlign: "center", color: "#666", fontSize: 12.5 }}>Cargando...</div>
+                      )}
+
+                      {!cargandoNotif && notificaciones.length === 0 && (
+                        <div style={{ padding: 24, textAlign: "center", color: "#666", fontSize: 12.5 }}>
+                          Aún no tienes notificaciones.
+                        </div>
+                      )}
+
+                      {notificaciones.map((n) => (
+                        <button
+                          key={n.id}
+                          onClick={() => !n.leida && marcarNotifLeida(n.id)}
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            textAlign: "left",
+                            padding: "12px 16px",
+                            background: n.leida ? "transparent" : "rgba(124,58,237,0.08)",
+                            border: "none",
+                            borderBottom: "1px solid #1f1f27",
+                            cursor: n.leida ? "default" : "pointer",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                            {!n.leida && (
+                              <span style={{ marginTop: 5, width: 7, height: 7, borderRadius: "50%", background: "#a855f7", flexShrink: 0 }} />
+                            )}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ color: "white", fontSize: 13, fontWeight: 600 }}>{n.titulo}</div>
+                              {n.mensaje && (
+                                <div style={{ color: "#999", fontSize: 12, marginTop: 2, lineHeight: 1.4 }}>{n.mensaje}</div>
+                              )}
+                              <div style={{ color: "#666", fontSize: 10.5, marginTop: 4 }}>{tiempoNotif(n.fecha)}</div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
 
               {/* Analíticas */}
               <a href="/analiticas">

@@ -113,6 +113,16 @@ module.exports = {
     calle: "calle",
     noExterior: "no_exterior",
   },
+  notificaciones: {
+    table: "notificaciones",
+    id: "id",
+    usuarioId: "user_id",
+    tipo: "tipo",
+    titulo: "titulo",
+    mensaje: "mensaje",
+    leida: "leida",
+    fecha: "created_at",
+  },
   redesSociales: {
     table: "redes_sociales",
     id: "id",
