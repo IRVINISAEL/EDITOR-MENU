@@ -150,6 +150,7 @@ export default function Login() {
       });
       const data = await res.json();
       if (data.ok) {
+        sessionStorage.setItem("mm-recien-registrado", "true");
         alert("¡Cuenta creada! Ahora inicia sesión.");
         setModo("login");
       } else {

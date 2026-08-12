@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   IconEdit,
   IconChart,
@@ -98,6 +98,78 @@ type Carta = {
 const CATEGORIAS_EXPLORAR = ["Todas", "Cafetería", "Parrilla", "Sushi", "Italiana", "Mexicana", "Saludable"];
 
 
+function LluviaConfeti({ activo, onFin }: { activo: boolean; onFin: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (!activo) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const ajustarTamano = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    ajustarTamano();
+    window.addEventListener("resize", ajustarTamano);
+
+    const colores = ["#a855f7", "#d4af37", "#f5e08a", "#22c55e", "#38bdf8", "#f472b6"];
+    const piezas = Array.from({ length: 160 }).map(() => ({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * canvas.height * 0.6,
+      w: 6 + Math.random() * 6,
+      h: 10 + Math.random() * 8,
+      color: colores[Math.floor(Math.random() * colores.length)],
+      velY: 2 + Math.random() * 3,
+      velX: -1.5 + Math.random() * 3,
+      rot: Math.random() * 360,
+      velRot: -6 + Math.random() * 12,
+    }));
+
+    const inicio = performance.now();
+    let animId: number;
+
+    const dibujar = (t: number) => {
+      const transcurrido = t - inicio;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      piezas.forEach((p) => {
+        p.x += p.velX;
+        p.y += p.velY;
+        p.rot += p.velRot;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+
+      if (transcurrido < 3200) {
+        animId = requestAnimationFrame(dibujar);
+      } else {
+        onFin();
+      }
+    };
+    animId = requestAnimationFrame(dibujar);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", ajustarTamano);
+    };
+  }, [activo, onFin]);
+
+  if (!activo) return null;
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: "fixed", inset: 0, zIndex: 9999, pointerEvents: "none" }}
+    />
+  );
+}
+
 export default function Dashboard() {
   const [activeNav] = useState("Dashboard");
   const [usuario, setUsuario] = useState<{ id?: string; email?: string; nombre: string; plan: string } | null>(null);
@@ -107,6 +179,8 @@ export default function Dashboard() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [mostrarPremium, setMostrarPremium] = useState(false);
   const [carruselIndex, setCarruselIndex] = useState(0);
+  const [mostrarConfeti, setMostrarConfeti] = useState(false);
+  const [mostrarBienvenida, setMostrarBienvenida] = useState(false);
 
   // --- Explorar cartas ---
   const [busquedaCartas, setBusquedaCartas] = useState("");
@@ -129,7 +203,10 @@ export default function Dashboard() {
   const totalPaginas = Math.ceil(plantillasPopulares.length / porPagina);
   const siguientePagina = () => setCarruselIndex((i) => (i + 1) % totalPaginas);
   const anteriorPagina = () => setCarruselIndex((i) => (i - 1 + totalPaginas) % totalPaginas);
-  const plantillasVisibles = plantillasPopulares.slice(carruselIndex * porPagina, carruselIndex * porPagina + porPagina);
+  const paginasPlantillas: (typeof plantillasPopulares)[] = [];
+  for (let i = 0; i < plantillasPopulares.length; i += porPagina) {
+    paginasPlantillas.push(plantillasPopulares.slice(i, i + porPagina));
+  }
 
   useEffect(() => {
     const resize = () => setMobile(window.innerWidth <= 768);
@@ -159,6 +236,16 @@ export default function Dashboard() {
 
         // Consumimos la bandera para que no vuelva a activarse en un refresh
         sessionStorage.removeItem("acaba-de-iniciar-sesion");
+
+        // Si el usuario se acaba de registrar, esta es su primera entrada:
+        // lanzamos confeti de bienvenida una sola vez.
+        const recienRegistrado = sessionStorage.getItem("mm-recien-registrado");
+        if (recienRegistrado) {
+          setMostrarConfeti(true);
+          setMostrarBienvenida(true);
+          sessionStorage.removeItem("mm-recien-registrado");
+          setTimeout(() => setMostrarBienvenida(false), 5000);
+        }
       }
 
     // Cargar menús reales del backend
@@ -378,6 +465,27 @@ export default function Dashboard() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", background: "#0f0f13" }}>
+      <LluviaConfeti activo={mostrarConfeti} onFin={() => setMostrarConfeti(false)} />
+
+      {mostrarBienvenida && (
+        <div
+          style={{
+            position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
+            zIndex: 10000, background: "linear-gradient(90deg,#a855f7,#7c3aed)",
+            color: "white", padding: "14px 24px", borderRadius: 12,
+            boxShadow: "0 8px 30px rgba(124,58,237,0.45)",
+            fontWeight: 700, fontSize: 14, textAlign: "center",
+            animation: "mmToastIn .4s cubic-bezier(.16,1,.3,1) both",
+          }}
+        >
+          🎉 ¡Bienvenido a Menu Master{usuario?.nombre ? `, ${usuario.nombre}` : ""}!
+        </div>
+      )}
+
+      <style>{`
+        @keyframes mmToastIn { 0% { opacity: 0; transform: translate(-50%, -16px); } 100% { opacity: 1; transform: translate(-50%, 0); } }
+      `}</style>
+
       <button className="hamburger-btn" onClick={() => setMenuAbierto(!menuAbierto)}>☰</button>
       {menuAbierto && <div className="sidebar-overlay" onClick={() => setMenuAbierto(false)} />}
 
@@ -1411,31 +1519,53 @@ export default function Dashboard() {
                 <IconArrowLeft />
               </button>
 
-              <div style={{ display: "grid", gridTemplateColumns: mobile ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))", gap: 16, flex: 1, minWidth: 0 }}>
-                {plantillasVisibles.map((p) => (
-                  <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
-                    <div style={{
-                      background: p.color, borderRadius: 12, aspectRatio: "3/4",
-                      display: "flex", flexDirection: "column", alignItems: "center",
-                      justifyContent: "center", gap: 8, cursor: "pointer", position: "relative",
-                      border: "1px solid rgba(212,175,55,0.35)",
-                      boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
-                    }}>
-                      {p.premium && (
-                        <div style={{
-                          position: "absolute", top: 8, right: 8,
-                          background: "linear-gradient(90deg,#d4af37,#f5e08a)",
-                          color: "#2b2118", fontSize: 9, fontWeight: 800,
-                          letterSpacing: 0.5, padding: "3px 7px", borderRadius: 6,
-                        }}>PREMIUM</div>
-                      )}
-                      <div style={{ color: p.textColor }}>
-                        <IconoPlantilla categoria={p.categoria} size={36} />
-                      </div>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: p.textColor, textAlign: "center", padding: "0 6px" }}>{p.nombre}</div>
+              <div style={{ overflow: "hidden", flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    width: `${totalPaginas * 100}%`,
+                    transform: `translateX(-${carruselIndex * (100 / totalPaginas)}%)`,
+                    transition: "transform 0.9s cubic-bezier(0.65, 0, 0.35, 1)",
+                  }}
+                >
+                  {paginasPlantillas.map((pagina, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: mobile ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))",
+                        gap: 16,
+                        flex: `0 0 ${100 / totalPaginas}%`,
+                        minWidth: 0,
+                      }}
+                    >
+                      {pagina.map((p) => (
+                        <a key={p.id} href="/plantillas" style={{ textDecoration: "none" }}>
+                          <div style={{
+                            background: p.color, borderRadius: 12, aspectRatio: "3/4",
+                            display: "flex", flexDirection: "column", alignItems: "center",
+                            justifyContent: "center", gap: 8, cursor: "pointer", position: "relative",
+                            border: "1px solid rgba(212,175,55,0.35)",
+                            boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
+                          }}>
+                            {p.premium && (
+                              <div style={{
+                                position: "absolute", top: 8, right: 8,
+                                background: "linear-gradient(90deg,#d4af37,#f5e08a)",
+                                color: "#2b2118", fontSize: 9, fontWeight: 800,
+                                letterSpacing: 0.5, padding: "3px 7px", borderRadius: 6,
+                              }}>PREMIUM</div>
+                            )}
+                            <div style={{ color: p.textColor }}>
+                              <IconoPlantilla categoria={p.categoria} size={36} />
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: p.textColor, textAlign: "center", padding: "0 6px" }}>{p.nombre}</div>
+                          </div>
+                        </a>
+                      ))}
                     </div>
-                  </a>
-                ))}
+                  ))}
+                </div>
               </div>
 
               <button onClick={siguientePagina} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "white", width: 32, height: 32, cursor: "pointer", flexShrink: 0 }}>
