@@ -203,6 +203,27 @@ db.getConnection((err, connection) => {
       }
     }
   );
+
+  db.query(
+    `CREATE TABLE IF NOT EXISTS ${C.notificaciones.table} (
+      ${C.notificaciones.id} INT AUTO_INCREMENT PRIMARY KEY,
+      ${C.notificaciones.usuarioId} INT NOT NULL,
+      ${C.notificaciones.tipo} VARCHAR(40) NOT NULL DEFAULT 'general',
+      ${C.notificaciones.titulo} VARCHAR(150) NOT NULL,
+      ${C.notificaciones.mensaje} VARCHAR(500) DEFAULT NULL,
+      ${C.notificaciones.leida} TINYINT(1) NOT NULL DEFAULT 0,
+      ${C.notificaciones.fecha} TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      KEY user_id (${C.notificaciones.usuarioId}),
+      CONSTRAINT fk_notificaciones_usuario FOREIGN KEY (${C.notificaciones.usuarioId}) REFERENCES ${C.usuarios.table}(${C.usuarios.id}) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    (errTablaNotificaciones) => {
+      if (errTablaNotificaciones) {
+        console.error("❌ Error creando tabla notificaciones:", errTablaNotificaciones);
+      } else {
+        console.log("✅ Tabla notificaciones lista");
+      }
+    }
+  );
 });
 
 // Middleware: verificar que el usuario sea propietario del menú
@@ -265,6 +286,17 @@ async function notificarSiHabilitado(usuarioId, { email, subject, html }) {
   } catch (mailErr) {
     console.error("ERROR NOTIFICACION EMAIL:", mailErr);
   }
+}
+
+// Crea una notificación para el usuario (aparece en la campanita del dashboard)
+function crearNotificacion(usuarioId, { tipo = "general", titulo, mensaje = "" }) {
+  db.query(
+    `INSERT INTO ${C.notificaciones.table} (${C.notificaciones.usuarioId}, ${C.notificaciones.tipo}, ${C.notificaciones.titulo}, ${C.notificaciones.mensaje}) VALUES (?, ?, ?, ?)`,
+    [usuarioId, tipo, titulo, mensaje],
+    (err) => {
+      if (err) console.error("ERROR creando notificación:", err);
+    }
+  );
 }
 
 app.get("/", (req, res) => res.json({ ok: true, version: "3.0.1" }));
@@ -685,6 +717,13 @@ app.post("/api/auth/register", async (req, res) => {
           if (err.code === "ER_DUP_ENTRY") return res.status(400).json({ ok: false, mensaje: "Correo ya registrado" });
           return res.status(500).json({ ok: false, mensaje: err.message });
         }
+
+        crearNotificacion(result.insertId, {
+          tipo: "bienvenida",
+          titulo: `¡Bienvenido a Menu Master, ${nombre}! 🎉`,
+          mensaje: "Crea tu primer menú y publícalo para que otros negocios y clientes lo descubran.",
+        });
+
         res.status(201).json({ ok: true, userId: result.insertId });
       });
   } catch (e) {
@@ -1399,6 +1438,70 @@ app.post("/api/descargas", verificarToken, async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// Lista las notificaciones del usuario logueado (más recientes primero).
+// Si el usuario nunca ha tenido ninguna (p. ej. cuentas creadas antes de
+// este cambio), le sembramos la de bienvenida en su primera consulta.
+app.get("/api/notificaciones", verificarToken, async (req, res, next) => {
+  try {
+    const usuarioId = req.usuario.id;
+
+    const [existentes] = await dbAsync.query(
+      `SELECT COUNT(*) AS total FROM ${C.notificaciones.table} WHERE ${C.notificaciones.usuarioId} = ?`,
+      [usuarioId]
+    );
+
+    if (existentes[0].total === 0) {
+      await dbAsync.query(
+        `INSERT INTO ${C.notificaciones.table} (${C.notificaciones.usuarioId}, ${C.notificaciones.tipo}, ${C.notificaciones.titulo}, ${C.notificaciones.mensaje}) VALUES (?, 'bienvenida', ?, ?)`,
+        [
+          usuarioId,
+          "¡Bienvenido a Menu Master! 🎉",
+          "Crea tu primer menú y publícalo para que otros negocios y clientes lo descubran.",
+        ]
+      );
+    }
+
+    const [rows] = await dbAsync.query(
+      `SELECT ${C.notificaciones.id} AS id, ${C.notificaciones.tipo} AS tipo, ${C.notificaciones.titulo} AS titulo,
+              ${C.notificaciones.mensaje} AS mensaje, ${C.notificaciones.leida} AS leida, ${C.notificaciones.fecha} AS fecha
+       FROM ${C.notificaciones.table}
+       WHERE ${C.notificaciones.usuarioId} = ?
+       ORDER BY ${C.notificaciones.fecha} DESC
+       LIMIT 30`,
+      [usuarioId]
+    );
+
+    const noLeidas = rows.filter((n) => !n.leida).length;
+    res.json({ ok: true, notificaciones: rows, noLeidas });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Marca una notificación puntual como leída
+app.post("/api/notificaciones/:id/leida", verificarToken, (req, res, next) => {
+  db.query(
+    `UPDATE ${C.notificaciones.table} SET ${C.notificaciones.leida} = 1 WHERE ${C.notificaciones.id} = ? AND ${C.notificaciones.usuarioId} = ?`,
+    [req.params.id, req.usuario.id],
+    (err) => {
+      if (err) return next(err);
+      res.json({ ok: true });
+    }
+  );
+});
+
+// Marca todas las notificaciones del usuario como leídas
+app.post("/api/notificaciones/marcar-todas-leidas", verificarToken, (req, res, next) => {
+  db.query(
+    `UPDATE ${C.notificaciones.table} SET ${C.notificaciones.leida} = 1 WHERE ${C.notificaciones.usuarioId} = ?`,
+    [req.usuario.id],
+    (err) => {
+      if (err) return next(err);
+      res.json({ ok: true });
+    }
+  );
 });
 
 app.post("/api/upload", verificarToken, (req, res) => {
